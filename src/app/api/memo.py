@@ -23,7 +23,7 @@ async def create_memo(payload: MemoSchema,
     
     # log.info(f"create_memo: current_user is {current_user}")
     
-    if not user_has_role(current_user,"admin") and user_has_role(current_user,"staff"):
+    if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to create Memo posts")
         
