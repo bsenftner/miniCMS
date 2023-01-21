@@ -1,0 +1,30 @@
+<script>
+
+    function GetLatestMemos() {
+        fetch("/memo")
+        .then(response => response.json())
+        .then( response =>  {
+
+            // console.log( response );
+
+            let meJson = response;
+            let newHtml = "</br><div>Please review the following for any new memos:</div>";
+            newHtml += '<div><ul>';
+            for (let i = 0; i < meJson.length; i++) {
+                newHtml += '<li>';
+                let memo = meJson[i];
+                newHtml += '<a href="/memopage/';
+                newHtml += memo.memoid;
+                newHtml += '">';
+                newHtml += memo.title;
+                if (memo.status == 'unpublished') {
+                    newHtml += ' (unpublished)';
+                }
+                newHtml += '</a></li></br>';
+            }
+            newHtml += '</ul></div>';
+            document.getElementById("mainContent").innerHTML += newHtml
+        });
+    }
+
+</script>

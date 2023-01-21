@@ -90,10 +90,14 @@
 							//	'<a href="#" class="button" onclick="MemoEdit()">Edit</a>';
 
 						}
+
+						GetLatestMemos();
 					}
 				});
 			}
 		}
+
+		
 
 		function MemoEdit() { window.location.href = "/Editor/{{ contentPost.id }}"; }
 
@@ -105,6 +109,8 @@
 
 	</script>
 
+	{% include 'common_latestMemos.html' %}
+	
 	{% include 'common_logout.html' %}
 
 	{% include 'common_refresh.html' %}

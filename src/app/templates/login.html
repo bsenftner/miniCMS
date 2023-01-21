@@ -102,6 +102,7 @@
 			}
 		}
 
+		/*
 		function GetLatestMemos() {
 			fetch("/memo")
 			.then(response => response.json())
@@ -127,7 +128,7 @@
 				newHtml += '</ul></div>';
 				document.getElementById("mainContent").innerHTML += newHtml
 			});
-		}
+		} */
 
         function VerifyEmail() { 
 			// get the verification code:
@@ -231,6 +232,8 @@
 		function Profile() { window.location.href = "/profile"; }
 
 	</script>
+
+	{% include 'common_latestMemos.html' %}
 
 	{% include 'common_logout.html' %}
 
