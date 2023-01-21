@@ -124,6 +124,7 @@ async def memoPage( request: Request, id: int,
 @router.get("/publicmemo/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoPublic( request: Request, id: int  ):
     
+    # using memoNice to get the memo's username from the author field
     memoNice: MemoNice = await crud.get_memoNice(id)
     if not memoNice:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
@@ -145,7 +146,7 @@ async def memoPublic( request: Request, id: int  ):
     
 
 # ------------------------------------------------------------------------------------------------------------------
-# serve memo with an editor on it thru a template:
+# serve memo on an editor thru a template:
 @router.get("/Editor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def editor( request: Request, id: int, current_user: User = Depends(users.get_current_active_user) ):
     
@@ -161,8 +162,30 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
     
     return TEMPLATES.TemplateResponse(
         "tinymcEditor.html", 
-        {"request": request, "contentPost": memoNice, "frags": FRAGS, "access": "private", "memos": memoList}, 
+        {"request": request, "contentPost": memoNice, "frags": FRAGS, "memos": memoList}, 
     )
+    
+# ------------------------------------------------------------------------------------------------------------------
+# serve an empty editor page that saves as a memo thru a template:
+@router.get("/Editor", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def editor( request: Request, current_user: User = Depends(users.get_current_active_user) ):
+    
+    memoNice = MemoNice( author=current_user.username,
+                        memoid=0,
+                        userid=current_user.userid,
+                        title='your memo title',
+                        description='Edit this to be your memo.',
+                        status='unpublished',
+                        tags='',
+                        access='staff')
+    
+    memoList = await crud.get_all_memos(current_user)
+    
+    return TEMPLATES.TemplateResponse(
+        "tinymcEditor.html", 
+        {"request": request, "contentPost": memoNice, "frags": FRAGS, "memos": memoList}, 
+    )
+    
     
 # ------------------------------------------------------------------------------------------------------------------
 # serve a user profile page thru a template:
@@ -196,7 +219,7 @@ async def user_settings_page( request: Request, current_user: User = Depends(use
        
     return TEMPLATES.TemplateResponse(
         page,
-        {"request": request, "data": page_data, "frags": FRAGS, "access": "private", "memos": memoList}, 
+        {"request": request, "data": page_data, "frags": FRAGS, "memos": memoList}, 
     )
     
      

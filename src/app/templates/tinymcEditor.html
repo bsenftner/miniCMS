@@ -6,7 +6,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Martinez-attornies.com</title>
+  <title>MiniCMS</title>
   <link rel="stylesheet" href="/static/index.css">
 </head>
 <body>
@@ -70,14 +70,14 @@
 				<div>
 					<label for="NewPostTags">Tags:</label>
   					<input type="text" id="NewPostTags" name="label" value="{{contentPost.tags}}">
-					<div id="TagsMsg">Tags are words used to group memos of similar topic together, separated by commas.</div>
+					<div id="TagsMsg">Tags are words used to group memos of similar topic together, separated by spaces.</div>
 				</div>
 				<div id="divBeneathTheEditor">
 					<a href="#" class="button" onclick="MemoEditCancel()">Cancel</a>
 					<a href="#" class="button" onclick="MemoUpdate()">Update</a>
 					<a href="#" class="button" onclick="MemoDelete()">Delete</a>
 					<br/>
-					<a href="#" class="button" onclick="MemoSubmit()">Submit A Completely New Memo</a>
+					<a href="#" class="button" onclick="MemoSubmit()">Post A Completely New Memo</a>
 				</div>
 			</div>
 		</main>
@@ -132,7 +132,7 @@
 		document.addEventListener( "DOMContentLoaded", function(){page_init();} );
 	
 
-		function page_init_work() {
+		function page_init_work(userdata) {
 
 			// user is logged in, change right sidebar links:
 							
@@ -146,10 +146,35 @@
 			document.getElementById("statusSelectBox").value = "{{contentPost.status}}"
 			//
 			document.getElementById("NewPostAccess").value = "{{contentPost.access}}"
+
+			if (Number("{{contentPost.memoid}}") == 0) {
+				// we're creating a new memo, so change the button options:
+				document.getElementById("divBeneathTheEditor").innerHTML =
+					`<a href="#" class="button" onclick="MemoEditCancel()">Cancel</a>
+					<a href="#" class="button" onclick="MemoSubmit()">Post A New Memo</a>
+					`;
+			}
+
+			if (userdata.hasOwnProperty('roles')) {
+				if (userdata.roles.includes('staff')) {
+					let newPostAccess = document.getElementById("NewPostAccess")
+					//
+					let i;
+					//
+					for (i = newPostAccess.options.length; i >= 0; i--) {
+						newPostAccess.remove(i);
+					}
+					//
+					let optn = document.createElement("OPTION");
+					optn.text = 'Staff';
+					optn.value = 'staff'; 
+					newPostAccess.options.add(optn);
+				}
+			}
 		}
 		//
 		function page_init() {
-			ifAccessDo(page_init_work);
+			ifAccessDoWithUser(page_init_work);
 		}
 
 		function MemoEditCancel() { window.location.href = "/memopage/{{ contentPost.memoid }}"; }

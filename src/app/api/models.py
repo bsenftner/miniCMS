@@ -23,11 +23,11 @@ class NoteDB(NoteSchema):
 # the access field is used to restrict who sees the memo, 
 # the access field holds csv roles, where a "role" is an attribute on a user. 
 class MemoSchema(BaseModel):
-    title: str = Field(..., min_length=3, max_length=80)
-    description: str = Field(..., min_length=3, max_length=16384)
-    status: str = Field(..., min_length=3, max_length=32)
-    tags: str = Field(..., min_length=3, max_length=80)
-    access: str = Field(..., min_length=3, max_length=80)
+    title: str = Field(..., min_length=0, max_length=80)
+    description: str = Field(..., min_length=0, max_length=16384)
+    status: str = Field(..., min_length=0, max_length=32)
+    tags: str = Field(..., min_length=0, max_length=80)
+    access: str = Field(..., min_length=0, max_length=80)
 
 # A "Memo" in the database is simply an id plus our MemoSchema: 
 class MemoDB(MemoSchema):

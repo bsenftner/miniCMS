@@ -144,7 +144,7 @@
 			 ).then(
 				  success => {
 					console.log( success ) // Handle the success response object
-					userSelectBox = document.getElementById("userSelectBox")
+					let userSelectBox = document.getElementById("userSelectBox")
 					//
 					let i;
 					//
@@ -156,7 +156,7 @@
 					//
 					limit = success.length;
 					for (i = 0; i < limit; i++) {
-						var optn = document.createElement("OPTION");
+						let optn = document.createElement("OPTION");
 						optn.text = success[i].username;
 						optn.value = success[i].userid; // i+1;
 						userSelectBox.options.add(optn);
