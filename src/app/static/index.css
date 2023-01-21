@@ -306,50 +306,6 @@ footer {
   max-width: 100%;
 }
 
-#blakeImg {
-  float: left;
-  margin-left: 124px;
-  margin-right: 20px;
-  margin-bottom: 20px;
-}
-
-#GraveCaveImg, #FractalsBookImg, #BULabImg, #MacImg, #HarvestImg {
-  display: inline;
-  margin-left: 10px;
-  margin-right: 0px;
-  margin-top: 0px;
-  margin-bottom: 10px;
-  height: 170px;
-}
-
-#TD0Img, #PSXImg, #TigerWoodsImg, #CatImg, #ScoobyImg, #GarfieldImg, #NarniaImg, #AureusImg {
-  display: inline;
-  margin-left: 10px;
-  margin-right: 0px;
-  margin-top: 0px;
-  margin-bottom: 10px;
-  height: 170px;
-}
-
-.slide3DAS img {
-  max-width: 75%;
-}
-
-#AvatarStoreVid {
-  margin-left: 10px;
-  margin-right: 0px;
-  margin-top: 0px;
-  margin-bottom:10px;
-}
-
-#AvatarFaceCtrlsImg {
-  float: right;
-  margin-left: 20px;
-  margin-right: 0px;
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
 label.chkbox {
   padding-left: 20px;
   font-weight: bold;
@@ -393,9 +349,8 @@ div#userMsg3 {
   margin-top: 40px;
 }
 
-#RandHLogo {
-  margin-left: 10px;
-  margin-right: 10px;
-  margin-top: 10px;
-  margin-bottom:10px;
+div.memolist ul li {
+  list-style-type: none;
+  font-size: 22px;
+  font-weight: bold;
 }

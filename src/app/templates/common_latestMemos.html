@@ -8,8 +8,10 @@
             // console.log( response );
 
             let meJson = response;
-            let newHtml = "</br><div>Please review the following for any new memos:</div>";
-            newHtml += '<div><ul>';
+
+            let newHtml = "</br><h3>Please review the following for new memos:</h3>";
+
+            newHtml += '<div class="memolist"><ul>';
             for (let i = 0; i < meJson.length; i++) {
                 newHtml += '<li>';
                 let memo = meJson[i];

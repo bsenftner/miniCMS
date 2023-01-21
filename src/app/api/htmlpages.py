@@ -46,6 +46,7 @@ async def root( request: Request ):
     return TEMPLATES.TemplateResponse(
         "home.html",
         {"request": request, "frags": FRAGS, "access": "public", "memos": memoList}, 
+        # 'access' key is for template left sidebar construction
     )
     
 
@@ -59,6 +60,7 @@ async def register( request: Request ):
     return TEMPLATES.TemplateResponse(
         "register.html",
         {"request": request, "frags": FRAGS, "access": "public", "memos": memoList}, 
+        # 'access' key is for template left sidebar construction
     )
     
 # ------------------------------------------------------------------------------------------------------------------
@@ -71,6 +73,7 @@ async def login( request: Request ):
     return TEMPLATES.TemplateResponse(
         "login.html",
         {"request": request, "frags": FRAGS, "access": "public", "memos": memoList}, 
+        # 'access' key is for template left sidebar construction
     )
     
 
@@ -89,6 +92,7 @@ async def profilePage( request: Request,
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList }, 
+        # 'access' key is for template left sidebar construction
     )
     
 # ------------------------------------------------------------------------------------------------------------------
@@ -116,6 +120,7 @@ async def memoPage( request: Request, id: int,
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList }, 
+        # 'access' key is for template left sidebar construction
     )
     
 
@@ -142,6 +147,7 @@ async def memoPublic( request: Request, id: int  ):
           "access": 'public',
           "memos": memoList 
         }, 
+        # 'access' key is for template left sidebar construction
     )
     
 
@@ -162,7 +168,8 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
     
     return TEMPLATES.TemplateResponse(
         "tinymcEditor.html", 
-        {"request": request, "contentPost": memoNice, "frags": FRAGS, "memos": memoList}, 
+        {"request": request, "contentPost": memoNice, "frags": FRAGS, "access": 'private', "memos": memoList}, 
+        # 'access' key is for template left sidebar construction
     )
     
 # ------------------------------------------------------------------------------------------------------------------
@@ -183,7 +190,8 @@ async def editor( request: Request, current_user: User = Depends(users.get_curre
     
     return TEMPLATES.TemplateResponse(
         "tinymcEditor.html", 
-        {"request": request, "contentPost": memoNice, "frags": FRAGS, "memos": memoList}, 
+        {"request": request, "contentPost": memoNice, "frags": FRAGS, "access": 'private', "memos": memoList}, 
+        # 'access' key is for template left sidebar construction
     )
     
     
@@ -219,7 +227,8 @@ async def user_settings_page( request: Request, current_user: User = Depends(use
        
     return TEMPLATES.TemplateResponse(
         page,
-        {"request": request, "data": page_data, "frags": FRAGS, "memos": memoList}, 
+        {"request": request, "data": page_data, "frags": FRAGS, "access": 'private', "memos": memoList}, 
+        # 'access' key is for template left sidebar construction
     )
     
      
