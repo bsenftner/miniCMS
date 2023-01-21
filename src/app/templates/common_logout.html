@@ -1,0 +1,36 @@
+<script>
+
+function Logout() { 
+    
+    // document.cookie = 'access_token=; Max-Age=0; path=/; domain=' + location.host; // don't work
+    const options = { method: 'POST', body: {} };
+    fetch("/users/logout", options)
+        .then((response) => {
+            if (!response.ok) {
+                window.location.href = '/';
+            }
+            return response.json();
+        })
+        .then( response => 
+        {
+            if (response.hasOwnProperty('username')) {
+
+                localStorage.removeItem('token');
+                    
+                document.getElementById("mainContent").innerHTML = 
+                        "<h4>By now, " + response.username + ".</h4>";
+                    
+                if (window.location.href != '/login')
+                {
+                    window.location.href = '/login';
+                }
+                else {
+                    document.getElementById("aside").innerHTML = 
+                            '<a href="#" class="button" onclick="window.location.reload();">Re-login</a>';
+                }
+            }
+        }
+    );
+}
+
+</script>

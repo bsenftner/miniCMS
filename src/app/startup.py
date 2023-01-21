@@ -1,0 +1,75 @@
+import json   
+from app.api.models import NoteSchema, MemoSchema, UserReg
+from app.api import crud, users, encrypt
+
+from app.config import get_settings, log
+
+import secrets
+import string
+
+# ---------------------------------------------------------------------------------------
+# Called by app startup event, this ensures site_config exists in the db:
+async def initialize_database_data( ) -> None:
+    
+    settings = get_settings() # application config settings
+    
+    # ensure initial memo post exists
+    log.info("checking initial user exists...")
+    adminUser = await crud.get_user_by_id(1)
+    if not adminUser:
+        log.info("creating first user...")
+        
+        first_user_payload = UserReg(username=settings.ADMIN_USERNAME, password=settings.ADMIN_PASSWORD, email=settings.ADMIN_EMAIL)
+        roles = users.user_initial_roles( True ) # returns the initial roles granted to a new user
+        hashed_password = encrypt.get_password_hash(first_user_payload.password)
+        # generate an email verification code:
+        verify_code = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase) for i in range(16))
+        
+        log.info(f"the admin email verification code is {verify_code}")
+        log.info(f"posting first_user_payload...")
+        
+        # validation of user info complete, create the user in the db:
+        last_record_id = await crud.post_user( first_user_payload, hashed_password, verify_code, roles )
+        log.info(f"created first user with id {last_record_id}.")
+        
+    else:
+        log.info(f"first username is '{adminUser.username}'")
+        
+        
+    log.info('looking for site_config...')
+    note = await crud.get_note_by_title('site_config')
+    if not note:
+        
+        log.info('site_config not found, creating...')
+        data = { "protect_contact": True }  # old, unused data; but there is no data for the webapp to maintain yet
+        
+        dataP = json.dumps(data) # dump to string
+        
+        note = NoteSchema(title="site_config",
+                          description = "configuration data for admins",
+                          data=dataP
+                         )
+        id = await crud.post_note( payload=note, owner=1)
+        log.info(f"created site_config with id {id}.")
+    
+    else:
+        log.info(f"Loaded site config: {note.data}")
+        note.data = json.loads(note.data)
+        log.info(f"site config recovered: {note.data}")
+        
+    # ensure initial memo post exists
+    log.info("checking if initial memo post exists...")
+    memo = await crud.get_memo(1)
+    if not memo:
+        log.info("creating first memo...")
+        first_memo_payload = MemoSchema(title="Hello Admins", description="<p>What shall we do today?</p>", status="unpublished", access="admin", tags="debug")
+        log.info(f"posting {first_memo_payload}...")
+        id = await crud.post_memo(first_memo_payload,1)
+        log.info(f"created first memo with id {id}.")
+        
+    else:
+        log.info(f"first memo title is '{memo.title}'")
+        
+
+
+

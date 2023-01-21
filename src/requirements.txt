@@ -1,0 +1,33 @@
+asyncpg==0.22.0
+databases[postgresql]==0.6.1
+
+fastapi==0.85.1
+# fastapi==0.88.0
+
+fastapi-mail==1.2.0
+psycopg2
+pydantic==1.10.2
+pydantic[email]
+SQLAlchemy==1.4.42
+uvicorn==0.20.0
+gunicorn==20.1.0
+# Jinja2==3.0.1
+Jinja2==3.1.2
+aiofiles==22.1.0
+python-multipart==0.0.5
+python-jose==3.3.0
+passlib[bcrypt]==1.7.4
+python-dotenv==0.21.0
+email-validator
+
+# dev
+# basic test framework
+pytest==6.2.3
+# requests==2.25.1
+requests==2.26.0
+# provides utilities for testing asynchronous code
+# pytest-asyncio
+# provides an async request client for testing endpoints
+# httpx
+# allows testing async applications without having to spin up an ASGI server
+# asgi-lifespan

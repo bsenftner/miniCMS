@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Martinez-attornies.com</title>
+  <link rel="stylesheet" href="/static/index.css">
+
+  <style>
+   div#main-content {
+	  box-sizing: border-box;
+	  font-family: Helvetica, Arial, sans-serif;
+	  font-size: 16px;
+	  height: 100%;
+	  margin: 0px;
+	  position: relative;
+	}
+  </style>
+
+</head>
+<body onload="slidesInit()">
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		{# the main content area #}
+		<main>
+			<div id="mainContent">
+				{# title and post contents, with an optional edit button #}
+				<H1>Username: {{contentPost.username}} </H1>
+				<h2>User Id: {{contentPost.id}}</h2>
+				<h2>Email: {{contentPost.email}}</h2>
+				<h2>Roles: {{contentPost.roles}}</h2>
+			</div>
+			
+		</main>
+
+		{# the right sidebar #}
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Login()">Login</a>
+				<br/>
+				<a href="#" class="button" onclick="Register()">Register</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+
+	{% include 'common_slides.html' %}
+
+	<script>
+
+		document.addEventListener("DOMContentLoaded", function() {
+			page_init();
+			slidesInit();
+			setTimeout( slidesInit, 3000 );
+		});
+		//
+		function page_init() {
+
+			const access_token = localStorage.getItem('token');
+			if (typeof access_token !== 'undefined') {
+				
+				const options = { headers: { "Authorization": "Bearer " + access_token } }
+				fetch("/users/me", options)
+				.then(response => response.json())
+				.then( response =>  {
+
+					if (response.hasOwnProperty('roles')) {
+
+						// user is logged in, change right sidebar links:
+						document.getElementById("aside").innerHTML = 
+						`<a href="#" class="button" onclick="UserSettings()">Settings</a>
+						<br/><br/>
+						<a href="#" class="button" onclick="Logout()">Logout</a>
+						`;
+
+						if (response.roles.includes("admin")) {
+							// user is admin:
+							
+                            // document.getElementById("mainContent").innerHTML += 
+							//	'<a href="#" class="button" onclick="MemoEdit()">Edit</a>';
+
+						}
+					}
+				});
+			}
+		}
+
+		function MemoEdit() { window.location.href = "/Editor/{{ contentPost.id }}"; }
+
+		function Login() { window.location.href = "/login"; }
+
+		function Register() { window.location.href = "/register"; }
+
+		function UserSettings() { window.location.href = "/Settings"; }
+
+	</script>
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+	
+</body>
+</html>

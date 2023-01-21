@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Martinez-attornies.com</title>
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		<main>
+			<div id="mainContent">
+				{# the editor itself, embedded in a form, with a post's contents, and operation buttons #}
+				<form id="editorForm" method="post">
+					<label for="NewPostTitle">Title:</label>
+  					<input type="text" id="NewPostTitle" name="label" value="{{contentPost.title}}">
+					<div class="editorContainer">
+						<div id="editor">
+							{{contentPost.description | safe}}
+  						</div>
+					</div>
+				</form>
+				<div id="authorName">
+					Author: {{contentPost.author}}, UserId: {{contentPost.userid}} 
+					(The author cannot be changed.)
+				</div>
+				<div id="statusList">
+					<div id="statusSelectionDiv">
+						<label for="statusSelectBox">Status:</label>
+						<select id="statusSelectBox" onchange="onStatusSelectChangeFunc();">
+							<option value="unpublished">Unpublished</option>
+    						<option value="published">Published</option>
+						</select>
+					</div>
+					<div id="statusSelectionMsg">
+						Unpublished memos are not shown to others. Unpublished memos are 
+						only visible to the author. Published memos are visible to users with 
+						the same access roles as the memo as well as the memo author. 
+					</div>
+				</div>
+				<div>
+					<div id="PostAccessSelectionDiv">
+						<label for="NewPostAccess">Access:</label>
+						<select id="NewPostAccess">
+							<option value="admin">Admin</option>
+    						<option value="staff">Staff</option>
+    						<option value="public">Public</option>
+						</select>
+					</div>
+					<div id="AccessSelectionMsg">
+						Selecting <b>Admin</b> makes the memo only visible to management and the memo author. 
+						<br/>
+						Selecting <b>Staff</b> makes the memo visible to all employees. 
+						<br/>
+						Selecting <b>Public</b> makes the memo visible to anyone with a web browser.
+						<br/>
+						Public memos can only be created by admins. 
+						<br/>
+						Consider memos company notices and company-wide discussions. 
+					</div>
+				</div>
+				<div>
+					<label for="NewPostTags">Tags:</label>
+  					<input type="text" id="NewPostTags" name="label" value="{{contentPost.tags}}">
+					<div id="TagsMsg">Tags are words used to group memos of similar topic together, separated by commas.</div>
+				</div>
+				<div id="divBeneathTheEditor">
+					<a href="#" class="button" onclick="MemoEditCancel()">Cancel</a>
+					<a href="#" class="button" onclick="MemoUpdate()">Update</a>
+					<a href="#" class="button" onclick="MemoDelete()">Delete</a>
+					<br/>
+					<a href="#" class="button" onclick="MemoSubmit()">Submit A Completely New Memo</a>
+				</div>
+			</div>
+		</main>
+
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Login()">Login</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+
+	{% include 'common_ifAccessDo.html' %}
+
+	
+	<!-- for html syntax hilighting -->
+	<link
+  		rel="stylesheet"
+  		href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/github.min.css"
+	/>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/highlight.min.js"></script>
+	<script
+  		charset="UTF-8"
+  		src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/languages/xml.min.js">
+	</script>
+
+	{% include 'common_editStyle.html' %}
+
+    <!-- include the TinyMCE editor -->
+	<script src="https://cdn.tiny.cloud/1/tpl8zzz2nyqln68299z0tf9u4m2p3hi6c9qxgr7gal0i454q/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+	<script>
+
+        // configure the TinyMCE editor 
+        tinymce.init({
+            selector: '#editor',
+            convert_urls: false,
+            plugins: 'anchor autolink charmap code codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+            toolbar: 'undo redo | code | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+            tinycomments_mode: 'embedded',
+            tinycomments_author: 'Author name',
+            mergetags_list: [
+              { value: 'First.Name', title: 'First Name' },
+              { value: 'Email', title: 'Email' },
+            ]
+        });
+
+
+		document.addEventListener( "DOMContentLoaded", function(){page_init();} );
+	
+
+		function page_init_work() {
+
+			// user is logged in, change right sidebar links:
+							
+			document.getElementById("aside").innerHTML = 
+							`<a href="#" class="button" onclick="UserSettings()">Settings</a>
+							 <br/><br/>
+							 <a href="#" class="button" onclick="Logout()">Logout</a>
+							`;
+
+			// make sure memo status is reflected in the selection widget:
+			document.getElementById("statusSelectBox").value = "{{contentPost.status}}"
+			//
+			document.getElementById("NewPostAccess").value = "{{contentPost.access}}"
+		}
+		//
+		function page_init() {
+			ifAccessDo(page_init_work);
+		}
+
+		function MemoEditCancel() { window.location.href = "/memopage/{{ contentPost.memoid }}"; }
+
+		function MemoSubmitWork() {
+			// get the post label:
+			var newPostTitle = document.getElementById("NewPostTitle").value;
+			// Get HTML content
+			var newPostHTML = tinymce.get("editor").getContent();
+			// get the post status:
+			var newPostStatus = document.getElementById("statusSelectBox").value;
+			// get the post access:
+			var newPostAccess = document.getElementById("NewPostAccess").value;
+			// get the post tags:
+			var newPostTags = document.getElementById("NewPostTags").value;
+
+			// post as new memo submission:
+			const params = {
+				"title": newPostTitle, 
+				"description": newPostHTML,
+				"status": newPostStatus,
+				"access": newPostAccess,
+				"tags": newPostTags,
+			};
+		
+			const options = {
+				method: 'POST',
+				headers: {
+					  'Accept': 'application/json',
+					  'Content-Type': 'application/json',
+					  // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify( params )  
+			};
+			fetch( '/memo/', options )
+				.then( response => response.json() )
+				.then( response => {
+					// Do something with response.
+					// console.log( response )
+					if (response.hasOwnProperty('detail')) {
+						alert( 'Please fix the following and try again: ' + response.detail )
+					}
+					else if (response.hasOwnProperty('memoid')) {
+					//	window.location.href = "/memopage/" + response.id.toString();
+						window.location.href = "/memopage/" + response.memoid;
+					}
+					else {
+						console.log( response )
+					}
+				})
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+					// window.location.href = "/memopage/{{ contentPost.userid }}";
+				}) 
+		}
+		function MemoSubmit() {
+			ifAccessDo(MemoSubmitWork);
+		}
+
+		function MemoUpdateWork() {
+			const someData = {
+				"title": document.getElementById("NewPostTitle").value, 
+				"description": tinymce.get("editor").getContent(),
+				"status": document.getElementById("statusSelectBox").value, 
+				"access": document.getElementById("NewPostAccess").value, 
+				"tags": document.getElementById("NewPostTags").value, 
+			}
+			//
+			const options = {
+				credentials: 'include',
+				method: 'PUT', // Method itself
+				headers: {
+				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify(someData) // We send data in JSON format
+			}
+			   
+			// make the HTTP put request using fetch api
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/memo/{{ contentPost.memoid }}';
+			fetch(furl, options) 
+			// .then(response => response.json())
+			.then(response => 
+			{
+				if (response.ok) {
+					window.location.href = "/memopage/{{ contentPost.memoid }}";
+				}
+				else {
+					alert( 'Problem updating. Are you sure the access groups are valid and separated by spaces?' )
+				}
+			}) 
+			.catch(err => {
+				// Do something with the error
+				console.log(err) 
+				alert( err )
+				window.location.href = "/memopage/{{ contentPost.memoid }}";
+			}) 
+		}
+		function MemoUpdate() {
+			ifAccessDo(MemoUpdateWork);
+		}
+
+		function MemoDeleteWork() {
+			const options = { 
+				method: 'DELETE',
+				// headers: { "Authorization": "Bearer " + access_token } // only needed when JWT is not in cookie
+			};
+			fetch( '/memo/{{ contentPost.memoid }}', options )
+				.then( response => response.json() )
+				.then( response => {
+					// Do something with response:
+					console.log( response )
+					if (response.memoid != '{{ contentPost.memoid }}')
+					{ 
+						console.log( "DELETE ERROR!" )
+						alert( "DELETE ERROR!" )
+						
+					}
+					window.location.href = "/";
+
+				} )
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+					window.location.href = "/memopage/{{ contentPost.memoid }}";
+				});
+		}
+		function MemoDelete() {
+			ifAccessDo(MemoDeleteWork);
+		}
+
+		// called when the status dropdown selection changes:
+		function onStatusSelectChangeFunc() {
+			let statusSelectBox = document.getElementById("statusSelectBox")
+			let selected = statusSelectBox.value;
+		}
+
+		function UserSettings() { window.location.href = "/Settings"; }
+
+	</script>
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+
+
+</body>
+</html>

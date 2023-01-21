@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Martinez-attornies.com</title>
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		<main>
+			<div id="mainContent">
+                <h4>Account & Admin Settings for {{ data.username }}:</h4>
+				
+				<input type="checkbox" name="protect_contact" id="protect_contact" class="chkbox" />
+        		<label for="protect_contact" class="chkbox">This is unused. It remains as a developer example of admin settings.</label>
+
+				<div id="adminMsg"></div>
+                <br/>
+                <a href="#" class="button" onclick="SaveAdminSettings()">Save Admin Settings</a>
+  				
+				
+				<div id="backupList">
+					<div id="backupSelectionDiv">
+						<label for="refSelectBox">Available backups:</label>
+						<select id="refSelectBox" onchange="onBackupSelectChangeFunc();"></select>
+					</div>
+					<div id="backupSelectionMsg">
+						Select the backup file to download. 
+						<br/>
+						Create backups with the src/app/backups/new_backup.sh script on the container host. 
+					</div>
+					<br/>
+					<a href="#" class="button" id="backupDownloadBttn" onclick="DownloadBackup()">Please select a backup to download first</a>
+				</div>
+  				
+                <h4>User Accounts:</h4>
+				<div id="userList">
+					<div id="userSelectionDiv">
+						<span>Users:</span>
+						<select id="userSelectBox" size="4" onchange="onUserSelectChangeFunc();"></select>
+						<div id="userSelectionMsg">
+							Select a user to examine. 
+						</div>
+					</div>
+					<div id="userInfoDiv">
+						Please select a user from the list.
+					</div>
+				</div>
+
+                <h4>Your Account:</h4>
+				{% include 'common_settings.html' %}
+
+			</div>
+		</main>
+
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Profile()">Profile</a>
+				<a href="#" class="button" onclick="Logout()">Logout</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+	
+	{% include 'common_ifAccessDo.html' %}
+
+	<script>
+		
+		document.addEventListener( "DOMContentLoaded", function(){page_init();} );
+		//
+		function page_init_work() {
+
+			// user is logged in:
+							
+			var state = "{{ data.protect_contact }}"
+			state = (state=="True")
+			document.getElementById("protect_contact").checked = state;
+
+			get_available_backups();
+			get_user_list();
+		}
+		//
+		function page_init() {
+			ifAccessDo(page_init_work);
+		}
+
+		function SaveAdminSettingsWork() {
+			
+			// get admin settings:
+			const protectContent = document.getElementById("protect_contact").checked;
+                		
+			// package as "note"
+			const someData = {
+				"title": "protect_contact", 
+				"description": "configuration data for admins", 
+				"data": JSON.stringify({ "protect_contact": protectContent }) ,
+			}
+			
+			const options = {
+				method: 'PUT', // Method itself
+				headers: {
+						 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+						 // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify(someData) // We send data in JSON format
+			}
+
+			fetch( '/notes/1/', options )
+					.then( response => response.json() )
+					.then( response => {
+						// Do something with response.
+						console.log( response )
+						document.getElementById("adminMsg").innerHTML = 
+							'<p>Admin Settings saved.</p>';
+					}
+				); 
+		}
+		function SaveAdminSettings() {
+			ifAccessDo(SaveAdminSettingsWork);
+		}
+
+		
+		let gUsers = {}
+		//
+		// get list of users and populate user selection list:
+		const get_user_list = () => {
+			fetch('/users/', { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+				  success => {
+					console.log( success ) // Handle the success response object
+					userSelectBox = document.getElementById("userSelectBox")
+					//
+					let i;
+					//
+					for (i = userSelectBox.options.length; i >= 0; i--) {
+						userSelectBox.remove(i);
+					}
+					//
+					gUsers = success; // remember
+					//
+					limit = success.length;
+					for (i = 0; i < limit; i++) {
+						var optn = document.createElement("OPTION");
+						optn.text = success[i].username;
+						optn.value = success[i].userid; // i+1;
+						userSelectBox.options.add(optn);
+					}
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		  };
+
+		// called when the user selection changes:
+		function onUserSelectChangeFunc() {
+			let userSelectBox = document.getElementById("userSelectBox")
+			let selected = userSelectBox.value;
+			for (i = 0; i < gUsers.length; i++) {
+				if (gUsers[i].userid == selected) {
+
+					document.getElementById("userInfoDiv").innerHTML = 
+					'<h3>Username: ' + gUsers[i].username + '</br>' +
+					    'UserId: '   + gUsers[i].userid + '</br>' +
+						'Roles: ' + gUsers[i].roles + '</br>' +
+						'Email: ' + gUsers[i].email + '</h3>';
+
+					break;
+				}
+			}
+		}
+
+		// get list of backup files and populate download selection list:
+		const get_available_backups = () => {
+			fetch('/backups/', { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+				  success => {
+					console.log( success ) // Handle the success response object
+					downloadSelectBox = document.getElementById("refSelectBox")
+					//
+					var i;
+					for (i = downloadSelectBox.options.length; i >= 0; i--) {
+						downloadSelectBox.remove(i);
+					}
+					//
+					var optn = document.createElement("OPTION");
+					optn.text = 'nothing';
+					optn.value = 0;
+					downloadSelectBox.options.add(optn);
+					//
+					var limit = success.length;
+					for (var i = 0; i < limit; i++) {
+						var optn = document.createElement("OPTION");
+						optn.text = success[i];
+						optn.value = success[i]; // i+1;
+						downloadSelectBox.options.add(optn);
+					}
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		  };
+
+		// called when the backup files dropdown selection changes:
+		function onBackupSelectChangeFunc() {
+			let backupSelectBox = document.getElementById("refSelectBox")
+			let selected = backupSelectBox.value;
+			if (Number.isInteger(selected)) {
+				document.getElementById("backupDownloadBttn").innerHTML = 'Please select a backup to download first';
+			}
+			else {
+				document.getElementById("backupDownloadBttn").innerHTML = 'Download "' + selected + '"';
+			}
+		}
+
+		
+		function download_backup_work() {
+			let backupSelectBox = document.getElementById("refSelectBox")
+			let selected = backupSelectBox.value;
+			if (Number.isInteger(selected)) {
+				alert("Invalid backup selected, please select a backup to download from the pulldown selection")
+			}
+			else {
+				let url = '/backups/' + selected;
+				fetch(url, {
+					headers: {
+					  "Content-Type": "application/octet-stream",
+					},
+					credentials: 'include'
+			   })
+			   .then((res) => { return res.blob(); })
+			   .then((data) => {
+				 var a = document.createElement("a");
+				 a.href = window.URL.createObjectURL(data);
+				 a.download = selected;
+				 a.click();
+			   }); 
+			}
+		}
+
+		function DownloadBackup() {
+			ifAccessDo(download_backup_work);
+		}
+
+		function Profile() { window.location.href = "/profile"; }
+
+	</script>
+
+	{% include 'common_settings2.html' %}
+
+	{% include 'common_logout.html' %}
+
+
+</body>
+</html>

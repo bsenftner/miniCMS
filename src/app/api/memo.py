@@ -1,0 +1,147 @@
+# ----------------------------------------------------------------------------------------------
+# This file contains the JSON endpoints for memo posts, handling the CRUD operations with the db 
+#
+from fastapi import APIRouter, HTTPException, Path, Depends, status
+
+from app.api import crud
+from app.api.users import get_current_active_user, user_has_role
+from app.api.models import UserInDB, MemoDB, MemoSchema
+
+from typing import List
+
+from app.config import log
+
+router = APIRouter()
+
+
+
+# ----------------------------------------------------------------------------------------------
+# declare a POST endpoint on the root 
+@router.post("/", response_model=MemoDB, status_code=201)
+async def create_memo(payload: MemoSchema, 
+                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
+    
+    # log.info(f"create_memo: current_user is {current_user}")
+    
+    if not user_has_role(current_user,"admin") and user_has_role(current_user,"staff"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to create Memo posts")
+        
+    # log.info(f"create_memo: posting {payload}")
+    
+    access_roles = payload.access.split()
+    unknown_access_roles = ''
+    bad_access_roles = False
+    for t in access_roles:
+        if t not in "staff admin unverified public":
+            unknown_access_roles += t + ' '
+            bad_access_roles = True
+    #
+    if bad_access_roles:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail="Unknown access roles: " + unknown_access_roles)
+    
+    memoid = await crud.post_memo(payload, current_user.userid)
+
+    # log.info(f"create_memo: returning id {memoid}")
+    
+    response_object = {
+        "memoid": memoid,
+        "userid": current_user.userid,
+        "title": payload.title,
+        "description": payload.description,
+        "status": payload.status,
+        "access": payload.access,
+        "tags": payload.tags,
+    }
+    return response_object
+
+# ----------------------------------------------------------------------------------------------
+# Note: id's type is validated as greater than 0  
+@router.get("/{id}", response_model=MemoDB)
+async def read_memo(id: int = Path(..., gt=0),
+                    current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
+    
+    # log.info("read_memo: here!!")
+    
+    memo = await crud.get_memo(id)
+    
+    if memo is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
+    
+    weAreAllowed = crud.user_has_memo_access( current_user, memo )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo.")
+    
+    return memo
+
+# ----------------------------------------------------------------------------------------------
+# The response_model is a List with a MemoDB subtype. See import of List top of file. 
+@router.get("/", response_model=List[MemoDB])
+async def read_all_memos(current_user: UserInDB = Depends(get_current_active_user)) -> List[MemoDB]:
+    
+    # get all the memos, they are filtered by the user's roles:
+    memoList = await crud.get_all_memos( current_user )
+            
+    return memoList
+
+# ----------------------------------------------------------------------------------------------
+# Note: id's type is validated as greater than 0  
+@router.put("/{id}", response_model=MemoDB)
+async def update_memo(payload: MemoSchema, 
+                      id: int = Path(..., gt=0), 
+                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
+   
+    # log.info("update_memo: here!!")
+
+    memo: MemoDB = await crud.get_memo(id)
+
+    if memo is None:
+        raise HTTPException(status_code=404, detail="Memo not found")
+        
+    if memo.userid != current_user.userid and not user_has_role(current_user,"admin"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to change other's Memos")
+        
+    access_roles = payload.access.split()
+    unknown_access_roles = ''
+    bad_access_roles = False
+    for t in access_roles:
+        if t not in "staff admin unverified public":
+            unknown_access_roles += t + ' '
+            bad_access_roles = True
+    #
+    if bad_access_roles:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                            detail="Unknown access roles: " + unknown_access_roles)
+    
+    # make sure to retain original memo author
+    memoid = await crud.put_memo(id, memo.userid, payload)
+    
+    response_object = {
+        "memoid": memoid,
+        "userid": memo.userid,                  # make sure to retain original memo author
+        "title": payload.title,
+        "description": payload.description,
+        "status": payload.status,
+        "access": payload.access,
+        "tags": payload.tags,
+    }
+    return response_object
+
+# ----------------------------------------------------------------------------------------------
+# Note: id's type is validated as greater than 0  
+@router.delete("/{id}", response_model=MemoDB)
+async def delete_memo(id: int = Path(..., gt=0), 
+                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
+    memo: MemoDB = await crud.get_memo(id)
+    if memo is None:
+        raise HTTPException(status_code=404, detail="Memo not found")
+
+    if memo.userid != current_user.userid and not user_has_role(current_user,"admin"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to delete other's Memos")
+        
+    await crud.delete_memo(id)
+
+    return memo

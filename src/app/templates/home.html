@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Martinez-attornies.com</title>
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		{# the main content area #}
+		<main>
+			<div id="mainContent">
+				{# title and post contents, with an optional edit button #}
+				<H3> Martinez-attornies.com </H3>
+				
+			</div>
+			<h5>tags: home</h5>
+		</main>
+
+		{# the right sidebar #}
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Login()">Login</a>
+				<br/>
+				<a href="#" class="button" onclick="Register()">Register</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+	
+	{% include 'common_ifAccessDo.html' %}
+
+	{% include 'common_slides.html' %}
+
+	<script>
+
+		document.addEventListener("DOMContentLoaded", function() {
+			page_init();
+			slidesInit();
+			setTimeout( slidesInit, 3000 );
+		  });
+		function page_init() {
+
+            // everyone is allowed:
+			const access_token = 1 // = localStorage.getItem('token');
+			//
+			if (typeof access_token !== 'undefined') {
+				fetch("/users/me", { headers: { "Authorization": "Bearer " + access_token } })
+				.then(response => response.json())
+				.then( response => 
+					{
+						if (response.hasOwnProperty('roles')) {
+
+							// user is logged in, right sidebar changes:
+							
+							document.getElementById("aside").innerHTML = 
+							`<a href="#" class="button" onclick="UserProfile()">Profile</a>
+							<br/><br/>
+							<a href="#" class="button" onclick="UserSettings()">Settings</a>
+							<br/><br/>
+							<a href="#" class="button" onclick="Logout()">Logout</a>
+							`;
+						}
+				  })
+			}
+		}
+
+		function Login() { window.location.href = "/login"; }
+
+		function Register() { window.location.href = "/register"; }
+
+		function UserProfile() { window.location.href = "/profile"; }
+
+		function UserSettings() { window.location.href = "/Settings"; }
+
+	</script>
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+
+</body>
+</html>

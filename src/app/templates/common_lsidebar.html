@@ -1,0 +1,17 @@
+<nav>
+    {# default links from page_frags.py #}
+    {% for alink in frags[0].links %} 
+        {{ alink | safe }}
+    {% endfor %}
+
+    {# not expecting a huge number of memo posts, so here's all of them #}
+    {% if access == 'public' -%}
+    {% for m in memos %} 
+        <br/><br/><a href="/publicmemo/{{ m.memoid }}">{{ m.title }}</a>
+    {% endfor %}
+    {% else -%}
+    {% for m in memos %} 
+        <br/><br/><a href="/memopage/{{ m.memoid }}">{{ m.title }}</a>
+    {% endfor %}
+    {% endif %}
+</nav>

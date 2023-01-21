@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Martinez-attornies.com</title>
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+        {# the main content area #}
+		<main>
+			<div id="mainContent">
+				{# a new user registration form #}
+            	<h4>New User Registration:</h4>
+			    	<label for="username">Username:</label>
+  			    	<input type="text" id="username" name="label" value="">
+                    <br/>
+                    <label for="email">Email Addr:</label>
+                    <input type="text" id="email" name="label" value="">
+                	<br/>
+                	<label for="password">Password:</label>
+                	<input type="password" id="password" name="label" value="">
+                	<br/>
+                	<label for="confirmPass">Confirm Password:</label>
+                	<input type="password" id="confirmPass" name="label" value="">
+                	<br/>
+					<h4>Password must be a minimum of 12 characters long.</h4>
+			    	<div id="divRegisterButtons">
+				    	<a href="#" class="button" onclick="Cancel()">Cancel</a>
+				    	<a href="#" class="button" onclick="Register()">Register</a>
+			    	</div>
+			</div>
+            <div id="userMsg"></div>
+		</main>
+
+        {# the right sidebar #}
+		<aside>
+			<div id="aside"></div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+
+	<script>
+		
+		document.addEventListener("DOMContentLoaded", function() {
+			page_init();
+		  });
+		function page_init() {
+            // check if this is a reload after successful registration:
+			const webusername = localStorage.getItem('webusername');
+			if (webusername) {
+				console.log('new user refresh')
+				document.getElementById("mainContent").innerHTML = 
+								'<h4>Thank you for registering with the site, ' + webusername + '.</h4>' +
+                                '<h5>Now that you are registered, expect to receive an email with a verification code.' +
+								'<br/><br/>' +
+								'After logging into the site, the verification code is needed before you can do anything.</h5>' +
+							    '<a href="#" class="button" onclick="Login()">Login</a>';
+			}
+            // check if the user is already logged in: 
+            else {
+			    const access_token = localStorage.getItem('token');
+                if (typeof access_token !== 'undefined') {
+                    const options = {}
+                    fetch("/users/me", options)
+                    .then(response => response.json())
+                    .then( response => 
+                        {
+                            console.log(response)
+                            if (response.hasOwnProperty('username')) {
+                                document.getElementById("mainContent").innerHTML = 
+                                    '<h4>You are already alogged in ' + response.username + '</h4>';
+                            }
+                        })
+                }
+            }
+            // else the original page with the registration form persists
+		}
+
+        function Cancel() { window.location.href = "/"; }
+
+		function Register() { 
+            
+            // get the user's info:
+			const regUser = document.getElementById("username").value;
+			const regEmail = document.getElementById("email").value;
+			const regPass = document.getElementById("password").value;
+			const regConf = document.getElementById("confirmPass").value;
+
+            if (regPass.length < 12) {
+                document.getElementById("userMsg").innerHTML = '<h3>Password must be at least 12 characters long.</h3>'
+            }
+            else if (regPass!=regConf) {
+                document.getElementById("userMsg").innerHTML = '<h3>Password and Confirm Password must match.</h3>'
+            }
+            else if (regEmail.indexOf('@') < 1) {
+                document.getElementById("userMsg").innerHTML = '<h3>Please supply a valid email, it is required for account validation.</h3>'
+            }
+            else {
+                
+                document.getElementById("userMsg").innerHTML = ''
+
+                const regData = { 
+                    'username': regUser, 
+                    'email': regEmail,
+                    'password': regPass,
+                };
+                const options = { 
+                    method: 'POST', 
+					headers: {
+				  		'Accept': 'application/json',
+				  		'Content-Type': 'application/json',
+					},
+                    body: JSON.stringify( regData ) 
+                };
+                fetch('/users/register', options)
+                .then(response => response.text())
+                .then(data => { 
+                    console.log(data);
+                    const jsonData = JSON.parse(data);
+                    localStorage.setItem('webusername', jsonData.username);
+                    window.location.reload();
+                });
+            }
+            
+            
+        }
+
+		function Login() { window.location.href = "/login"; }
+
+	</script>
+</body>
+</html>

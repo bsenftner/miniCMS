@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Martinez-attornies.com</title>
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		<main>
+			<div id="mainContent">
+                <h4>Account Settings for {{ data.username }}</h4>
+                
+				{% include 'common_settings.html' %}
+
+			</div>
+		</main>
+
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Logout()">Logout</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+	
+	{% include 'common_ifAccessDo.html' %}
+
+	<script>
+
+		document.addEventListener( "DOMContentLoaded", function(){page_init();} );
+		//
+		function page_init_work() {
+			
+			// user is logged in, do anything necessary after login is validated here:
+		}
+		//
+		function page_init() {
+			ifAccessDo(page_init_work);
+		}
+		
+	</script>
+
+	{% include 'common_settings2.html' %}
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+
+
+</body>
+</html>

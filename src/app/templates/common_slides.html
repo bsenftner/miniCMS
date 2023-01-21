@@ -1,0 +1,51 @@
+<script>
+		
+    // if any slides are present on the page, we're on the first one:
+    var activeSlide = 0;
+    var slContainer = document.getElementById("slidesContainer");
+    var slPrev = document.getElementById("slidesPrev");
+    var slNext = document.getElementById("slidesNext");
+    //
+    function prevSlide() {
+        const collection = document.getElementsByClassName("slide");
+        var oldSlide = activeSlide;
+        activeSlide--;
+        if (activeSlide < 0) {
+            activeSlide = collection.length - 1;
+        }
+        collection[oldSlide].style.display = "none";
+        collection[activeSlide].style.display = "block";
+    }
+    //
+    function nextSlide() {
+        const collection = document.getElementsByClassName("slide");
+        var oldSlide = activeSlide;
+        activeSlide++;
+        if (activeSlide >= collection.length) {
+            activeSlide = 0;
+        }
+        collection[oldSlide].style.display = "none";
+        collection[activeSlide].style.display = "block";
+    }
+    //
+    function slidesInit() {
+        // reset these globals:
+        activeSlide = 0;
+         slContainer = document.getElementById("slidesContainer");
+        slPrev = document.getElementById("slidesPrev");
+        slNext = document.getElementById("slidesNext");
+        // handle any slides on the page:
+        if (slContainer && slPrev && slNext)
+        {
+            const collection = document.getElementsByClassName("slide");
+            for (let i = 1; i < collection.length; i++) {
+                collection[i].style.display = "none";
+            }
+            //
+            slPrev.addEventListener("click", prevSlide);
+            //
+            slNext.addEventListener("click", nextSlide);
+        }
+    }
+
+</script>
