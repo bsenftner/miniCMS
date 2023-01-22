@@ -150,6 +150,16 @@ main {
   font-size: 20px;
 }
 
+div#mainContent div.ql-editor {
+  background: #eee;
+}
+div#mainContent h5 {
+  margin: 5px 0px;
+}
+div#mainContent a {
+  margin: 10px 10px 0px 10px;
+}
+
 input#NewPostTitle {
   width: 80%;
   margin-bottom: 20px;

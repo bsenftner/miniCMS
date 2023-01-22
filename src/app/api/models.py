@@ -28,15 +28,23 @@ class MemoSchema(BaseModel):
     status: str
     tags: str 
     access: str 
-
-# A "Memo" in the database is simply an id plus our MemoSchema: 
+ 
 class MemoDB(MemoSchema):
-    memoid: int
-    userid: int
+    memoid: int = Field(index=True)
+    userid: int = Field(default=None, foreign_key="UserInDB.userid")
 
 class MemoNice(MemoDB):
     author: str             # the username associated with the memo's userid
     
+    
+class Comment(BaseModel):
+    text: str
+    commid: int = Field(index=True)
+    memoid: int = Field(..., foreign_key="MenoDB.menoid")
+    userid: int = Field(...,foreign_key="UserInDB.userid")
+    username: str = Field(..., foreign_key="UserInDB.userid")
+    parent: Union[int,None] = Field(default=None, foreign_key="Comment.commid")
+
 
 # an access token used by authentication
 class Token(BaseModel):
@@ -56,7 +64,7 @@ class User(BaseModel):
 
 # a user in the dabase
 class UserInDB(User):
-    userid: int
+    userid: int = Field(index=True)
     verify_code: str
     hashed_password: str
 

@@ -60,6 +60,17 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
             Column("updated_date", DateTime, default=func.now(), nullable=False),
         )
+        
+        self.comment_tb = Table(
+            "comments",
+            self.metadata,
+            Column("commid", Integer, primary_key=True, index=True),
+            Column("memoid", Integer, ForeignKey("memo.memoid")),
+            Column("userid", Integer, ForeignKey("users.userid")),
+            Column("username", String, ForeignKey("users.username")),
+            Column("parent", Integer, ForeignKey("comments.commid")),
+            Column("created_date", DateTime, default=func.now(), nullable=False),
+        )
 
         self.notes_tb = Table(
             "notes",
