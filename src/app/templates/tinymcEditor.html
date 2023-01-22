@@ -156,7 +156,7 @@
 			}
 
 			if (userdata.hasOwnProperty('roles')) {
-				if (userdata.roles.includes('staff')) {
+				if (userdata.roles.includes('staff') && !userdata.roles.includes('admin')) {
 					let newPostAccess = document.getElementById("NewPostAccess")
 					//
 					let i;

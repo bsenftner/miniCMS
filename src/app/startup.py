@@ -13,7 +13,7 @@ async def initialize_database_data( ) -> None:
     
     settings = get_settings() # application config settings
     
-    # ensure initial memo post exists
+    # ensure initial user exists
     log.info("checking initial user exists...")
     adminUser = await crud.get_user_by_id(1)
     if not adminUser:
