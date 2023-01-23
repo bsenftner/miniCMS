@@ -89,7 +89,9 @@
 						<a href="#" class="button" onclick="Logout()">Logout</a>
 						`;
 
-						if (response.roles.includes("admin")) {
+						let status = "{{contentPost.status}}"
+						if (response.roles.includes("admin") || 
+						    (response.userid == '{{ contentPost.userid }}') && status.includes('unpublished')) {
 							// user is admin:
 							document.getElementById("mainContent").innerHTML += 
 								'<a href="#" class="button" onclick="MemoEdit()">Edit</a>';
