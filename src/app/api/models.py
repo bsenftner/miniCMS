@@ -40,7 +40,7 @@ class MemoNice(MemoDB):
 class Comment(BaseModel):
     text: str
     commid: int = Field(index=True)
-    memoid: int = Field(..., foreign_key="MenoDB.menoid")
+    memoid: int = Field(..., foreign_key="MemoDB.memoid")
     userid: int = Field(...,foreign_key="UserInDB.userid")
     username: str = Field(..., foreign_key="UserInDB.userid")
     parent: Union[int,None] = Field(default=None, foreign_key="Comment.commid")
