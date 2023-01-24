@@ -143,11 +143,47 @@ main {
   padding: 0 20px;
 }
 
+/*
+body.mceContentBody { 
+  background: #fff; 
+  color:#000;
+} */
+form#editorForm {
+  background: #eee; 
+}
 .editorContainer { 
   height: 75%; 
+  padding: 10px 10px;
 } 
 .ql-container {
   font-size: 20px;
+}
+
+div.memoMetadata {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr;
+    grid-column-gap: 10px;
+    grid-row-gap: 0px;
+    background: #eee;
+    margin: 10px 0px;
+}
+div.memoMetadata h5.g1 { grid-area: 1 / 1 / 2 / 2; }
+div.memoMetadata h5.g2 { grid-area: 1 / 2 / 2 / 3; }
+div.memoMetadata h5.g3 { grid-area: 1 / 3 / 2 / 4; }
+div.memoMetadata h5.g4 { grid-area: 1 / 4 / 2 / 5; }
+div.memoMetadata h5.g5 { grid-area: 1 / 5 / 2 / 6; }
+
+div#commentsTop {
+  font-size: 1.5em;
+}
+
+div#existingComments {
+  background: #eee;
+  margin: 20px 10px;
+}
+form#editorForm a.button {
+  margin: 0px 10px 10px;
 }
 
 div#mainContent div.ql-editor {

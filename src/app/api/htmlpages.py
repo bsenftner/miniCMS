@@ -114,7 +114,7 @@ async def memoPage( request: Request, id: int,
     memoList = await crud.get_all_memos(current_user)
     
     return TEMPLATES.TemplateResponse(
-        "index.html",
+        "memo.html",
         { "request": request, 
           "contentPost": memoNice, 
           "frags": FRAGS, 

@@ -36,12 +36,27 @@
 				<div class="ql-editor">
 					{{contentPost.description | safe}}
 				</div>
-				<h5>Author: {{contentPost.author}}</h5>
-				<h5>Status: {{contentPost.status}}</h5>
-				<h5>Access: {{contentPost.access}}</h5>
-				<h5>Tags: {{contentPost.tags}}</h5>
+                <div class="memoMetadata">
+				    <h5 class="g1">Author: {{contentPost.author}}</h5>
+				    <h5 class="g2">Status: {{contentPost.status}}</h5>
+				    <h5 class="g3">Access: {{contentPost.access}}</h5>
+				    <h5 class="g4">Tags: {{contentPost.tags}}</h5>
+                </div>
 			</div>
-			
+            <div id="commentsTop">
+                Comments:
+            </div>
+            <div id="existingComments">
+                No comments yet; be the first to comment...
+            </div>
+			<form id="editorForm" method="post">
+                <div class="editorContainer">
+                    <div id="editor">
+                        comment...
+                      </div>
+                </div>
+                <a href="#" class="button">Post Comment</a>
+            </form>
 		</main>
 
 		{# the right sidebar #}
@@ -59,6 +74,11 @@
 	</div>
 
 	{% include 'common_slides.html' %}
+
+	{% include 'common_editStyle.html' %}
+
+    <!-- include the TinyMCE editor -->
+	<script src="https://cdn.tiny.cloud/1/tpl8zzz2nyqln68299z0tf9u4m2p3hi6c9qxgr7gal0i454q/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
 
 	<script>
 
@@ -101,6 +121,19 @@
 				});
 			}
 		}
+
+        // configure the TinyMCE editor 
+        tinymce.init({
+            selector: '#editor',
+            height: 200,
+            convert_urls: false,
+            plugins: 'autolink emoticons image link lists searchreplace visualblocks wordcount',
+            menubar: false,
+            toolbar: 'undo redo | bold italic underline strikethrough | link image | align | checklist numlist bullist indent outdent | emoticons | removeformat',
+            });
+        
+ 
+                
 
 		function MemoEdit() { window.location.href = "/Editor/{{ contentPost.memoid }}"; }
 
