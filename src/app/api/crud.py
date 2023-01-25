@@ -1,7 +1,7 @@
 from typing import List
 from sqlalchemy import asc 
 
-from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic, MemoDB, MemoNice, NoteDB
+from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic, MemoDB, MemoNice, NoteDB, CommentSchema, CommentDB
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -67,6 +67,9 @@ async def get_memoNice(id: int) -> MemoNice:
                           status=memo.status,
                           tags=memo.tags,
                           access=memo.access)
+    
+    
+    log.info(f"get_memoNice: returning memo {finalMemo}")
     
     return finalMemo
     
@@ -134,6 +137,68 @@ async def put_memo(memoid: int, userid: int, payload: MemoSchema):
 async def delete_memo(id: int):
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_memo_table().delete().where(id == db_mgr.get_memo_table().c.memoid)
+    return await db_mgr.get_db().execute(query=query)
+
+
+# -----------------------------------------------------------------------------------------
+# for creating new comments
+async def post_comment(payload: CommentSchema):
+    # log.info(f"post_comment: here! got {payload}")
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_comment_table().insert().values(text=payload.text, 
+                                                       memoid=payload.memoid,
+                                                       userid=payload.userid, 
+                                                       username=payload.username,
+                                                       parent=payload.parent)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting comments:
+async def get_comment(commid: int) -> CommentDB:
+    log.info(f"get_comment: getting comment with commid {commid}")
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_comment_table().select().where(commid == db_mgr.get_comment_table().c.commid)
+    
+    log.info(f"get_comment: query built...")
+    
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# returns all comments for a given memo:
+async def get_all_memo_comments(memoid: int) -> List[CommentDB]:
+    
+    log.info(f"get_all_memo_comments: getting comments for memo with id {memoid}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # query = db_mgr.get_comment_table().select().where(memoid == db_mgr.get_comment_table().c.memoid).order_by(asc(db_mgr.get_comment_table().c.commid))
+    query = db_mgr.get_comment_table().select().where(memoid == db_mgr.get_comment_table().c.memoid)
+    
+    commIdList = await db_mgr.get_db().fetch_all(query=query)
+        
+    finalCommList = []
+    for c in commIdList:
+        commid = c.commid
+        log.info(f"get_all_memo_comments: preping comment with id {commid}")
+        fullComm = CommentDB( commid = c.commid,
+                              text = c.text,
+                              memoid = c.memoid,
+                              userid = c.userid,
+                              username = c.username,
+                              parent = c.parent )
+        finalCommList.append(fullComm)
+            
+    log.info(f"get_all_memo_comments: finalCommList {finalCommList}")
+            
+    return finalCommList
+
+# ---------------------------------------------------------------------------------------------
+# delete a comment. Note: this does not validate if the current user should be able to do this;
+# that logic is in the delete_comment() router.delete endpoint handler. 
+async def delete_comment(id: int):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_comment_table().delete().where(id == db_mgr.get_comment_table().c.commid)
     return await db_mgr.get_db().execute(query=query)
 
 

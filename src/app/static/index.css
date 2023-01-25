@@ -176,12 +176,21 @@ div.memoMetadata h5.g5 { grid-area: 1 / 5 / 2 / 6; }
 
 div#commentsTop {
   font-size: 1.5em;
+  margin-top: 20px;
 }
 
 div#existingComments {
-  background: #eee;
+  background: #fff;
   margin: 20px 10px;
 }
+div.comment {
+  margin: 10px 10px;
+  background: #eee;
+}
+div.comment div.memoMetadata {
+  margin-bottom: -20px;
+}
+
 form#editorForm a.button {
   margin: 0px 10px 10px;
 }

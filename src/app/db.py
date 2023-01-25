@@ -25,10 +25,10 @@ class DatabaseMgr:
     def __init__(self):
         # SQLAlchemy
         url = get_settings().DATABASE_URL
-        print(f"DatabaseMgr:__init__:: database_url = {url}")
+        # print(f"DatabaseMgr:__init__:: database_url = {url}")
         if url and url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
-            print(f"DatabaseMgr:__init__:: tweaked database_url = {url}")
+            # print(f"DatabaseMgr:__init__:: tweaked database_url = {url}")
         #
         self.engine = create_engine(url) # , future=True) adding the future parameter enables SQLAlchemy 2.0 syntax
 
@@ -62,13 +62,14 @@ class DatabaseMgr:
         )
         
         self.comment_tb = Table(
-            "comments",
+            "comment",
             self.metadata,
             Column("commid", Integer, primary_key=True, index=True),
+            Column("text", String),
             Column("memoid", Integer, ForeignKey("memo.memoid")),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("username", String, ForeignKey("users.username")),
-            Column("parent", Integer, ForeignKey("comments.commid")),
+            Column("parent", Integer, ForeignKey("comment.commid")),
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
 
@@ -98,6 +99,9 @@ class DatabaseMgr:
         
     def get_memo_table(self):
         return self.memo_tb
+        
+    def get_comment_table(self):
+        return self.comment_tb
         
     def get_notes_table(self):
         return self.notes_tb

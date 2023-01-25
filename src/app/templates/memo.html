@@ -55,7 +55,7 @@
                         comment...
                       </div>
                 </div>
-                <a href="#" class="button">Post Comment</a>
+                <a href="#" class="button" onclick="PostComment()">Post Comment</a>
             </form>
 		</main>
 
@@ -88,6 +88,8 @@
 			setTimeout( slidesInit, 3000 );
 		});
 		//
+		gUser = {};
+		//
 		function page_init() {
 
 			const access_token = localStorage.getItem('token');
@@ -98,7 +100,9 @@
 				.then(response => response.json())
 				.then( response =>  {
 
-					if (response.hasOwnProperty('roles')) {
+					gUser = response;
+
+					if (gUser.hasOwnProperty('roles')) {
 
 						// user is logged in, change right sidebar links:
 						document.getElementById("aside").innerHTML = 
@@ -110,19 +114,26 @@
 						`;
 
 						let status = "{{contentPost.status}}"
-						if (response.roles.includes("admin") || 
-						    (response.userid == '{{ contentPost.userid }}') && status.includes('unpublished')) {
+						if (gUser.roles.includes("admin") || 
+						    (gUser.userid == '{{ contentPost.userid }}') && status.includes('unpublished')) {
 							// user is admin:
 							document.getElementById("mainContent").innerHTML += 
 								'<a href="#" class="button" onclick="MemoEdit()">Edit</a>';
 
 						}
+
+						LoadComments();
+					}
+					else {
+						// something is wrong, user should not be on this page:
+						gUser = {};
+						window.location.href = "/";
 					}
 				});
 			}
 		}
 
-        // configure the TinyMCE editor 
+        // configure the TinyMCE editor for comments:
         tinymce.init({
             selector: '#editor',
             height: 200,
@@ -132,7 +143,80 @@
             toolbar: 'undo redo | bold italic underline strikethrough | link image | align | checklist numlist bullist indent outdent | emoticons | removeformat',
             });
         
- 
+
+		function LoadComments() {
+			fetch("/comment/memo/{{contentPost.memoid}}", { method: 'GET', headers: {} })
+			.then(response => response.json())
+			.then( response =>  {
+				let commList = response;
+				console.log( commList );
+
+				let commHtml = '';
+				let limit = commList.length;
+				for (let i = 0; i < limit; i++) {
+					let comm = commList[i];
+					commHtml += '<div class="comment">';
+					commHtml += '<div class="memoMetadata">';
+					commHtml += '<h5 class="g1">';
+					commHtml += comm.username;
+					commHtml += ' adds:</h5>';
+					commHtml += '</div>';
+					commHtml += comm.text;
+					commHtml += '</div>';
+				}
+				document.getElementById("existingComments").innerHTML = commHtml;
+			});
+		}
+
+		function PostComment() {
+			if (gUser.hasOwnProperty('roles')) {
+
+				// Get comment's html content
+				var newCommentHTML = tinymce.get("editor").getContent();
+
+				// post as new comment submission:
+				const params = {
+					"text": newCommentHTML, 
+					"memoid": "{{ contentPost.memoid }}",
+					"userid": gUser.userid,
+					"username": gUser.username,
+					"parent": 0,
+				};
+
+				const options = {
+					method: 'POST',
+					headers: {
+						  'Accept': 'application/json',
+						  'Content-Type': 'application/json',
+					},
+					body: JSON.stringify( params )  
+				};
+				fetch( '/comment', options )
+					.then( response => response.json() )
+					.then( response => {
+						// Do something with response.
+						console.log( response )
+						if (response.hasOwnProperty('detail')) {
+							alert( 'Please fix the following and try again: ' + response.detail )
+						}
+						else {
+							// reload the page to see the new comment
+							window.location.reload();
+						}
+					})
+					.catch(err => {
+						// Do something with the error
+						console.log(err) 
+						alert( err )
+						// window.location.href = "/memopage/{{ contentPost.userid }}";
+					}) 
+			}
+			else {
+				// something is wrong, user should not be on this page:
+				gUser = {};
+				window.location.href = "/";
+			}
+		}
                 
 
 		function MemoEdit() { window.location.href = "/Editor/{{ contentPost.memoid }}"; }

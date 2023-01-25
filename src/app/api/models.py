@@ -37,13 +37,20 @@ class MemoNice(MemoDB):
     author: str             # the username associated with the memo's userid
     
     
-class Comment(BaseModel):
+class CommentSchema(BaseModel):
+    text: str
+    memoid: int 
+    userid: int 
+    username: str 
+    parent: Union[int,None] 
+    
+class CommentDB(BaseModel):
     text: str
     commid: int = Field(index=True)
     memoid: int = Field(..., foreign_key="MemoDB.memoid")
     userid: int = Field(...,foreign_key="UserInDB.userid")
     username: str = Field(..., foreign_key="UserInDB.userid")
-    parent: Union[int,None] = Field(default=None, foreign_key="Comment.commid")
+    parent: Union[int,None] = Field(default=None, foreign_key="CommentDB.commid")
 
 
 # an access token used by authentication
