@@ -4,6 +4,8 @@
 
 Features in place so far:
 
+- Duel local and prod docker compose setups
+  - FastAPI, Postgresql, SQLAlchemy, Pydantic, Databases
 - User accounts
   - roles (admin/staff)
   - email verification
@@ -37,6 +39,7 @@ Account roles are getting more formalized. Where they currently track admin/staf
 hold project/group memberships. Those project/group memberships will also be honored by memos.
 
 This is a fork of my other repo FastAPI_TDD_Docker, focusing on a more formal CMS experience (without going to far.)
-From that other repo are tests, yet to be updated to this change, and untested backups. Soon those will get attention.
+From that other repo are tests, yet to be updated to this repo, untested backups, and a Traefik https config for prod.
+Soon those will get attention.
 
 ![webpage screen shot](/src/app/static/MiniCMS-memo.jpg)
