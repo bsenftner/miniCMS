@@ -113,14 +113,27 @@
 						<a href="#" class="button" onclick="Logout()">Logout</a>
 						`;
 
-						let status = "{{contentPost.status}}"
-						if (gUser.roles.includes("admin") || 
-						    (gUser.userid == '{{ contentPost.userid }}') && status.includes('unpublished')) {
-							// user is admin:
-							document.getElementById("mainContent").innerHTML += 
-								'<a href="#" class="button" onclick="MemoEdit()">Edit</a>';
-
+						let status = "{{contentPost.status}}";
+						if (gUser.userid == '{{ contentPost.userid }}') {
+							// user is author
+							if (status.includes('unpublished')) {
+								// memo is unpublished:
+								document.getElementById("mainContent").innerHTML += 
+									'<a href="#" class="button" onclick="MemoEdit()">Edit Unpublished Memo</a>';
+	
+							}
 						}
+						else if (gUser.roles.includes("admin")) {
+							// user is admin:
+							if (status.includes('unpublished')) {
+								document.getElementById("mainContent").innerHTML += 
+								'<a href="#" class="button" onclick="MemoEdit()">Edit Unpublished Memo (not your memo)</a>';
+							}
+							else if (status.includes('published')) {
+								document.getElementById("mainContent").innerHTML += 
+								'<a href="#" class="button" onclick="MemoEdit()">Edit Published Memo (not your memo)</a>';
+							}
+						} 
 
 						LoadComments();
 					}
