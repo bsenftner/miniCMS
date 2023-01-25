@@ -27,7 +27,6 @@
 
 		<aside>
 			<div id="aside">
-				<a href="#" class="button" onclick="Logout()">Logout</a>
 			</div>
 		</aside>
   
@@ -45,11 +44,20 @@
 		function page_init_work() {
 			
 			// user is logged in, do anything necessary after login is validated here:
+
+			// user is logged in, change right sidebar links:
+			document.getElementById("aside").innerHTML = 
+			`<a href="#" class="button" onclick="UserProfile()">Profile</a>
+			<br/><br/>
+			<a href="#" class="button" onclick="Logout()">Logout</a>
+			`;
 		}
 		//
 		function page_init() {
 			ifAccessDo(page_init_work);
 		}
+		
+		function UserProfile() { window.location.href = "/profile"; }
 		
 	</script>
 

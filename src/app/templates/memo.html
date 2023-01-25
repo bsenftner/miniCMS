@@ -34,10 +34,10 @@
 				{# title and post contents, with an optional edit button #}
 				<H1> {{contentPost.title}} </H1>
 				<div class="ql-editor">
-					{{contentPost.description | safe}}
+					{{contentPost.text | safe}}
 				</div>
                 <div class="memoMetadata">
-				    <h5 class="g1">Author: {{contentPost.author}}</h5>
+				    <h5 class="g1">Author: {{contentPost.username}}</h5>
 				    <h5 class="g2">Status: {{contentPost.status}}</h5>
 				    <h5 class="g3">Access: {{contentPost.access}}</h5>
 				    <h5 class="g4">Tags: {{contentPost.tags}}</h5>
@@ -135,7 +135,15 @@
 							}
 						} 
 
-						LoadComments();
+						if (status.includes('unpublished')) {
+							document.getElementById("existingComments").innerHTML = 
+								'<p>Commenting available after memo is published</p>';
+							
+							document.getElementById("editorForm").style.display = 'none';
+						}
+						else {
+							LoadComments();
+						}
 					}
 					else {
 						// something is wrong, user should not be on this page:
@@ -164,20 +172,22 @@
 				let commList = response;
 				console.log( commList );
 
-				let commHtml = '';
 				let limit = commList.length;
-				for (let i = 0; i < limit; i++) {
-					let comm = commList[i];
-					commHtml += '<div class="comment">';
-					commHtml += '<div class="memoMetadata">';
-					commHtml += '<h5 class="g1">';
-					commHtml += comm.username;
-					commHtml += ' adds:</h5>';
-					commHtml += '</div>';
-					commHtml += comm.text;
-					commHtml += '</div>';
+				if (limit>0) {
+					let commHtml = '';
+					for (let i = 0; i < limit; i++) {
+						let comm = commList[i];
+						commHtml += '<div class="comment">';
+						commHtml += '<div class="memoMetadata">';
+						commHtml += '<h5 class="g1">';
+						commHtml += comm.username;
+						commHtml += ' adds:</h5>';
+						commHtml += '</div>';
+						commHtml += comm.text;
+						commHtml += '</div>';
+					}
+					document.getElementById("existingComments").innerHTML = commHtml;
 				}
-				document.getElementById("existingComments").innerHTML = commHtml;
 			});
 		}
 

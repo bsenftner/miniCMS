@@ -24,7 +24,7 @@
   					<input type="text" id="NewPostTitle" name="label" value="{{contentPost.title}}">
 					<div class="editorContainer">
 						<div id="editor">
-							{{contentPost.description | safe}}
+							{{contentPost.text | safe}}
   						</div>
 					</div>
 				</form>
@@ -131,8 +131,11 @@
 
 		document.addEventListener( "DOMContentLoaded", function(){page_init();} );
 	
+		let gUser = {};
 
 		function page_init_work(userdata) {
+
+			gUser = userdata;
 
 			// user is logged in, change right sidebar links:
 							
@@ -194,10 +197,12 @@
 			// post as new memo submission:
 			const params = {
 				"title": newPostTitle, 
-				"description": newPostHTML,
+				"text": newPostHTML,
 				"status": newPostStatus,
 				"access": newPostAccess,
 				"tags": newPostTags,
+				"userid": gUser.userid,
+				"username": gUser.username,
 			};
 		
 			const options = {
@@ -239,10 +244,12 @@
 		function MemoUpdateWork() {
 			const someData = {
 				"title": document.getElementById("NewPostTitle").value, 
-				"description": tinymce.get("editor").getContent(),
+				"text": tinymce.get("editor").getContent(),
 				"status": document.getElementById("statusSelectBox").value, 
 				"access": document.getElementById("NewPostAccess").value, 
 				"tags": document.getElementById("NewPostTags").value, 
+				"userid": gUser.userid,
+				"username": gUser.username,
 			}
 			//
 			const options = {

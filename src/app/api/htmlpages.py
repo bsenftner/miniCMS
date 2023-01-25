@@ -8,7 +8,7 @@ import json
 
 from app import config
 from app.api import crud, users
-from app.api.models import User, MemoNice
+from app.api.models import User, MemoDB
 from app.send_email import send_email_async
 
 # page_frag.py contains common page fragments, like .header & .footer.
@@ -103,23 +103,25 @@ async def memoPage( request: Request, id: int,
     
     # config.log.info("memoPage: here!!")
      
-    memoNice: MemoNice = await crud.get_memoNice(id)
-    if not memoNice:
+    memo: MemoDB = await crud.get_memo(id)
+    if not memo:
         raise HTTPException(status_code=404, detail="Memo not found")
 
-    weAreAllowed = crud.user_has_memo_access( current_user, memoNice )
+    weAreAllowed = crud.user_has_memo_access( current_user, memo )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo.")
     
+    # returns list of memos this user has access:
     memoList = await crud.get_all_memos(current_user)
     
     return TEMPLATES.TemplateResponse(
         "memo.html",
         { "request": request, 
-          "contentPost": memoNice, 
+          "contentPost": memo, 
           "frags": FRAGS, 
           "access": 'private',
-          "memos": memoList }, 
+          "memos": memoList,
+        }, 
         # 'access' key is for template left sidebar construction
     )
     
@@ -129,12 +131,11 @@ async def memoPage( request: Request, id: int,
 @router.get("/publicmemo/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoPublic( request: Request, id: int  ):
     
-    # using memoNice to get the memo's username from the author field
-    memoNice: MemoNice = await crud.get_memoNice(id)
-    if not memoNice:
+    memo: MemoDB = await crud.get_memo(id)
+    if not memo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
 
-    if 'public' not in memoNice.access:
+    if 'public' not in memo.access:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Memo not publc.")
         
     memoList = await crud.get_all_public_memos()
@@ -142,7 +143,7 @@ async def memoPublic( request: Request, id: int  ):
     return TEMPLATES.TemplateResponse(
         "index.html",
         { "request": request, 
-          "contentPost": memoNice, 
+          "contentPost": memo, 
           "frags": FRAGS, 
           "access": 'public',
           "memos": memoList 
@@ -156,11 +157,11 @@ async def memoPublic( request: Request, id: int  ):
 @router.get("/Editor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def editor( request: Request, id: int, current_user: User = Depends(users.get_current_active_user) ):
     
-    memoNice: MemoNice = await crud.get_memoNice(id)
-    if not memoNice:
+    memo: MemoDB = await crud.get_memo(id)
+    if not memo:
         raise HTTPException(status_code=404, detail="Memo not found")
 
-    if memoNice.userid != current_user.userid and not users.user_has_role(current_user,"admin"):
+    if memo.userid != current_user.userid and not users.user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to edit other's Memos")
         
@@ -168,7 +169,12 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
     
     return TEMPLATES.TemplateResponse(
         "tinymcEditor.html", 
-        {"request": request, "contentPost": memoNice, "frags": FRAGS, "access": 'private', "memos": memoList}, 
+        {"request": request, 
+         "contentPost": memo, 
+         "frags": FRAGS, 
+         "access": 'private', 
+         "memos": memoList,
+        }, 
         # 'access' key is for template left sidebar construction
     )
     
@@ -177,20 +183,25 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
 @router.get("/Editor", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def editor( request: Request, current_user: User = Depends(users.get_current_active_user) ):
     
-    memoNice = MemoNice( author=current_user.username,
-                        memoid=0,
-                        userid=current_user.userid,
-                        title='your memo title',
-                        description='Edit this to be your memo.',
-                        status='unpublished',
-                        tags='',
-                        access='staff')
+    memo = MemoDB( memoid=0,
+                   title='your memo title',
+                   text='Edit this to be your memo.',
+                   status='unpublished',
+                   tags='',
+                   access='staff',
+                   userid=current_user.userid,
+                   username=current_user.username )
     
     memoList = await crud.get_all_memos(current_user)
     
     return TEMPLATES.TemplateResponse(
         "tinymcEditor.html", 
-        {"request": request, "contentPost": memoNice, "frags": FRAGS, "access": 'private', "memos": memoList}, 
+        { "request": request, 
+          "contentPost": memo, 
+          "frags": FRAGS, 
+          "access": 'private', 
+          "memos": memoList
+        }, 
         # 'access' key is for template left sidebar construction
     )
     

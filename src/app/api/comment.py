@@ -23,7 +23,7 @@ async def create_comment(payload: CommentSchema,
     
     # log.info(f"create_comment: current_user is {current_user}")
         
-    log.info(f"create_comment: posting {payload}")
+    # log.info(f"create_comment: posting {payload}")
     
     # memo must exist to receive a comment:
     memo = await crud.get_memo(payload.memoid)
@@ -43,12 +43,12 @@ async def create_comment(payload: CommentSchema,
         if pcomm is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parent comment not found.")
     
-    log.info(f"create_comment: doing post...")
+    # log.info(f"create_comment: doing post...")
     
     # post comment: 
     commid = await crud.post_comment(payload)
 
-    log.info(f"create_comment: returning id {commid}")
+    # log.info(f"create_comment: returning id {commid}")
     
     response_object = {
         "commid": commid,
@@ -66,7 +66,7 @@ async def create_comment(payload: CommentSchema,
 async def read_comment(id: int = Path(..., gt=0),
                        current_user: UserInDB = Depends(get_current_active_user)) -> CommentDB:
     
-    log.info("read_comment: here!!")
+    # log.info("read_comment: here!!")
     
     comment: CommentDB = await crud.get_comment(id)
     if comment is None:
@@ -92,19 +92,20 @@ async def read_all_memo_comments(memoid: int,
     if memo is None:
        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
     
-    log.info(f"read_all_memo_comments: got memo {memo}")
+    # log.info(f"read_all_memo_comments: got memo {memo}")
     
     memodb = MemoDB(
         memoid=memo.memoid,
-        userid=memo.userid,
         title=memo.title,
-        description=memo.description,
+        text=memo.text,
         status=memo.status,
         tags=memo.tags,
-        access=memo.access
+        access=memo.access,
+        userid=memo.userid,
+        username=memo.username
     )
     
-    log.info(f"read_all_memo_comments: got memodb {memodb}")
+    # log.info(f"read_all_memo_comments: got memodb {memodb}")
     
     if not crud.user_has_memo_access(current_user, memodb):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")

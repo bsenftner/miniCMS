@@ -24,18 +24,17 @@ class NoteDB(NoteSchema):
 # the access field holds csv roles, where a "role" is an attribute on a user. 
 class MemoSchema(BaseModel):
     title: str
-    description: str
+    text: str
     status: str
     tags: str 
     access: str 
+    userid: int
+    username: str 
  
 class MemoDB(MemoSchema):
     memoid: int = Field(index=True)
-    userid: int = Field(default=None, foreign_key="UserInDB.userid")
 
-class MemoNice(MemoDB):
-    author: str             # the username associated with the memo's userid
-    
+ 
     
 class CommentSchema(BaseModel):
     text: str

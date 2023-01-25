@@ -47,9 +47,10 @@ async def create_memo(payload: MemoSchema,
     
     response_object = {
         "memoid": memoid,
-        "userid": current_user.userid,
+        "userid": payload.userid,
+        "username": payload.username,
         "title": payload.title,
-        "description": payload.description,
+        "text": payload.text,
         "status": payload.status,
         "access": payload.access,
         "tags": payload.tags,
@@ -115,14 +116,18 @@ async def update_memo(payload: MemoSchema,
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
                             detail="Unknown access roles: " + unknown_access_roles)
     
-    # make sure to retain original memo author
+    # make sure to retain original memo author:
+    payload.userid = memo.userid
+    payload.username = memo.username 
+    
     memoid = await crud.put_memo(id, memo.userid, payload)
     
     response_object = {
         "memoid": memoid,
-        "userid": memo.userid,                  # make sure to retain original memo author
+        "userid": payload.userid,                 
+        "username": payload.username,
         "title": payload.title,
-        "description": payload.description,
+        "text": payload.text,
         "status": payload.status,
         "access": payload.access,
         "tags": payload.tags,

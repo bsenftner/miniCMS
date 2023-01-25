@@ -1,7 +1,7 @@
 from typing import List
 from sqlalchemy import asc 
 
-from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic, MemoDB, MemoNice, NoteDB, CommentSchema, CommentDB
+from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic, MemoDB, NoteDB, CommentSchema, CommentDB
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -27,15 +27,18 @@ def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
 # -----------------------------------------------------------------------------------------
 # for creating new memos
 async def post_memo(payload: MemoSchema, user_id: int):
-    # log.info(f"post_memo: here!")
+    log.info(f"post_memo: here!")
+    log.info(f"payload is {payload}")
+    
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
-    query = db_mgr.get_memo_table().insert().values(userid=user_id, 
-                                                    title=payload.title, 
-                                                    description=payload.description,
+    query = db_mgr.get_memo_table().insert().values(title=payload.title, 
+                                                    text=payload.text,
                                                     status=payload.status,
                                                     access=payload.access,
-                                                    tags=payload.tags)
+                                                    tags=payload.tags,
+                                                    userid=payload.userid,
+                                                    username=payload.username)
     # Executes the query and returns the generated ID
     return await db_mgr.get_db().execute(query=query)
 
@@ -45,33 +48,6 @@ async def get_memo(id: int) -> MemoDB:
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_memo_table().select().where(id == db_mgr.get_memo_table().c.memoid)
     return await db_mgr.get_db().fetch_one(query=query)
-
-# -----------------------------------------------------------------------------------------
-# for getting memos:
-async def get_memoNice(id: int) -> MemoNice:
-    db_mgr: DatabaseMgr = get_database_mgr()
-    query = db_mgr.get_memo_table().select().where(id == db_mgr.get_memo_table().c.memoid)
-    memo: MemoDB =  await db_mgr.get_db().fetch_one(query=query)
-    if memo is None:
-        return memo
-    
-    log.info(f"get_memoNice: got memo {memo}")
-    
-    user = await get_user_by_id(memo.userid)
-    
-    finalMemo = MemoNice( author=user.username,
-                          memoid=memo.memoid,
-                          userid=memo.userid,
-                          title=memo.title,
-                          description=memo.description,
-                          status=memo.status,
-                          tags=memo.tags,
-                          access=memo.access)
-    
-    
-    log.info(f"get_memoNice: returning memo {finalMemo}")
-    
-    return finalMemo
     
 
 # -----------------------------------------------------------------------------------------
@@ -121,9 +97,10 @@ async def put_memo(memoid: int, userid: int, payload: MemoSchema):
         db_mgr.get_memo_table()
         .update()
         .where(memoid == db_mgr.get_memo_table().c.memoid)
-        .values(userid=userid,
+        .values(userid=payload.userid,
+                username=payload.username,
                 title=payload.title, 
-                description=payload.description, 
+                text=payload.text, 
                 status=payload.status, 
                 access=payload.access, 
                 tags=payload.tags)
@@ -157,11 +134,12 @@ async def post_comment(payload: CommentSchema):
 # -----------------------------------------------------------------------------------------
 # for getting comments:
 async def get_comment(commid: int) -> CommentDB:
-    log.info(f"get_comment: getting comment with commid {commid}")
+    # log.info(f"get_comment: getting comment with commid {commid}")
+    
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_comment_table().select().where(commid == db_mgr.get_comment_table().c.commid)
     
-    log.info(f"get_comment: query built...")
+    # log.info(f"get_comment: query built...")
     
     return await db_mgr.get_db().fetch_one(query=query)
 
@@ -169,7 +147,7 @@ async def get_comment(commid: int) -> CommentDB:
 # returns all comments for a given memo:
 async def get_all_memo_comments(memoid: int) -> List[CommentDB]:
     
-    log.info(f"get_all_memo_comments: getting comments for memo with id {memoid}")
+    # log.info(f"get_all_memo_comments: getting comments for memo with id {memoid}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     # query = db_mgr.get_comment_table().select().where(memoid == db_mgr.get_comment_table().c.memoid).order_by(asc(db_mgr.get_comment_table().c.commid))
@@ -180,7 +158,7 @@ async def get_all_memo_comments(memoid: int) -> List[CommentDB]:
     finalCommList = []
     for c in commIdList:
         commid = c.commid
-        log.info(f"get_all_memo_comments: preping comment with id {commid}")
+        # log.info(f"get_all_memo_comments: preping comment with id {commid}")
         fullComm = CommentDB( commid = c.commid,
                               text = c.text,
                               memoid = c.memoid,
@@ -189,7 +167,7 @@ async def get_all_memo_comments(memoid: int) -> List[CommentDB]:
                               parent = c.parent )
         finalCommList.append(fullComm)
             
-    log.info(f"get_all_memo_comments: finalCommList {finalCommList}")
+    # log.info(f"get_all_memo_comments: finalCommList {finalCommList}")
             
     return finalCommList
 
