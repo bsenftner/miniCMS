@@ -147,11 +147,15 @@ main {
   padding: 0 20px;
 }
 
-/*
-body.mceContentBody { 
-  background: #fff; 
-  color:#000;
-} */
+div#main-content {
+  box-sizing: border-box;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  height: 100%;
+  margin: 0px;
+  position: relative;
+}
+
 form#editorForm {
   background: #eee; 
 }
@@ -161,6 +165,36 @@ form#editorForm {
 } 
 .ql-container {
   font-size: 20px;
+}
+
+form#uploadForm {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: 1fr;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px; 
+  margin: 8px;
+}
+form#uploadForm div.upload1 {
+  grid-area: 1 / 1 / 2 / 2;
+  margin-left: -8px;
+}
+form#uploadForm div.upload2 {
+  grid-area: 1 / 2 / 2 / 3;
+}
+form#uploadForm div.upload3 {
+  grid-area: 1 / 3 / 2 / 4;
+}
+input[type=file]::file-selector-button {
+  font-size: 18px;
+  font-weight: bold;
+}
+form#uploadForm div.upload3 a#uploadBttn {
+  margin-top: -2px;
+}
+div#divUploadMsg {
+  margin-top: -5px;
+  margin-bottom: 20px;
 }
 
 div.memoMetadata {
@@ -226,13 +260,15 @@ div#mainContent a {
 input#NewPostTitle {
   width: 80%;
   margin-bottom: 20px;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 input#NewPostTags {
   width: 60%;
   margin: 10px 0;
-  font-size: 25px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 input#NewPostUpload {
@@ -299,29 +335,35 @@ input#NewEmailSubject {
 }
 
 label {
-  width: 12%;
+  /* width: 12%; */
   display: inline-block;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 input#username {
   width: 50%;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 input#password, input#password2 {
   width: 50%;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 input#email, input#email2 {
   width: 50%;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 input#confirmPass {
   width: 50%;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 input#vcode {
   width: 50%;
-  font-size: 30px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 div#userList {
@@ -333,7 +375,7 @@ div#userSelectionDiv {
   grid-column: 1;
 }
 div#userSelectionDiv span {
-  font-size: 30px;
+  font-size: 18px;
   font-weight: bold;
   vertical-align: top;
 }
@@ -352,12 +394,13 @@ div#userInfoDiv {
 
 div#authorName {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: bold;
   margin: 10px 10px;
 }
 
 select#statusSelectBox, select#NewPostAccess {
-  font-size: 25px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
 div#statusSelectionMsg, div#AccessSelectionMsg, div#TagsMsg {
