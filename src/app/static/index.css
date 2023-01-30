@@ -196,6 +196,41 @@ div#divUploadMsg {
   margin-top: -5px;
   margin-bottom: 20px;
 }
+div#divUploadLinksMsg {
+  margin-top: 5px;
+  margin-bottom: 20px;
+}
+
+div#divUploadLinksWrapper {
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  height: 5em;
+  background: #eee; 
+}
+div#divUploadLinksHeader {
+  font-size: 18px;
+  font-weight: bold;
+}
+div#divUploadLinksGridParent {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr); 
+  grid-template-rows: 1fr;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px; 
+}
+div#divUploadLinksGrid0 {
+  grid-area: 1 / 1 / 2 / 2;
+}
+div#divUploadLinksGrid1 {
+  grid-area: 1 / 2 / 2 / 3;
+}
+div#divUploadLinksGrid2 {
+  grid-area: 1 / 3 / 2 / 4;
+}
+div#divUploadLinksGrid3 {
+  grid-area: 1 / 4 / 2 / 5;
+}
 
 div.memoMetadata {
     display: grid;

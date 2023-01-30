@@ -10,6 +10,10 @@ from app.api.models import UserInDB
 
 from app.config import log
 
+
+import os
+
+
 router = APIRouter()
 
 # ------------------------------------------------------------------------------------------------------------------
@@ -17,6 +21,9 @@ router = APIRouter()
 @router.post("/", status_code=200)
 async def upload(file: UploadFile = File(...), 
                  current_user: UserInDB = Depends(get_current_active_user)):
+    
+    u = os.path.expanduser('~')
+    log.info(f"upload: {u}")
     
     if not user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -28,6 +35,7 @@ async def upload(file: UploadFile = File(...),
         log.info(f"upload: attempting {upload_path}")
         #
         async with aiofiles.open(upload_path, 'wb') as f:
+            log.info(f"upload: file opened for writing...")
             CHUNK_SIZE = 1024*1024
             while contents := await file.read(CHUNK_SIZE):
                 await f.write(contents)

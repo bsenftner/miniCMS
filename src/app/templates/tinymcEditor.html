@@ -43,7 +43,77 @@
 						<a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Select a file first</a>
 					</div>
 				</form>
-				<div id="divUploadMsg">Use the <b>Browse</b> button to select a file to upload</div>
+				<div id="divUploadMsg">
+					Use the <b>Browse</b> button to select a file to upload; after selection that right-most button 
+					becomes a 'start this upload' button
+				</div>
+
+				<div id="divUploadLinksHeader">
+					Uploaded File Links:
+				</div>
+				<div id="divUploadLinksWrapper">
+					<div id="divUploadLinksGridParent">
+						<div id="divUploadLinksGrid0">
+							filename.ext
+						</div>
+						<div id="divUploadLinksGrid1">
+							mimetype
+						</div>
+						<div id="divUploadLinksGrid2">
+							copy document link to clipboard
+						</div>
+						<div id="divUploadLinksGrid3">
+							download this file
+						</div>
+					</div>
+					<div id="divUploadLinksGridParent">
+						<div id="divUploadLinksGrid0">
+							filename.ext
+						</div>
+						<div id="divUploadLinksGrid1">
+							mimetype
+						</div>
+						<div id="divUploadLinksGrid2">
+							copy document link to clipboard
+						</div>
+						<div id="divUploadLinksGrid3">
+							download this file
+						</div>
+					</div>
+					<div id="divUploadLinksGridParent">
+						<div id="divUploadLinksGrid0">
+							filename.ext
+						</div>
+						<div id="divUploadLinksGrid1">
+							mimetype
+						</div>
+						<div id="divUploadLinksGrid2">
+							copy document link to clipboard
+						</div>
+						<div id="divUploadLinksGrid3">
+							download this file
+						</div>
+					</div>
+					<div id="divUploadLinksGridParent">
+						<div id="divUploadLinksGrid0">
+							filename.ext
+						</div>
+						<div id="divUploadLinksGrid1">
+							mimetype
+						</div>
+						<div id="divUploadLinksGrid2">
+							copy document link to clipboard
+						</div>
+						<div id="divUploadLinksGrid3">
+							download this file
+						</div>
+					</div>
+				</div>
+				<div id="divUploadLinksMsg">
+					Previously uploaded files. 
+					Use <b>Copy document link to clipboard</b> to generate the 'embed text' to use an 
+					uploaded file in memo or comment text
+				</div>
 				<div id="statusList">
 					<div id="statusSelectionDiv">
 						<label for="statusSelectBox">Status:</label>
@@ -329,6 +399,64 @@
 			let statusSelectBox = document.getElementById("statusSelectBox")
 			let selected = statusSelectBox.value;
 		}
+
+
+		// called when the Input File's browse button has been operated and it's value changed:
+		function onUploadChangeFunc() {
+			fileInputCtrl = document.getElementById("NewUploadInput")
+
+			let selected = fileInputCtrl.value; 	// has fake path components before filename
+			const pathArray = selected.split("\\");	// prepare...
+   			const lastIndex = pathArray.length - 1; // ...to remove...
+			selected = pathArray[lastIndex];		// ...path components.
+
+			fileUploadButton = document.getElementById("uploadBttn")
+			fileUploadButton.innerHTML = 'Upload "' + selected + '"'
+
+			document.getElementById("divUploadMsg").innerHTML = 'Now use the <b>Upload "' + selected + '"</b> button to upload the file'
+		}
+		//
+		function UploadFile() {
+			// Select your input type file and store it in a variable
+			const input = document.getElementById('NewUploadInput');
+
+			var data = new FormData()
+			data.append('file', input.files[0])
+
+			// This will upload the file after having read it
+			const upload = (file) => {
+				fetch('/upload', { // Your POST endpoint
+	  				method: 'POST',
+	  				headers: {},
+	  				body: data // This is your file object
+				}).then(
+	  				response => response.json() // if the response is a JSON object
+				 ).then(
+	  				success => {
+						console.log( success.message) // Handle the success response object
+						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
+						//
+						// populate listbox for upload selection:
+						// get_uploads();
+						//
+						// clear the file upload ctrl, now that the file has been uploaded
+						fileInputCtrl = document.getElementById("NewUploadInput")
+						fileInputCtrl.value = '';
+						//
+						fileUploadButton = document.getElementById("uploadBttn")
+						fileUploadButton.innerHTML = 'Select a file first'
+					}
+				 ).catch(
+	  				error => {
+						console.log( error ) // Handle the error response object
+						document.getElementById("divUploadMsg").innerHTML = '<p>Error msg: ' + error + '</p>';
+					}
+				);
+  			};
+  
+  			upload(input.files[0]);
+		}
+
 
 		function UserSettings() { window.location.href = "/Settings"; }
 

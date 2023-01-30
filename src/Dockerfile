@@ -39,7 +39,16 @@ RUN set -eux \
 COPY . .
 
 # chown all the files to the app user
-RUN chown -R app:app $APP_HOME
+RUN chown app:app $APP_HOME
+# RUN chown app:app $APP_HOME/app/static/uploads
+#
+# trying to make file system writable by app
+# RUN chmod o+rw $APP_HOME
+# RUN chmod o+rw $APP_HOME/app/static/uploads
+#
+# These various attempts (above) to give the running app write permissions to the upload directory are not working.
+# what does seem to work, for development at least, is manually changing the permissions of the upload directory  
+# using: "chmod go+w ./uploads" from inside the static directory.
 
 # change to the app user
 USER app
