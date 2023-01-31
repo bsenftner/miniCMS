@@ -1,6 +1,6 @@
 # A FastAPI based multi-user CMS experiment
 
-## Very much a work in progress at this point, informally declared version 0.5
+## Very much a work in progress at this point, informally declared version 0.6
 
 Features in place so far:
 
@@ -21,10 +21,21 @@ Features in place so far:
 - 'Memo' content type
   - intended for company (and soon group) communications on a project
   - using TinyMCE editor
-  - has title, content text, status, access, and tags
+  - has title, content text, file uploads, prior upload embedding, status, access, and tags
+    - files may be uploaded
+      - which become available as embed links and download buttons
+        - image and video embeds are working, still fussing with pdf embeds
+      - currently uploads all go to a central location
+        - soon "projects" will be implemented that layer in another level of access control, with will impact uploads
     - status can be unpublished or published
-      - once published memo can no longer be edited by staff (admin can)
-    - access can be admin, staff or public
+      - once published memo can no longer be edited by staff 
+      - admins can see and edit unpublished and published memos of others
+    - configuring access is different between admin and staff
+      - admins can set access to: admin, staff, or public
+        - admin access is only visible to other admins
+        - staff access is visible to admin and staff
+        - public access is visible to the public, but only admins can create public memos
+      - staff can only create staff visible memos, so the access controls disappear when a user with only the staff role is editing
       - soon to include project/group access as well
     - tags are not yet fully implmented, will be search term for similar memos
 - 'Comment' content type
@@ -43,3 +54,9 @@ From that other repo are tests, yet to be updated to this repo, untested backups
 Soon those will get attention.
 
 ![webpage screen shot](/src/app/static/MiniCMS-memo.jpg)
+
+General view of memo editing from a staff role account
+
+![webpage screen shot](/src/app/static/MiniCMS-comments.jpg)
+
+A published memo, with an embedded image and video, some comments, and the comment editor

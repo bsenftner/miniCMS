@@ -27,8 +27,8 @@ async def upload(file: UploadFile = File(...),
     u = os.path.expanduser('~')
     log.info(f"upload: {u}")
     
-    if not user_has_role(current_user,"admin"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+    if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail="Not Authorized to upload files")
         
     try:
@@ -58,8 +58,8 @@ async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_u
     
     # log.info(f"read_all_uploads: here!")
     
-    if not user_has_role(current_user,"admin"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+    if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
                             detail="Not Authorized")
     
     upload_path = config.get_base_path() / 'static/uploads/*' 
@@ -95,6 +95,6 @@ async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_u
         # ret.append( parts[count-1] )
         ret.append( fdesc )
         
-    log.info(f"read_all_uploads: got {ret}")
+    # log.info(f"read_all_uploads: got {ret}")
     
     return ret

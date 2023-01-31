@@ -31,89 +31,54 @@
 				<div id="authorName">
 					Author: {{contentPost.username}}, UserId: {{contentPost.userid}} 
 					(The author cannot be changed.)
-				</div>
-				<form id="uploadForm">
-					<div class="upload1">
-						<label>Manual File Upload:</label>
+					<div class="memoMetadata">
+						<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Uploads & Links</a>
 					</div>
-					<div class="upload2">
-						<input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" >
-					</div>
-					<div class="upload3">
-						<a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Select a file first</a>
-					</div>
-				</form>
-				<div id="divUploadMsg">
-					Use the <b>Browse</b> button to select a file to upload; after selection that right-most button 
-					becomes a 'start this upload' button
 				</div>
 
-				<div id="divUploadLinksHeader">
-					Uploaded File Links:
-				</div>
-				<div id="divUploadLinksWrapper">
-					<div id="divUploadLinksGridParent">
-						<div id="divUploadLinksGrid0">
-							filename.ext
+				<div id="uploadDownloadSet">
+					<form id="uploadForm">
+						<div class="upload1">
+							<label>Manual File Upload:</label>
 						</div>
-						<div id="divUploadLinksGrid1">
-							mimetype
+						<div class="upload2">
+							<input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" >
 						</div>
-						<div id="divUploadLinksGrid2">
-							copy document link to clipboard
+						<div class="upload3">
+							<a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Select a file first</a>
 						</div>
-						<div id="divUploadLinksGrid3">
-							download this file
+					</form>
+					<div id="divUploadMsg">
+						Use the <b>Browse</b> button to select a file to upload; after selection that right-most button 
+						becomes a 'start this upload' button
+					</div>
+
+					<div id="divUploadLinksHeader">
+						Uploaded File Links:
+					</div>
+					<div id="divUploadLinksWrapper">
+						<div id="divUploadLinksGridParent">
+							<div id="divUploadLinksGrid0">
+								filename.ext
+							</div>
+							<div id="divUploadLinksGrid1">
+								mimetype
+							</div>
+							<div id="divUploadLinksGrid2">
+								copy document link to clipboard
+							</div>
+							<div id="divUploadLinksGrid3">
+								download this file
+							</div>
 						</div>
 					</div>
-					<div id="divUploadLinksGridParent">
-						<div id="divUploadLinksGrid0">
-							filename.ext
-						</div>
-						<div id="divUploadLinksGrid1">
-							mimetype
-						</div>
-						<div id="divUploadLinksGrid2">
-							copy document link to clipboard
-						</div>
-						<div id="divUploadLinksGrid3">
-							download this file
-						</div>
-					</div>
-					<div id="divUploadLinksGridParent">
-						<div id="divUploadLinksGrid0">
-							filename.ext
-						</div>
-						<div id="divUploadLinksGrid1">
-							mimetype
-						</div>
-						<div id="divUploadLinksGrid2">
-							copy document link to clipboard
-						</div>
-						<div id="divUploadLinksGrid3">
-							download this file
-						</div>
-					</div>
-					<div id="divUploadLinksGridParent">
-						<div id="divUploadLinksGrid0">
-							filename.ext
-						</div>
-						<div id="divUploadLinksGrid1">
-							mimetype
-						</div>
-						<div id="divUploadLinksGrid2">
-							copy document link to clipboard
-						</div>
-						<div id="divUploadLinksGrid3">
-							download this file
-						</div>
+					<div id="divUploadLinksMsg">
+						Previously uploaded files. 
+						Use <b>Copy link to clipboard</b> to generate the 'embed text' to use an 
+						uploaded file in the editor's text
 					</div>
 				</div>
-				<div id="divUploadLinksMsg">
-					Previously uploaded files. 
-					Use <b>Copy document link to clipboard</b> to generate the 'embed text' to use an 
-					uploaded file in memo or comment text
-				</div>
+
 				<div id="statusList">
 					<div id="statusSelectionDiv">
 						<label for="statusSelectBox">Status:</label>
@@ -128,7 +93,7 @@
 						the same access roles as the memo as well as the memo author. 
 					</div>
 				</div>
-				<div>
+				<div id="divPostAccess">
 					<div id="PostAccessSelectionDiv">
 						<label for="NewPostAccess">Access:</label>
 						<select id="NewPostAccess">
@@ -216,7 +181,9 @@
 			// user is logged in, change right sidebar links:
 							
 			document.getElementById("aside").innerHTML = 
-							`<a href="#" class="button" onclick="UserSettings()">Settings</a>
+							`<a href="#" class="button" onclick="Profile()">Profile</a>
+							 <br/><br/>
+							 <a href="#" class="button" onclick="UserSettings()">Settings</a>
 							 <br/><br/>
 							 <a href="#" class="button" onclick="Logout()">Logout</a>
 							`;
@@ -249,6 +216,9 @@
 					optn.text = 'Staff';
 					optn.value = 'staff'; 
 					newPostAccess.options.add(optn);
+
+					// and for simplicity of interface, hide these controls completely:
+					document.getElementById("divPostAccess").style.display = "none";
 				}
 			}
 
@@ -259,7 +229,14 @@
 			ifAccessDoWithUser(page_init_work);
 		}
 
-		function MemoEditCancel() { window.location.href = "/memopage/{{ contentPost.memoid }}"; }
+		function MemoEditCancel() { 
+			if (Number("{{ contentPost.memoid }}") > 0) {
+				window.location.href = "/memopage/{{ contentPost.memoid }}"; 
+			}
+			else {
+				window.location.href = "/profile"; 
+			}
+		}
 
 		function MemoSubmitWork() {
 			// get the post label:
@@ -397,12 +374,23 @@
 			ifAccessDo(MemoDeleteWork);
 		}
 
+
 		// called when the status dropdown selection changes:
 		function onStatusSelectChangeFunc() {
 			let statusSelectBox = document.getElementById("statusSelectBox")
 			let selected = statusSelectBox.value;
 		}
 
+
+		// called when user clicks the "Show / Hide Uploads & Links" button
+		function ToggleUploadDownloadSet() {
+			let upDownSet = document.getElementById("uploadDownloadSet")
+			if (upDownSet.style.display === "none") {
+				upDownSet.style.display = "block";
+			  } else {
+				upDownSet.style.display = "none";
+			  }
+		}
 
 		// called when the Input File's browse button has been operated and it's value changed:
 		function onUploadChangeFunc() {
@@ -545,6 +533,8 @@
 			})
 			.catch(() => alert('oh no!'));
 		}
+
+		function Profile() { window.location.href = "/profile"; }
 
 		function UserSettings() { window.location.href = "/Settings"; }
 

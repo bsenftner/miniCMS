@@ -156,7 +156,7 @@ div#main-content {
   position: relative;
 }
 
-form#editorForm {
+div#commentEditorContainer {
   background: #eee; 
 }
 .editorContainer { 
@@ -165,6 +165,15 @@ form#editorForm {
 } 
 .ql-container {
   font-size: 20px;
+}
+
+div#uploadDownloadSet {
+  margin-bottom: 15px;
+  border: #bababa;
+  border-width: thin;
+  border-style: solid;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 form#uploadForm {
@@ -197,8 +206,8 @@ div#divUploadMsg {
   margin-bottom: 20px;
 }
 div#divUploadLinksMsg {
-  margin-top: 5px;
-  margin-bottom: 20px;
+  margin-top: 10px;
+  margin-bottom: 15px;
 }
 
 div#divUploadLinksWrapper {
@@ -207,6 +216,11 @@ div#divUploadLinksWrapper {
   overflow: auto;
   height: 6em;
   background: #eee; 
+  border: #bababa;
+  border-width: thin;
+  border-style: solid;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 div#divUploadLinksHeader {
   font-size: 18px;
@@ -255,6 +269,11 @@ div.memoMetadata h5.g4 {
 }
 div.memoMetadata h5.g5 { 
   grid-area: 1 / 5 / 2 / 6; 
+}
+
+div.memoMetadata a.g5 { 
+  grid-area: 1 / 5 / 2 / 6; 
+  font-size: 16px;
 }
 
 div#commentsTop {
@@ -360,7 +379,7 @@ div#uploadInsertBttnDiv {
 }
 
 div#divBeneathTheEditor {
-  padding-top: 60px; /* 52px; */
+  padding-top: 0px; /* 52px; */
 }
 
 input#NewEmailSubject {
@@ -374,6 +393,7 @@ label {
   display: inline-block;
   font-size: 18px;
   font-weight: bold;
+  padding-right: 10px;
 }
 input#username {
   width: 50%;
