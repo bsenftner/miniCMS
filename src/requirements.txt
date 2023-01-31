@@ -20,6 +20,8 @@ passlib[bcrypt]==1.7.4
 python-dotenv==0.21.0
 email-validator
 
+mimelib==0.1.1
+
 # dev
 # basic test framework
 pytest==6.2.3

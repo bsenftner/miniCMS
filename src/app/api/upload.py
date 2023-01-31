@@ -12,6 +12,8 @@ from app.config import log
 
 
 import os
+import mimelib
+import json
 
 
 router = APIRouter()
@@ -49,8 +51,10 @@ async def upload(file: UploadFile = File(...),
 
 # ----------------------------------------------------------------------------------------------
 # The response_model is a List with a str subtype. See import of List top of file. 
-@router.get("/", response_model=List[str])
-async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_user)) -> List[str]:
+# @router.get("/", response_model=List[str])
+@router.get("/", response_model=List)
+# async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_user)) -> List[str]:
+async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_user)) -> List:
     
     # log.info(f"read_all_uploads: here!")
     
@@ -71,7 +75,25 @@ async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_u
     for longPath in result:
         parts = longPath.split('/')
         count = len(parts)
-        ret.append( parts[count-1] )
+        filename = parts[count-1]
+        
+        parts = filename.split('.')
+        count = len(parts)
+        ext = parts[count-1]
+        extValid =  count > 1
+        
+        mo = mimelib.url(longPath)
+        
+        link = '/static/uploads/' + filename
+        
+        fdesc = {
+            "filename": filename,
+            "type": mo.file_type,
+            "link": link
+        }
+        
+        # ret.append( parts[count-1] )
+        ret.append( fdesc )
         
     log.info(f"read_all_uploads: got {ret}")
     

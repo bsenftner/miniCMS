@@ -11,8 +11,8 @@ router = APIRouter()
 @router.get("/{video_file}", status_code=200) 
 async def video_endpoint(video_file: str, range: str = Header(None)):
     
-    # config.log.info(f"video_file is >{video_file}<")
-    # config.log.info(f"range is >{range}<")
+    config.log.info(f"video_file is >{video_file}<")
+    config.log.info(f"range is >{range}<")
     
     start, end = 0, 0
     if range:

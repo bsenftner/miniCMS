@@ -205,7 +205,7 @@ div#divUploadLinksWrapper {
   margin: 0;
   padding: 0;
   overflow: auto;
-  height: 5em;
+  height: 6em;
   background: #eee; 
 }
 div#divUploadLinksHeader {
@@ -294,7 +294,7 @@ div#mainContent a {
 
 input#NewPostTitle {
   width: 80%;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   font-size: 18px;
   font-weight: bold;
 }
