@@ -1,0 +1,196 @@
+<div id="uploadDownloadSet">
+    <form id="uploadForm">
+        <div class="upload1">
+            <label>Manual File Upload:</label>
+        </div>
+        <div class="upload2">
+            <input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" >
+        </div>
+        <div class="upload3">
+            <a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Select a file first</a>
+        </div>
+    </form>
+    <div id="divUploadMsg">
+        Use the <b>Browse</b> button to select a file to upload; after selection that right-most button 
+        becomes a 'start this upload' button
+    </div>
+
+    <div id="divUploadLinksHeader">
+        Uploaded File Links:
+    </div>
+    <div id="divUploadLinksWrapper">
+        <div id="divUploadLinksGridParent">
+            <div id="divUploadLinksGrid0">
+                filename.ext
+            </div>
+            <div id="divUploadLinksGrid1">
+                mimetype
+            </div>
+            <div id="divUploadLinksGrid2">
+                copy document link to clipboard
+            </div>
+            <div id="divUploadLinksGrid3">
+                download this file
+            </div>
+        </div>
+    </div>
+    <div id="divUploadLinksMsg">
+        Previously uploaded files. 
+        Use <b>Copy link to clipboard</b> to generate the 'embed text' to use an 
+        uploaded file in the editor's text
+    </div>
+</div>
+
+<script>
+		// called when user clicks the "Show / Hide Uploads & Links" button
+		function ToggleUploadDownloadSet() {
+			let upDownSet = document.getElementById("uploadDownloadSet")
+			if (upDownSet.style.display === "none") {
+				upDownSet.style.display = "block";
+			  } else {
+				upDownSet.style.display = "none";
+			  }
+		}
+        
+		// called when the Input File's browse button has been operated and it's value changed:
+		function onUploadChangeFunc() {
+			fileInputCtrl = document.getElementById("NewUploadInput")
+
+			let selected = fileInputCtrl.value; 	// has fake path components before filename
+			const pathArray = selected.split("\\");	// prepare...
+   			const lastIndex = pathArray.length - 1; // ...to remove...
+			selected = pathArray[lastIndex];		// ...path components.
+
+			fileUploadButton = document.getElementById("uploadBttn")
+			fileUploadButton.innerHTML = 'Upload "' + selected + '"'
+
+			document.getElementById("divUploadMsg").innerHTML = 'Now use the <b>Upload "' + selected + '"</b> button to upload the file'
+		}
+		
+		function UploadFile() {
+			// Select your input type file and store it in a variable
+			const input = document.getElementById('NewUploadInput');
+
+			var data = new FormData()
+			data.append('file', input.files[0])
+
+			// This will upload the file after having read it
+			const upload = (file) => {
+				fetch('/upload', { // Your POST endpoint
+	  				method: 'POST',
+	  				headers: {},
+	  				body: data // This is your file object
+				}).then(
+	  				response => response.json() // if the response is a JSON object
+				 ).then(
+	  				success => {
+						console.log( success.message) // Handle the success response object
+						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
+						//
+						// populate listbox for upload selection:
+						get_uploads();
+						//
+						// clear the file upload ctrl, now that the file has been uploaded
+						fileInputCtrl = document.getElementById("NewUploadInput")
+						fileInputCtrl.value = '';
+						//
+						fileUploadButton = document.getElementById("uploadBttn")
+						fileUploadButton.innerHTML = 'Select a file first'
+					}
+				 ).catch(
+	  				error => {
+						console.log( error ) // Handle the error response object
+						document.getElementById("divUploadMsg").innerHTML = '<p>Error msg: ' + error + '</p>';
+					}
+				);
+  			};
+  
+  			upload(input.files[0]);
+		}
+
+		// get list of uploaded files and populate upload selection list:
+		const get_uploads = () => {
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/upload';
+			fetch(furl, { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+				  success => {
+					
+					console.log( success ) // Handle the success response object
+
+					let uploadLinksWrapper = document.getElementById("divUploadLinksWrapper")
+					uploadLinksWrapper.innerHTML = '';
+
+					let fileLinks = success;
+					for (let i = 0; i < fileLinks.length; i++) {
+						let filename = fileLinks[i].filename;
+						let fnParts = filename.split('.');
+						let ext = fnParts[ fnParts.length - 1 ].toLowerCase();
+						let fileType = fileLinks[i].type;
+						let fileLink = fileLinks[i].link;
+						
+						// set this first:
+						let dwnloadBttn = `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download this file</a>`;
+						
+						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link to clipboard</a>`;
+						if (fileType != 'image' && fileType != 'media') {
+							docLinkBttn = 'cannot embed in memo/comment';
+							if (ext == 'pdfXX') {
+								let pdfLink = `<iframe src="` + fileLink + `" width='100%' height='200px'></iframe>`;
+								let click = '"navigator.clipboard.writeText(\"' + pdfLink + '\")"';
+								docLinkBttn = '<a href="#" class="button" onclick=' + click + '>Copy embed text to clipboard</a>';
+							}
+						}
+						else if (fileType == 'media') {
+							docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link to clipboard</a>`;
+						}
+						let markup = `
+						<div id="divUploadLinksGridParent">
+							<div id="divUploadLinksGrid0">
+								<b>${filename}</b>
+							</div>
+							<div id="divUploadLinksGrid1">
+								${fileType}
+							</div>
+							<div id="divUploadLinksGrid2">
+								${docLinkBttn}
+							</div>
+							<div id="divUploadLinksGrid3">
+								${dwnloadBttn}
+							</div>
+						</div>`;
+
+						uploadLinksWrapper.innerHTML += markup;
+					}
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		  };
+
+		// called when "Download this file" buttons are clicked
+		function DownloadFile(fileUrl, filename) {
+			fetch(fileUrl)
+			.then(resp => resp.blob())
+			.then(blob => {
+				const url = window.URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.style.display = 'none';
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				window.URL.revokeObjectURL(url);
+				alert('"' + filename + '" has downloaded.'); 
+			})
+			.catch(() => alert('oh no!'));
+		}
+
+</script>
