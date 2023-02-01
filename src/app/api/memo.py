@@ -147,6 +147,13 @@ async def delete_memo(id: int = Path(..., gt=0),
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to delete other's Memos")
         
+    memoComments = await crud.get_all_memo_comments(id)
+    for mc in memoComments:
+        log.info(f"delete_memo: also deleting comment {mc.commid}")
+        await crud.delete_comment(mc.commid)
+    
+    log.info(f"delete_memo: now deleting memo {id}")
+    
     await crud.delete_memo(id)
 
     return memo
