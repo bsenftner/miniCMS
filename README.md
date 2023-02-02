@@ -19,32 +19,48 @@ Features in place so far:
   - currently only used for site's configuration
   - notes do not have a web page GUI for editing them (yet)
 - 'Memo' content type
-  - intended for company (and soon group) communications on a project
+  - intended for company and group communications and document sharing on a project
   - using TinyMCE editor
   - has title, content text, file uploads, prior upload embedding, status, access, and tags
     - files may be uploaded
       - which become available as embed links and download buttons
-        - image and video embeds are working, still fussing with pdf embeds
+        - image, video and pdf embeds are working
       - currently uploads all go to a central location
         - soon "projects" will be implemented that layer in another level of access control, with will impact uploads
+          - where I am currently working
     - status can be unpublished or published
-      - once published memo can no longer be edited by staff 
+      - once published memo can no longer be edited by staff
       - admins can see and edit unpublished and published memos of others
     - configuring access is different between admin and staff
       - admins can set access to: admin, staff, or public
         - admin access is only visible to other admins
         - staff access is visible to admin and staff
-        - public access is visible to the public, but only admins can create public memos
+        - public access is visible to the public, and staff, but only admins can create public memos
       - staff can only create staff visible memos, so the access controls disappear when a user with only the staff role is editing
       - soon to include project/group access as well
-    - tags are not yet fully implmented, will be search term for similar memos
+        - where I am currently working
+    - tags are 90% implemented, working on their integration with related content types
 - 'Comment' content type
   - for commenting on memos
     - intent is more content types and Comments to be used on any of them
     - access to a Comment is controlled by the memo it is associated
   - uses a reduced functionality embed of TinyMCE editor
   - comments, once posted, cannot be edited
-  - underly support for nested comments is in place, just not completed yet
+  - support for nested comments is in place, just not completed yet
+  - both memos and comments can have image, video and pdf embeds
+- 'Tag' content type
+  - for unique term management, employed for multiple uses
+    - "system tags" are used for
+      - "status" (unpublished, published, archived)
+      - access permissions (admin, staff, public)
+    - Projects will each have a tag, defining an access role for that Project
+- 'Project' content type
+  - for organization of memos, and access control of them and their documents
+  - these are the container for a collection of memos concerning a single project
+  - each project defines a "project tag"
+    - that tag is an access role for any users on the project
+    - that tag is automatically added to any memos associated with the project
+  - also has a description field for an overview of the project
 
 Account roles are getting more formalized. Where they currently track admin/staff and unverified (email) statuses, they will also
 hold project/group memberships. Those project/group memberships will also be honored by memos.
