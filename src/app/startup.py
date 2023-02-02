@@ -1,5 +1,5 @@
 import json   
-from app.api.models import NoteSchema, MemoSchema, UserReg
+from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB
 from app.api import crud, users, encrypt
 
 from app.config import get_settings, log
@@ -56,7 +56,36 @@ async def initialize_database_data( ) -> None:
         log.info(f"Loaded site config: {note.data}")
         note.data = json.loads(note.data)
         log.info(f"site config recovered: {note.data}")
+    
         
+    # ensure initial tags used for system purposes exist:
+    log.info("checking if system tags exist...")
+    tag: TagDB = await crud.get_tag(1)
+    if not tag:
+        log.info("creating system tags...")
+        tag_payload = basicTextPayload(text="unpublished")
+        log.info(f"posting tag '{tag_payload}'...")
+        id = await crud.post_tag(tag_payload)
+        log.info(f"created first tag with id {id}.")
+        #
+        tag_payload.text = "published"
+        log.info(f"posting tag '{tag_payload}'...")
+        id = await crud.post_tag(tag_payload)
+        log.info(f"created second tag with id {id}.")
+        #
+        tag_payload.text = "archived"
+        log.info(f"posting tag '{tag_payload}'...")
+        id = await crud.post_tag(tag_payload)
+        log.info(f"created third tag with id {id}.")
+        
+    else:
+        log.info(f"first tag is '{tag.text}'")
+        tag: TagDB = await crud.get_tag(2)
+        log.info(f"second tag is '{tag.text}'")
+        tag: TagDB = await crud.get_tag(3)
+        log.info(f"third tag is '{tag.text}'")
+    
+    
     # ensure initial memo post exists
     log.info("checking if initial memo post exists...")
     memo = await crud.get_memo(1)

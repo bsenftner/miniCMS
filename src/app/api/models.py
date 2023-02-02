@@ -52,6 +52,21 @@ class CommentDB(BaseModel):
     parent: Union[int,None] = Field(default=None, foreign_key="CommentDB.commid")
 
 
+class TagDB(BaseModel):
+    tagid: int = Field(index=True)
+    text: str 
+    
+class ProjectDB(BaseModel):
+    projectid: int = Field(index=True)
+    name: str                                                   # project name, also a tag
+    text: str                                                   # project description
+    userid: int = Field(...,foreign_key="UserInDB.userid")      # owner/creator
+    username: str = Field(..., foreign_key="UserInDB.userid")
+    status: str                                                 # unpublished/published
+    tagid: int = Field(..., foreign_key="TagDB.tagid")          # tag id equal to our project name
+
+
+
 # an access token used by authentication
 class Token(BaseModel):
     access_token: str

@@ -73,6 +73,31 @@ class DatabaseMgr:
             Column("parent", Integer, ForeignKey("comment.commid")),
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
+        
+        # tags are used for multiple things. They act as unique identifiers, access fences, and search terms. 
+        # User roles are soon to become tags. 
+        # Project names become tags, with each memo associated with the project getting that project's tag. 
+        # User roles act as access permissions, and users on a project receive a role of that project's name, which is also a tag. 
+        self.tag_tb = Table(
+            "tag",
+            self.metadata,
+            Column("tagid", Integer, primary_key=True, index=True),
+            Column("text", String, index=True, unique=True, nullable=False),
+            Column("created_date", DateTime, default=func.now(), nullable=False),
+        )
+        
+        self.project_tb = Table(
+            "project",
+            self.metadata,
+            Column("projectid", Integer, primary_key=True, index=True), 
+            Column("userid", Integer, ForeignKey("users.userid")),          # creator/owner of project 
+            Column("username", String, ForeignKey("users.username")),       # same
+            Column("name", String),                                         # name of project, also becomes a tag with this name
+            Column("text", String),                                         # project description
+            Column("status", String, default="unpublished"),                # unpublished means not visible to staff
+            Column("tagid", Integer, ForeignKey("tag.tagid")),              # tagid defining the access role for this project 
+            Column("created_date", DateTime, default=func.now(), nullable=False),
+        )
 
         self.notes_tb = Table(
             "notes",
@@ -103,6 +128,12 @@ class DatabaseMgr:
         
     def get_comment_table(self):
         return self.comment_tb
+        
+    def get_tag_table(self):
+        return self.tag_tb
+        
+    def get_project_table(self):
+        return self.project_tb
         
     def get_notes_table(self):
         return self.notes_tb

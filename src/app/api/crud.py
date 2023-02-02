@@ -1,13 +1,74 @@
 from typing import List
 from sqlalchemy import asc 
 
-from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic, MemoDB, NoteDB, CommentSchema, CommentDB
+from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
+from app.api.models import  MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
 
 from app.db import DatabaseMgr, get_database_mgr
 
 from app.api.users import user_has_role
 
 from app.config import log
+
+
+# -----------------------------------------------------------------------------------------
+# for creating new tags
+async def post_tag(payload: basicTextPayload):
+    log.info(f"post_tag: payload is {payload}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_tag_table().insert().values(text=payload.text)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting tags:
+async def get_tag(id: int) -> TagDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_tag_table().select().where(id == db_mgr.get_tag_table().c.tagid)
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting tags:
+async def get_tag_by_name(text: str) -> TagDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_tag_table().select().where(text == db_mgr.get_tag_table().c.text)
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# returns all tags:
+async def get_all_tags() -> List[TagDB]:
+    
+    log.info(f"get_all_tags: here!")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_tag_table().select().order_by(asc(db_mgr.get_tag_table().c.tagid))
+    
+    tagList = await db_mgr.get_db().fetch_all(query=query)
+            
+    return tagList    
+
+# -----------------------------------------------------------------------------------------
+# update a tag:
+async def put_tag(tagid: int, payload: basicTextPayload):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = (
+        db_mgr.get_tag_table()
+        .update()
+        .where(tagid == db_mgr.get_tag_table().c.tagid)
+        .values(text=payload.text)
+        .returning(db_mgr.get_tag_table().c.tagid)
+    )
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# delete a tag. 
+async def delete_tag(id: int):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_tag_table().delete().where(id == db_mgr.get_tag_table().c.tagid)
+    return await db_mgr.get_db().execute(query=query)
+
 
 
 # ----------------------------------------------------------------------------------------------
@@ -115,6 +176,7 @@ async def delete_memo(id: int):
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_memo_table().delete().where(id == db_mgr.get_memo_table().c.memoid)
     return await db_mgr.get_db().execute(query=query)
+
 
 
 # -----------------------------------------------------------------------------------------

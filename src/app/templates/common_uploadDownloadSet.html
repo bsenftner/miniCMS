@@ -97,7 +97,8 @@
 						fileUploadButton = document.getElementById("uploadBttn")
 						fileUploadButton.innerHTML = 'Select a file first'
 
-						tinyMCE.execCommand("mceRepaint");
+						// after all that, we need to reload the page anyway:
+						window.location.reload();
 					}
 				 ).catch(
 	  				error => {
