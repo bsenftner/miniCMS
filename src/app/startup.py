@@ -77,14 +77,35 @@ async def initialize_database_data( ) -> None:
         log.info(f"posting tag '{tag_payload}'...")
         id = await crud.post_tag(tag_payload)
         log.info(f"created third tag with id {id}.")
-        
     else:
         log.info(f"first tag is '{tag.text}'")
         tag: TagDB = await crud.get_tag(2)
         log.info(f"second tag is '{tag.text}'")
         tag: TagDB = await crud.get_tag(3)
         log.info(f"third tag is '{tag.text}'")
-    
+    #
+    tag: TagDB = await crud.get_tag(4)
+    if not tag:
+        tag_payload = basicTextPayload(text="admin")
+        log.info(f"posting tag '{tag_payload}'...")
+        id = await crud.post_tag(tag_payload)
+        log.info(f"created 4th tag with id {id}.")
+        #
+        tag_payload.text = "staff"
+        log.info(f"posting tag '{tag_payload}'...")
+        id = await crud.post_tag(tag_payload)
+        log.info(f"created 5th tag with id {id}.")
+        #
+        tag_payload.text = "public"
+        log.info(f"posting tag '{tag_payload}'...")
+        id = await crud.post_tag(tag_payload)
+        log.info(f"created 6th tag with id {id}.")
+    else:
+        log.info(f"4th tag is '{tag.text}'")
+        tag: TagDB = await crud.get_tag(5)
+        log.info(f"5th tag is '{tag.text}'")
+        tag: TagDB = await crud.get_tag(6)
+        log.info(f"6th tag is '{tag.text}'")
     
     # ensure initial memo post exists
     log.info("checking if initial memo post exists...")

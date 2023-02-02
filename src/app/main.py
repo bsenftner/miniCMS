@@ -11,7 +11,7 @@ from app.api import memo, comment, tag, notes, ping, users_htmlpages, video, htm
 # generate our "app"
 def create_application() -> FastAPI:
 
-    application = FastAPI(title="Martinez-attornies.com", openapi_url="/openapi.json")
+    application = FastAPI(title="MiniCMS", openapi_url="/openapi.json")
 
     # add CORS handling: 
     application.add_middleware(
