@@ -96,6 +96,8 @@
 						//
 						fileUploadButton = document.getElementById("uploadBttn")
 						fileUploadButton.innerHTML = 'Select a file first'
+
+						tinyMCE.execCommand("mceRepaint");
 					}
 				 ).catch(
 	  				error => {

@@ -252,8 +252,8 @@ div.memoMetadata {
     grid-template-rows: 1fr;
     grid-column-gap: 10px;
     grid-row-gap: 0px;
-    background: #eee;
-    margin: 8px;
+    /* background: #eee;
+    margin: 8px; */
 }
 div.memoMetadata h5.g1 { 
   grid-area: 1 / 1 / 2 / 2; 
