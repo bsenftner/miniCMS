@@ -3,6 +3,7 @@ from sqlalchemy import asc
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
 from app.api.models import  MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
+from app.api.models import ProjectSchema, ProjectDB
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -15,7 +16,6 @@ from app.config import log
 # for creating new tags
 async def post_tag(payload: basicTextPayload):
     log.info(f"post_tag: payload is {payload}")
-    
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
     query = db_mgr.get_tag_table().insert().values(text=payload.text)
@@ -39,15 +39,9 @@ async def get_tag_by_name(text: str) -> TagDB:
 # -----------------------------------------------------------------------------------------
 # returns all tags:
 async def get_all_tags() -> List[TagDB]:
-    
-    log.info(f"get_all_tags: here!")
-    
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_tag_table().select().order_by(asc(db_mgr.get_tag_table().c.tagid))
-    
-    tagList = await db_mgr.get_db().fetch_all(query=query)
-            
-    return tagList    
+    return await db_mgr.get_db().fetch_all(query=query)   
 
 # -----------------------------------------------------------------------------------------
 # update a tag:
@@ -68,6 +62,86 @@ async def delete_tag(id: int):
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_tag_table().delete().where(id == db_mgr.get_tag_table().c.tagid)
     return await db_mgr.get_db().execute(query=query)
+
+
+
+# ----------------------------------------------------------------------------------------------
+# a utility for getting the permission to access a project
+def user_has_project_access( user: UserInDB, project: ProjectDB ) -> bool:
+    # first admins and the author automatically get access:
+    weAreAllowed = user_has_role(user, 'admin') or user.userid == project.userid
+    if not weAreAllowed:
+        # for everyone else:
+        if user_has_role(user, project.name) and project.status == 'published':
+            weAreAllowed = True
+    return weAreAllowed
+
+# -----------------------------------------------------------------------------------------
+# for creating new projects
+async def post_project(payload: ProjectSchema):
+    log.info(f"post_project: here!")
+    log.info(f"post_project is {payload}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_project_table().insert().values(name=payload.name, 
+                                                       text=payload.text,
+                                                       userid=payload.userid,
+                                                       username=payload.username,
+                                                       status=payload.status,
+                                                       tagid=payload.tagid)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting projects:
+async def get_project(id: int) -> ProjectDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_project_table().select().where(id == db_mgr.get_project_table().c.projectid)
+    return await db_mgr.get_db().fetch_one(query=query)
+    
+# -----------------------------------------------------------------------------------------
+# returns all projects user has access
+async def get_all_projects(user: UserInDB) -> List[ProjectDB]:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_project_table().select().order_by(asc(db_mgr.get_project_table().c.projectid))
+    projectList = await db_mgr.get_db().fetch_all(query=query)   
+
+    # now filter them by the roles held by the user:
+    finalList = []
+    for p in projectList:
+        if user_has_project_access( user, p ):
+            finalList.append(p)
+            
+    return finalList
+
+# -----------------------------------------------------------------------------------------
+# update a project:
+async def put_project(projectid: int, payload: ProjectSchema):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = (
+        db_mgr.get_project_table()
+        .update()
+        .where(projectid == db_mgr.get_project_table().c.projectid)
+        .values(name=payload.name, 
+                text=payload.text,
+                userid=payload.userid,
+                username=payload.username,
+                status=payload.status,
+                tagid=payload.tagid)
+        .returning(db_mgr.get_project_table().c.projectid)
+    )
+    return await db_mgr.get_db().execute(query=query)
+
+# ---------------------------------------------------------------------------------------------
+# delete a project. Note: this does not validate if the current user should be able to do this;
+# that logic is in the delete_project() router.delete endpoint handler. 
+async def delete_project(id: int):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_project_table().delete().where(id == db_mgr.get_project_table().c.projectid)
+    return await db_mgr.get_db().execute(query=query)
+
+
 
 
 

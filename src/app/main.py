@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.db import DatabaseMgr, get_database_mgr
-from app.api import memo, comment, tag, notes, ping, users_htmlpages, video, htmlpages, upload, backups
+from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video, htmlpages, upload, backups
 
 # import sentry_sdk
 
@@ -48,20 +48,23 @@ def create_application() -> FastAPI:
     # install the ping router into our app:
     application.include_router(ping.router)
 
+    # install the tag router into our app with a prefix & tag too:
+    application.include_router(tag.router, prefix="/tag", tags=["tag"])
+    
     # install the notes router into our app;
     # note the prefix URL along with the "notes" tag, 
     # the prefix places the routes defined by notes.router after "/notes",
     # these are also used by OpenAPI (for grouping operations).
     application.include_router(notes.router, prefix="/notes", tags=["notes"])
 
+    # install the project router into our app with a prefix & tag too:
+    application.include_router(project.router, prefix="/project", tags=["project"])
+    
     # install the memo router into our app with a prefix & tag too:
     application.include_router(memo.router, prefix="/memo", tags=["memo"])
     
-    # install the memo router into our app with a prefix & tag too:
+    # install the comment router into our app with a prefix & tag too:
     application.include_router(comment.router, prefix="/comment", tags=["comment"])
-    
-    # install the memo router into our app with a prefix & tag too:
-    application.include_router(tag.router, prefix="/tag", tags=["tag"])
 
     # install the video router into our app with a prefix & tag too:
     application.include_router(video.router, prefix="/video", tags=["video"])

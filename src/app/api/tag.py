@@ -21,12 +21,6 @@ router = APIRouter()
 async def create_tag(payload: basicTextPayload, 
                      current_user: UserInDB = Depends(get_current_active_user)) -> TagDB:
     
-    log.info(f"create_tag: current_user is {current_user}")
-    
-    if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                            detail="Not Authorized to create Tags")
-        
     log.info(f"create_tag: posting {payload}")
     
     tagid = await crud.post_tag(payload)
@@ -86,14 +80,14 @@ async def update_tag(payload: basicTextPayload,
                      current_user: UserInDB = Depends(get_current_active_user)) -> TagDB:
    
     log.info("update_tag: here!!")
+        
+    if not user_has_role(current_user,"admin"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to change Tags")
 
     tag: TagDB = await crud.get_tag(id)
 
     if tag is None:
         raise HTTPException(status_code=404, detail="Tag not found")
-        
-    if not user_has_role(current_user,"admin"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to change Tags")
 
     tagid = await crud.put_tag(id, payload)
     

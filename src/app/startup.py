@@ -1,5 +1,5 @@
 import json   
-from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB
+from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB, ProjectRequest
 from app.api import crud, users, encrypt
 
 from app.config import get_settings, log
@@ -107,6 +107,19 @@ async def initialize_database_data( ) -> None:
         tag: TagDB = await crud.get_tag(6)
         log.info(f"6th tag is '{tag.text}'")
     
+    # ensure initial project post exists
+    log.info("checking if initial project exists...")
+    project = await crud.get_project(1)
+    if not project:
+        log.info("creating first project...")
+        first_project_payload = ProjectRequest(name="MiniCMS", 
+                                               text="<p>Author of this software's notes</p>")
+        log.info(f"posting {first_project_payload}...")
+        id = await crud.post_project(first_project_payload,1)
+        log.info(f"created first project with id {id}.")
+    else:
+        log.info(f"first project is '{project.name}'")
+        
     # ensure initial memo post exists
     log.info("checking if initial memo post exists...")
     memo = await crud.get_memo(1)

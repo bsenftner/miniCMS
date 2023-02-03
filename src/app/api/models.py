@@ -56,16 +56,24 @@ class TagDB(BaseModel):
     tagid: int = Field(index=True)
     text: str 
     
-class ProjectDB(BaseModel):
-    projectid: int = Field(index=True)
+
+class ProjectRequest(BaseModel):
+    name: str                                                   # project name
+    text: str                                                   # project description
+    
+    
+class ProjectSchema(BaseModel):
     name: str                                                   # project name, also a tag
     text: str                                                   # project description
     userid: int = Field(...,foreign_key="UserInDB.userid")      # owner/creator
     username: str = Field(..., foreign_key="UserInDB.userid")
-    status: str                                                 # unpublished/published
+    status: str                                                 # unpublished/published/archived
     tagid: int = Field(..., foreign_key="TagDB.tagid")          # tag id equal to our project name
 
-
+class ProjectDB(ProjectSchema):
+    projectid: int = Field(index=True)
+    
+    
 
 # an access token used by authentication
 class Token(BaseModel):
