@@ -53,6 +53,7 @@ class DatabaseMgr:
             Column("memoid", Integer, primary_key=True, index=True),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("username", String, ForeignKey("users.username")),
+            Column("projectid", Integer, ForeignKey("project.projectid")),
             Column("title", String),
             Column("text", String),
             Column("status", String, default="unpublished"),

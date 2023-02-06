@@ -21,13 +21,13 @@ router = APIRouter()
 async def create_memo(payload: MemoSchema, 
                       current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
     
-    # log.info(f"create_memo: current_user is {current_user}")
+    log.info(f"create_memo: current_user is {current_user}")
     
     if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to create Memo posts")
         
-    # log.info(f"create_memo: posting {payload}")
+    log.info(f"create_memo: posting {payload}")
     
     access_roles = payload.access.split()
     unknown_access_roles = ''
@@ -43,7 +43,7 @@ async def create_memo(payload: MemoSchema,
     
     memoid = await crud.post_memo(payload, current_user.userid)
 
-    # log.info(f"create_memo: returning id {memoid}")
+    log.info(f"create_memo: returning id {memoid}")
     
     response_object = {
         "memoid": memoid,
@@ -54,6 +54,7 @@ async def create_memo(payload: MemoSchema,
         "status": payload.status,
         "access": payload.access,
         "tags": payload.tags,
+        "projectid": payload.projectid,
     }
     return response_object
 
@@ -63,7 +64,7 @@ async def create_memo(payload: MemoSchema,
 async def read_memo(id: int = Path(..., gt=0),
                     current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
     
-    # log.info("read_memo: here!!")
+    log.info("read_memo: here!!")
     
     memo = await crud.get_memo(id)
     
@@ -131,6 +132,7 @@ async def update_memo(payload: MemoSchema,
         "status": payload.status,
         "access": payload.access,
         "tags": payload.tags,
+        "projectid": payload.projectid,
     }
     return response_object
 

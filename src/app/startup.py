@@ -1,6 +1,6 @@
 import json   
 from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB, ProjectRequest
-from app.api import crud, users, encrypt
+from app.api import crud, users, encrypt, project
 
 from app.config import get_settings, log
 
@@ -31,7 +31,8 @@ async def initialize_database_data( ) -> None:
         # validation of user info complete, create the user in the db:
         last_record_id = await crud.post_user( first_user_payload, hashed_password, verify_code, roles )
         log.info(f"created first user with id {last_record_id}.")
-        
+        #
+        adminUser = await crud.get_user_by_id(1)
     else:
         log.info(f"first username is '{adminUser.username}'")
         
@@ -109,16 +110,16 @@ async def initialize_database_data( ) -> None:
     
     # ensure initial project post exists
     log.info("checking if initial project exists...")
-    project = await crud.get_project(1)
-    if not project:
+    proj = await crud.get_project(1)
+    if not proj:
         log.info("creating first project...")
         first_project_payload = ProjectRequest(name="MiniCMS", 
                                                text="<p>Author of this software's notes</p>")
         log.info(f"posting {first_project_payload}...")
-        id = await crud.post_project(first_project_payload,1)
-        log.info(f"created first project with id {id}.")
+        projectid = await project.create_project(first_project_payload, adminUser)
+        log.info(f"created first project with id {projectid}.")
     else:
-        log.info(f"first project is '{project.name}'")
+        log.info(f"first project is '{proj.name}'")
         
     # ensure initial memo post exists
     log.info("checking if initial memo post exists...")
@@ -131,7 +132,8 @@ async def initialize_database_data( ) -> None:
                                         access="admin", 
                                         tags="debug",
                                         userid=1, 
-                                        username=settings.ADMIN_USERNAME)
+                                        username=settings.ADMIN_USERNAME,
+                                        projectid=1)
         log.info(f"posting {first_memo_payload}...")
         id = await crud.post_memo(first_memo_payload,1)
         log.info(f"created first memo with id {id}.")

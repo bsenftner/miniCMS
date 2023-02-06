@@ -173,7 +173,8 @@ async def post_memo(payload: MemoSchema, user_id: int):
                                                     access=payload.access,
                                                     tags=payload.tags,
                                                     userid=payload.userid,
-                                                    username=payload.username)
+                                                    username=payload.username,
+                                                    projectid=payload.projectid)
     # Executes the query and returns the generated ID
     return await db_mgr.get_db().execute(query=query)
 
@@ -232,13 +233,14 @@ async def put_memo(memoid: int, userid: int, payload: MemoSchema):
         db_mgr.get_memo_table()
         .update()
         .where(memoid == db_mgr.get_memo_table().c.memoid)
-        .values(userid=payload.userid,
-                username=payload.username,
-                title=payload.title, 
+        .values(title=payload.title, 
                 text=payload.text, 
                 status=payload.status, 
                 access=payload.access, 
-                tags=payload.tags)
+                tags=payload.tags,
+                userid=payload.userid,
+                username=payload.username,
+                projectid=payload.projectid)
         .returning(db_mgr.get_memo_table().c.memoid)
     )
     return await db_mgr.get_db().execute(query=query)

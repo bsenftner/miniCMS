@@ -83,7 +83,11 @@ async def login( request: Request ):
 async def profilePage( request: Request,  
                        current_user: User = Depends(users.get_current_active_user) ):
 
+    config.log.info(f"profilePage: here!")
+    
     memoList = await crud.get_all_memos(current_user)
+    
+    config.log.info(f"profilePage: got the memos...")
     
     return TEMPLATES.TemplateResponse(
         "profile.html",
@@ -168,7 +172,7 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
     memoList = await crud.get_all_memos(current_user)
     
     return TEMPLATES.TemplateResponse(
-        "tinymcEditor.html", 
+        "memoEditor.html", 
         {"request": request, 
          "contentPost": memo, 
          "frags": FRAGS, 
@@ -195,7 +199,7 @@ async def editor( request: Request, current_user: User = Depends(users.get_curre
     memoList = await crud.get_all_memos(current_user)
     
     return TEMPLATES.TemplateResponse(
-        "tinymcEditor.html", 
+        "memoEditor.html", 
         { "request": request, 
           "contentPost": memo, 
           "frags": FRAGS, 

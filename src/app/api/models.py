@@ -30,6 +30,7 @@ class MemoSchema(BaseModel):
     access: str 
     userid: int
     username: str 
+    projectid: int  # parent/owner of memo, all memos belong to a project
  
 class MemoDB(MemoSchema):
     memoid: int = Field(index=True)
@@ -54,7 +55,7 @@ class CommentDB(BaseModel):
 
 class TagDB(BaseModel):
     tagid: int = Field(index=True)
-    text: str 
+    text: str = Field(index=True)
     
 
 class ProjectRequest(BaseModel):
@@ -63,7 +64,7 @@ class ProjectRequest(BaseModel):
     
     
 class ProjectSchema(BaseModel):
-    name: str                                                   # project name, also a tag
+    name: str = Field(index=True)                               # project name, also a tag
     text: str                                                   # project description
     userid: int = Field(...,foreign_key="UserInDB.userid")      # owner/creator
     username: str = Field(..., foreign_key="UserInDB.userid")

@@ -1,6 +1,6 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Very much a work in progress at this point, informally declared version 0.6
+## Very much a work in progress at this point, informally declared version 0.65
 
 Features in place so far:
 

@@ -102,7 +102,8 @@ async def read_all_memo_comments(memoid: int,
         tags=memo.tags,
         access=memo.access,
         userid=memo.userid,
-        username=memo.username
+        username=memo.username,
+        projectid=memo.projectid
     )
     
     # log.info(f"read_all_memo_comments: got memodb {memodb}")
