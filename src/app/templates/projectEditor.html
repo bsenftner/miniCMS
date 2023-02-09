@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MiniCMS</title>
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		<main>
+			<div id="mainContent">
+				{# the editor itself, embedded in a form, with a post's contents, and operation buttons #}
+				<form id="editorForm" method="post">
+					<label for="NewProjectName">Project:</label>
+  					<input type="text" id="NewProjectName" name="label" value="{{contentPost.name}}">
+					<div class="editorContainer">
+						<div id="editor">
+							{{contentPost.text | safe}}
+  						</div>
+					</div>
+				</form>
+				<div id="authorName">
+					Creator: {{contentPost.username}}, UserId: {{contentPost.userid}} 
+				</div>
+                
+                <div id="membersTop">
+                    <h2>Project members:</h2>
+                </div>
+                <div id="projectMembersHeader">
+                    <div class="divProjMembershipGridParent">
+                        <div class="ProjMembershipGrid0">
+                            Username:
+                        </div>
+                        <div class="ProjMembershipGrid1">
+                            Roles & Projects:
+                        </div>
+                        <div class="ProjMembershipGrid2">
+                            Add/Remove To/From Project:
+                        </div>
+                    </div>
+                </div>
+                <div id="projectMembers">
+                    <div class="divProjMembershipGridParent">
+                        <div class="ProjMembershipGrid0">
+                            username
+                        </div>
+                        <div class="ProjMembershipGrid1">
+                            user roles
+                        </div>
+                        <div class="ProjMembershipGrid2">
+                            add/remove project
+                        </div>
+                    </div>
+                </div>
+
+                <div id="uploadDownloadTop">
+                    <h2>Project Files:</h2>
+                    <a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project File Controls</a>
+                </div>
+                <script>gUpDownProj = "{{contentPost.name}}";</script>
+				{% include 'common_uploadDownloadSet.html' %}
+
+				<div id="statusList">
+					<div id="statusSelectionDiv">
+						<label for="statusSelectBox">Status:</label>
+						<select id="statusSelectBox" onchange="onStatusSelectChangeFunc();">
+							<option value="unpublished">Unpublished</option>
+    						<option value="published">Published</option>
+						</select>
+					</div>
+					<div id="statusSelectionMsg">
+						Unpublished projects are not shown to others. Unpublished projects are 
+						only visible to the author. Published projects are visible to users with 
+						the same access roles as the project as well as the project author. 
+					</div>
+				</div>
+
+				<div id="divBeneathTheEditor">
+					<a href="#" class="button" onclick="ProjectEditCancel()">Cancel</a>
+					<a href="#" class="button" onclick="ProjectUpdate()">Update</a>
+					<a href="#" class="button" onclick="ProjectDelete()">Delete</a>
+				</div>
+			</div>
+		</main>
+
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Login()">Login</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+
+	{% include 'common_ifAccessDo.html' %}
+
+	
+	<!-- for html syntax hilighting -->
+	<link
+  		rel="stylesheet"
+  		href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/github.min.css"
+	/>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/highlight.min.js"></script>
+	<script
+  		charset="UTF-8"
+  		src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/languages/xml.min.js">
+	</script>
+
+	{% include 'common_editStyle.html' %}
+
+    <!-- include the TinyMCE editor -->
+	<script src="https://cdn.tiny.cloud/1/tpl8zzz2nyqln68299z0tf9u4m2p3hi6c9qxgr7gal0i454q/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+	<script>
+
+        // configure the TinyMCE editor 
+        tinymce.init({
+            selector: '#editor',
+            convert_urls: false,
+            plugins: 'anchor autolink charmap code codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+            toolbar: 'undo redo | code | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+        });
+
+
+		document.addEventListener( "DOMContentLoaded", function(){page_init();} );
+	
+		let gUser = {};     // current user 
+        let gUsers = {};    // all users
+
+		function page_init_work(userdata) {
+
+			gUser = userdata;
+
+			// user is logged in, change right sidebar links:
+							
+			document.getElementById("aside").innerHTML = 
+							`<a href="#" class="button" onclick="Profile()">Profile</a>
+							 <br/><br/>
+							 <a href="#" class="button" onclick="UserSettings()">Settings</a>
+							 <br/><br/>
+							 <a href="#" class="button" onclick="Logout()">Logout</a>
+							`;
+
+			// make sure project status is reflected in the selection widget:
+			document.getElementById("statusSelectBox").value = "{{contentPost.status}}"
+
+            /*
+			if (Number("{{contentPost.memoid}}") == 0) {
+				// we're creating a new memo, so change the button options:
+				document.getElementById("divBeneathTheEditor").innerHTML =
+					`<a href="#" class="button" onclick="ProjectEditCancel()">Cancel</a>
+					<a href="#" class="button" onclick="MemoSubmit()">Post A New Memo</a>
+					`; 
+			} */
+
+			if (userdata.hasOwnProperty('roles')) {
+				if (!userdata.roles.includes("{{contentPost.name}}") && !userdata.roles.includes('admin')) {
+                    // this user does not have permission to see or edit this project 
+                    window.location.href = '/';
+				}
+			}
+
+            get_users();                         // get all the users and populate the project membership controls
+
+			get_uploads("{{contentPost.name}}"); // read and then populate the upload links grid
+		}
+		//
+		function page_init() {
+			ifAccessDoWithUser(page_init_work);
+		}
+
+        // get list of users and populate project membership controls:
+		const get_users = () => {
+			fetch('/users/', { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+                  // Handle the success response object
+				  success => {
+					console.log( success )  
+					//
+					gUsers = success;       // remember API return data
+                    //
+					let divProjectMembers = document.getElementById("projectMembers")
+					divProjectMembers.innerHTML = '';
+
+					for (let i = 0; i < gUsers.length; i++) {
+						let username = gUsers[i].username;
+						let roles = gUsers[i].roles;
+                        let userid = gUsers[i].userid;
+                        let actionBttn = `<a href="#" class="button" onclick="AddUserProject(${userid})">Add to Project</a>`;
+                        let isMember =  roles.includes("{{contentPost.name}}");
+                        if (isMember) {
+                            actionBttn = `<a href="#" class="button" onclick="RemoveUserProject(${userid})">Remove from Project</a>`;
+                        }
+
+						let markup = `
+						<div class="divProjMembershipGridParent">
+							<div class="ProjMembershipGrid0">
+								<b>${username}</b>
+							</div>
+							<div class="ProjMembershipGrid1">
+								${roles}
+							</div>
+							<div class="ProjMembershipGrid2">
+								${actionBttn}
+							</div>
+						</div>`;
+
+						divProjectMembers.innerHTML += markup;
+					}
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		  };
+
+          function UpdateUserRoles( userid, params ) {
+            const options = {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', },
+                body: JSON.stringify( params )  
+            };
+            fetch( `/users/roles/${userid}`, options )
+                .then( response => response.json() )
+                .then( response => {
+                    // Do something with response.
+                    console.log( response )
+                    if (response.hasOwnProperty('detail')) {
+                        alert( 'Please fix the following and try again: ' + response.detail )
+                    }
+                    else {
+                        window.location.reload();
+                    }
+                })
+                .catch(err => {
+                    // Do something with the error
+                    console.log(err) 
+                    alert( err )
+                }) 
+          }
+          function AddUserProject( userid ) {
+            let user = null;
+            for (let i = 0; i < gUsers.length; i++) {
+                if (gUsers[i].userid == userid) {
+                    user = gUsers[i];
+                    break;
+                }
+            }
+            if (user != null) {
+                // post user role update:
+			    const params = {
+				    "text": user.roles + " {{contentPost.name}}",
+			    };
+                //
+                UpdateUserRoles( userid, params );
+            }
+          };
+          //
+          function RemoveUserProject( userid ) {
+            let user = null;
+            for (let i = 0; i < gUsers.length; i++) {
+                if (gUsers[i].userid == userid) {
+                    user = gUsers[i];
+                    break;
+                }
+            }
+            if (user != null) {
+                // post user role update:
+			    const params = {
+				    "text": user.roles.replace(" {{contentPost.name}}", "")
+			    };
+                //
+                UpdateUserRoles( userid, params );
+            }
+          };
+
+		function ProjectEditCancel() { 
+			if (Number("{{ contentPost.projectid }}") > 0) {
+				window.location.href = "/projectPage/{{ contentPost.projectid }}"; 
+			}
+			else {
+				window.location.href = "/profile"; 
+			}
+		}
+
+		function ProjectSubmitWork() {
+			// get the post label:
+			var NewProjectName = document.getElementById("NewProjectName").value;
+			// Get HTML content
+			var newProjectDesc = tinymce.get("editor").getContent();
+			// get the post status:
+			var newPostStatus = document.getElementById("statusSelectBox").value;
+
+			// post as new project submission:
+			const params = {
+				"name": NewProjectName, 
+				"text": newProjectDesc,
+			};
+            //
+			const options = {
+				method: 'POST',
+				headers: {
+					  'Accept': 'application/json',
+					  'Content-Type': 'application/json',
+				},
+				body: JSON.stringify( params )  
+			};
+			fetch( '/project/', options )
+				.then( response => response.json() )
+				.then( response => {
+					// Do something with response.
+					// console.log( response )
+					if (response.hasOwnProperty('detail')) {
+						alert( 'Please fix the following and try again: ' + response.detail )
+					}
+					else if (response.hasOwnProperty('projectid')) {
+					//	window.location.href = "/memopage/" + response.id.toString();
+						window.location.href = "/projectPage/" + response.memoid;
+					}
+					else {
+						console.log( response )
+					}
+				})
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+					// window.location.href = "/memopage/{{ contentPost.userid }}";
+				}) 
+		}
+		function ProjectSubmit() {
+			ifAccessDo(ProjectSubmitWork);
+		}
+
+		function ProjectUpdateWork() {
+			const someData = {
+				"name": document.getElementById("NewProjectName").value, 
+				"text": tinymce.get("editor").getContent(),
+				"status": document.getElementById("statusSelectBox").value, 
+				"userid": gUser.userid,
+				"username": gUser.username,
+				"tagid": "{{ contentPost.tagid }}", 
+			}
+			//
+			const options = {
+				credentials: 'include',
+				method: 'PUT', // Method itself
+				headers: {
+				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify(someData) // We send data in JSON format
+			}
+			   
+			// make the HTTP put request using fetch api
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/project/{{ contentPost.projectid }}';
+			fetch(furl, options) 
+			// .then(response => response.json())
+			.then(response => 
+			{
+				if (response.ok) {
+					window.location.href = "/projectPage/{{ contentPost.projectid }}";
+				}
+				else {
+					alert( 'Problem updating project.' )
+				}
+			}) 
+			.catch(err => {
+				// Do something with the error
+				console.log(err) 
+				alert( err )
+				window.location.href = "/memoPage/{{ contentPost.projectid }}";
+			}) 
+		}
+		function ProjectUpdate() {
+			ifAccessDo(ProjectUpdateWork);
+		}
+
+		function ProjectDeleteWork() {
+			const options = { 
+				method: 'DELETE',
+				// headers: { "Authorization": "Bearer " + access_token } // only needed when JWT is not in cookie
+			};
+			fetch( '/memo/{{ contentPost.memoid }}', options )
+				.then( response => response.json() )
+				.then( response => {
+					// Do something with response:
+					console.log( response )
+					if (response.memoid != '{{ contentPost.memoid }}')
+					{ 
+						console.log( "DELETE ERROR!" )
+						alert( "DELETE ERROR!" )
+						
+					}
+					window.location.href = "/";
+
+				} )
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+					window.location.href = "/memopage/{{ contentPost.memoid }}";
+				});
+		}
+		function ProjectDelete() {
+			ifAccessDo(ProjectDeleteWork);
+		}
+
+
+		// called when the status dropdown selection changes:
+		function onStatusSelectChangeFunc() {
+			let statusSelectBox = document.getElementById("statusSelectBox")
+			let selected = statusSelectBox.value;
+		}
+
+
+		function Profile() { window.location.href = "/profile"; }
+
+		function UserSettings() { window.location.href = "/Settings"; }
+
+	</script>
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+
+
+</body>
+</html>

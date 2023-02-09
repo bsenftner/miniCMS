@@ -1,0 +1,39 @@
+<script>
+
+    function GetUserProjects() {
+        fetch("/project")
+        .then(response => response.json())
+        .then( response =>  {
+
+            // console.log( response );
+
+            let meJson = response;
+            if (meJson.length > 0) {
+
+                let newHtml = "</br><h2>Your Projects:</h2>";
+
+                newHtml += '<div class="projectlist"><ul>';
+                for (let i = 0; i < meJson.length; i++) {
+                    newHtml += '<li>';
+                    let proj = meJson[i];
+                    newHtml += '<a href="/projectPage/';
+                    newHtml += proj.projectid;
+                    newHtml += '">';
+                    newHtml += proj.name;
+                    if (proj.status == 'unpublished') {
+                        newHtml += ' (unpublished)';
+                    }
+                    newHtml += '</a></li></br>';
+                }
+                newHtml += '</ul></div>';
+                document.getElementById("mainContent").innerHTML += newHtml
+            }
+            else {
+                let newHtml = "</br><h2>You are not a member of any projects</h2>";
+                document.getElementById("mainContent").innerHTML += newHtml
+            }
+            
+        });
+    }
+
+</script>

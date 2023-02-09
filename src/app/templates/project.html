@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MiniCMS</title>
+  <link rel="stylesheet" href="/static/index.css">
+
+</head>
+<body onload="slidesInit()">
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		{# the main content area #}
+		<main>
+			<div id="mainContent">
+				{# title and post contents, with an optional edit button #}
+				<H1> Project: {{contentPost.name}} </H1>
+				<div class="ql-editor">
+					{{contentPost.text | safe}}
+				</div>
+                <div class="postMetadata">
+				    <h5 class="g1">Creator: {{contentPost.username}}</h5>
+				    <h5 class="g2">Status: {{contentPost.status}}</h5>
+                </div>
+			</div>
+            <div id="membersTop">
+                <h2>Project members:</h2>
+            </div>
+            <div id="projectMembersHeader">
+                <div class="divProjMembershipGridParent">
+                    <div class="ProjMembershipGrid0">
+                        Username:
+                    </div>
+                    <div class="ProjMembershipGrid1">
+                        Roles & Projects:
+                    </div>
+                </div>
+            </div>
+            <div id="projectMembers">
+                <div class="divProjMembershipGridParent">
+                    <div class="ProjMembershipGrid0">
+                        username
+                    </div>
+                    <div class="ProjMembershipGrid1">
+                        user roles
+                    </div>
+                </div>
+            </div>
+
+            <div id="uploadDownloadTop">
+                <h2>Project Files:</h2>
+            </div>
+            <script>gUpDownProj = "{{contentPost.name}}";</script>
+			{% include 'common_uploadDownloadSet.html' %}
+
+            <div id="memosTop">
+                <h2>Project Memos:</h2>
+            </div>
+            {% for m in memos %} 
+                <a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a>
+                <br>
+            {% endfor %}
+		</main>
+
+		{# the right sidebar, gets filled by page_init() #}
+		<aside>
+			<div id="aside"></div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+
+	{% include 'common_slides.html' %}
+
+	{% include 'common_editStyle.html' %}
+
+    <!-- include the TinyMCE editor -->
+	<script src="https://cdn.tiny.cloud/1/tpl8zzz2nyqln68299z0tf9u4m2p3hi6c9qxgr7gal0i454q/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+	<script>
+
+		document.addEventListener("DOMContentLoaded", function() {
+			page_init();
+			slidesInit();
+			setTimeout( slidesInit, 3000 );
+		});
+		//
+		let gUser = {};     // current user 
+        let gUsers = {};    // all users
+		//
+		function page_init() {
+
+			const access_token = localStorage.getItem('token');
+			if (typeof access_token !== 'undefined') {
+				
+				const options = { headers: { "Authorization": "Bearer " + access_token } }
+				fetch("/users/me", options)
+				.then(response => response.json())
+				.then( response =>  {
+
+					gUser = response;
+
+					if (gUser.hasOwnProperty('roles')) {
+
+						// user is logged in, populate right sidebar:
+						document.getElementById("aside").innerHTML = 
+						`<a href="#" class="button" onclick="UserProfile()">Profile</a>
+						<br/><br/>
+						<a href="#" class="button" onclick="UserSettings()">Settings</a>
+						<br/><br/>
+						<a href="#" class="button" onclick="Logout()">Logout</a>
+						`;
+
+						let status = "{{contentPost.status}}";
+						if (gUser.userid == '{{ contentPost.userid }}') {
+							// user is author
+							if (status.includes('unpublished')) {
+								// project is unpublished:
+								document.getElementById("mainContent").innerHTML += 
+									'<a href="#" class="button" onclick="ProjectEdit()">Edit Unpublished Project</a>';
+	
+							}
+							else if (gUser.roles.includes("admin")) {
+								document.getElementById("mainContent").innerHTML += 
+									'<a href="#" class="button" onclick="ProjectEdit()">Edit Published Project</a>';
+							}
+						}
+						else if (gUser.roles.includes("admin")) {
+							// user is admin (and not author):
+							if (status.includes('unpublished')) {
+								document.getElementById("mainContent").innerHTML += 
+									'<a href="#" class="button" onclick="ProjectEdit()">Edit Unpublished Project (not your Project)</a>';
+							}
+							else if (status.includes('published')) {
+								document.getElementById("mainContent").innerHTML += 
+									'<a href="#" class="button" onclick="ProjectEdit()">Edit Published Project (not your Project)</a>';
+							}
+						} 
+                        
+                        get_users();    // populates the project's user list
+
+						get_uploads("{{contentPost.name}}"); // gets project uploads and populates their place on the project page
+					}
+					else {
+						// something is wrong, user should not be on this page:
+						gUser = {};
+						window.location.href = "/";
+					}
+				});
+			}
+		}
+                
+        // get list of users and populate project membership controls:
+		const get_users = () => {
+			fetch('/users/', { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+                  // Handle the success response object
+				  success => {
+					console.log( success )  
+					//
+					gUsers = success;       // remember API return data
+                    //
+					let divProjectMembers = document.getElementById("projectMembers")
+					divProjectMembers.innerHTML = '';
+
+					for (let i = 0; i < gUsers.length; i++) {
+                        let username = gUsers[i].username;
+						let roles = gUsers[i].roles;
+                        let isMember =  roles.includes("{{contentPost.name}}");
+                        if (isMember) {
+                            let markup = `
+                                <div class="divProjMembershipGridParent">
+                                    <div class="ProjMembershipGrid0">
+                                        <b>${username}</b>
+                                    </div>
+                                    <div class="ProjMembershipGrid1">
+                                        ${roles}
+                                    </div>
+                                </div>`;
+
+						    divProjectMembers.innerHTML += markup;
+                        }
+					}
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		};
+
+		function ProjectEdit() { window.location.href = "/ProjectEditor/{{ contentPost.projectid }}"; }
+
+		function UserSettings() { window.location.href = "/Settings"; }
+
+		function UserProfile() { window.location.href = "/profile"; }
+
+	</script>
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+	
+</body>
+</html>
