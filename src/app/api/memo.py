@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
-from app.api.models import UserInDB, MemoDB, MemoSchema
+from app.api.models import UserInDB, MemoDB, MemoSchema, ProjectDB
 
 from typing import List
 
@@ -23,23 +23,15 @@ async def create_memo(payload: MemoSchema,
     
     log.info(f"create_memo: current_user is {current_user}")
     
-    if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                            detail="Not Authorized to create Memo posts")
+    proj: ProjectDB = await crud.get_project(payload.projectid)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Memo Project not found")
+    
+    weAreAllowed = crud.user_has_project_access( current_user, proj )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create memo for project.")
         
     log.info(f"create_memo: posting {payload}")
-    
-    access_roles = payload.access.split()
-    unknown_access_roles = ''
-    bad_access_roles = False
-    for t in access_roles:
-        if t not in "staff admin unverified public":
-            unknown_access_roles += t + ' '
-            bad_access_roles = True
-    #
-    if bad_access_roles:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
-                            detail="Unknown access roles: " + unknown_access_roles)
     
     memoid = await crud.post_memo(payload, current_user.userid)
 
@@ -67,11 +59,10 @@ async def read_memo(id: int = Path(..., gt=0),
     log.info("read_memo: here!!")
     
     memo = await crud.get_memo(id)
-    
     if memo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
     
-    weAreAllowed = crud.user_has_memo_access( current_user, memo )
+    weAreAllowed = await crud.user_has_memo_access( current_user, memo )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo.")
     
@@ -97,25 +88,19 @@ async def update_memo(payload: MemoSchema,
     # log.info("update_memo: here!!")
 
     memo: MemoDB = await crud.get_memo(id)
-
     if memo is None:
         raise HTTPException(status_code=404, detail="Memo not found")
         
+    proj: ProjectDB = await crud.get_project(memo.projectid)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Memo Project not found")
+    
+    weAreAllowed = crud.user_has_project_access( current_user, proj )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized for project.")
+    
     if memo.userid != current_user.userid and not user_has_role(current_user,"admin"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                            detail="Not Authorized to change other's Memos")
-        
-    access_roles = payload.access.split()
-    unknown_access_roles = ''
-    bad_access_roles = False
-    for t in access_roles:
-        if t not in "staff admin unverified public":
-            unknown_access_roles += t + ' '
-            bad_access_roles = True
-    #
-    if bad_access_roles:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
-                            detail="Unknown access roles: " + unknown_access_roles)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to change other's Memos")
     
     # make sure to retain original memo author:
     payload.userid = memo.userid
@@ -145,6 +130,9 @@ async def delete_memo(id: int = Path(..., gt=0),
     if memo is None:
         raise HTTPException(status_code=404, detail="Memo not found")
 
+    # note: not verifying project exists or is active;
+    # if we are here, the memo exists and the user wants it deleted
+    
     if memo.userid != current_user.userid and not user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to delete other's Memos")

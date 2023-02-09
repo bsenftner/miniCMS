@@ -31,7 +31,8 @@ async def create_comment(payload: CommentSchema,
        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
     
     # user must have memo access to comment on the memo:
-    if not crud.user_has_memo_access(current_user, memo):
+    memo_access = await crud.user_has_memo_access(current_user, memo)
+    if not memo_access:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
     
     if payload.parent == 0:
@@ -77,7 +78,8 @@ async def read_comment(id: int = Path(..., gt=0),
         if not user_has_role(current_user,"admin"):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
     else:
-        if not crud.user_has_memo_access(current_user,memo):
+        memo_access = await crud.user_has_memo_access(current_user, memo)
+        if not memo_access:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
     
     return comment
@@ -107,8 +109,8 @@ async def read_all_memo_comments(memoid: int,
     )
     
     # log.info(f"read_all_memo_comments: got memodb {memodb}")
-    
-    if not crud.user_has_memo_access(current_user, memodb):
+    memo_access = await crud.user_has_memo_access(current_user, memodb)
+    if not memo_access:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
         
     # get all the comments associated with this memo:
@@ -137,7 +139,8 @@ async def delete_comment(id: int = Path(..., gt=0),
         if not user_has_role(current_user,"admin"):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
     else:
-        if not crud.user_has_memo_access(current_user,memo):
+        memo_access = await crud.user_has_memo_access(current_user, memo)
+        if not memo_access:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
         
     await crud.delete_comment(id)

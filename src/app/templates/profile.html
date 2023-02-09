@@ -33,11 +33,10 @@
 			<div id="mainContent">
 				{# title and post contents, with an optional edit button #}
 				<H1>Username: {{contentPost.username}} </H1>
-				<h2>User Id: {{contentPost.id}}</h2>
+				<h2>User Id: {{contentPost.userid}}</h2>
 				<h2>Email: {{contentPost.email}}</h2>
 				<h2>Roles: {{contentPost.roles}}</h2>
 			</div>
-			
 		</main>
 
 		{# the right sidebar #}
@@ -85,19 +84,65 @@
 						<a href="#" class="button" onclick="Logout()">Logout</a>
 						`;
 
-						if (response.roles.includes("admin")) {
-							// user is admin:
-							
-                            // document.getElementById("mainContent").innerHTML += 
-							//	'<a href="#" class="button" onclick="MemoEdit()">Edit</a>';
-
+						// if user is unverified put the email verification controls beneath their initial page contents:
+						if (response.roles.includes('unverified')) {
+							let newHtml = '<div id="emailVerifyDiv">' +
+										  '<h4>Please verify your email:</h4>' + 
+										  '<label for="vcode">Verification code:</label>' + 
+										  '<input type="text" id="vcode" name="label" value="">' + 
+										  '<br/><br/><div id="userVerifyMsg"></div>' + 
+										  '<div id="divLoginButtons">' + 
+										  '<a href="#" class="button" onclick="Cancel()">Cancel</a>' + 
+										  '<a href="#" class="button" onclick="VerifyEmail()">Verify Email</a>' + 
+										  '</div></div>';
+							document.getElementById("mainContent").innerHTML += newHtml
 						}
 
-						GetLatestMemos();
+						if (response.roles.includes("admin")) {
+							// user is admin:
+						}
+
+						GetUserProjects();
+
+						// GetLatestMemos();
 					}
 				});
 			}
 		}
+
+		function VerifyEmail() { 
+			// get the verification code:
+			userVCode = document.getElementById("vcode").value;
+			userVCode = userVCode.trim();
+			// post:
+			const params = { "text": userVCode };
+			//
+			const options = {
+				method: 'POST',
+				headers: {
+					  'Accept': 'application/json',
+					  'Content-Type': 'application/json',
+					  // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify( params )  
+			};
+			fetch( '/users/verify', options )
+				.then( response => response.json() )
+				.then( response => {
+					// Do something with response.
+					console.log( response )
+					if (response.status=='Ok' || response.status=="Already verified") {
+						document.getElementById("emailVerifyDiv").innerHTML = "<h4>Email verified, thank you.</h4>";
+						setTimeout( ()=>{ window.location.reload(); }, 3000);
+					}
+					else{
+						document.getElementById("userVerifyMsg").innerHTML = 
+								"<h4>" + response.detail + "</h4>";
+					}
+				}); /* */
+		}
+
+        function Cancel() { window.location.href = "/"; }
 
 		function NewMemo() { window.location.href = "/Editor"; }
 
@@ -110,6 +155,8 @@
 		function UserSettings() { window.location.href = "/Settings"; }
 
 	</script>
+
+	{% include 'common_userProjects.html' %}
 
 	{% include 'common_latestMemos.html' %}
 	

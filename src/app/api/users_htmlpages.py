@@ -1,6 +1,7 @@
 
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Response
 from app.api.models import Token, UserInDB, UserPublic, UserReg, basicTextPayload
+from app.api.users import get_current_active_user, user_has_role
 from app.api import encrypt 
 
 from fastapi.security import OAuth2PasswordRequestForm
@@ -279,6 +280,39 @@ async def reset_user_password(payload: basicTextPayload):
     
     return { 'status': 'ok' }
 
+
+# -------------------------------------------------------------------------------------
+# expects payload to be new roles setting for user with userid, admins only 
+@router.post("/users/roles/{userid}",  
+             status_code=status.HTTP_200_OK, 
+             summary="sets a user's roles, admins only")
+async def set_user_roles(userid: int, 
+                         payload: basicTextPayload,
+                         current_user: UserInDB = Depends(get_current_active_user)):
+
+    log.info(f"set_user_roles: working with userid {userid} and payload >{payload.text}<")
+    
+    if not user_has_role(current_user, "admin"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to modify users")
+    
+    existingUser = await crud.get_user_by_id(userid)
+    if not existingUser:
+        raise HTTPException( status_code=status.HTTP_404_NOT_FOUND, detail="User not found", headers={"WWW-Authenticate": "Bearer"}, )
+    
+    log.info(f"set_user_roles: user: {existingUser.username}, {existingUser.userid}")
+    
+    existingUser.roles = payload.text
+    
+    # update user in the database: 
+    id = await crud.put_user( existingUser.userid, existingUser )
+    if id!=existingUser.userid:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return { 'status': 'ok' }
 
 # -------------------------------------------------------------------------------------
 @router.post("/users/setpass",  

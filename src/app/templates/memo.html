@@ -21,11 +21,12 @@
 		<main>
 			<div id="mainContent">
 				{# title and post contents, with an optional edit button #}
-				<H1> {{contentPost.title}} </H1>
+				<H2> Project: {{parentName}} </H2>
+				<H1> Memo: {{contentPost.title}} </H1>
 				<div class="ql-editor">
 					{{contentPost.text | safe}}
 				</div>
-                <div class="memoMetadata">
+                <div class="postMetadata">
 				    <h5 class="g1">Author: {{contentPost.username}}</h5>
 				    <h5 class="g2">Status: {{contentPost.status}}</h5>
 				    <h5 class="g3">Access: {{contentPost.access}}</h5>
@@ -48,10 +49,11 @@
 					</div>
 				</form>
 				
-				<div class="memoMetadata">
+				<div class="postMetadata">
 					<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Uploads & Links</a>
 				</div>
 
+				<script>gUpDownProj = "{{parentName}}";</script>
 				{% include 'common_uploadDownloadSet.html' %}
 
 				<a href="#" class="button" onclick="PostComment()">Post Comment</a>
@@ -147,7 +149,7 @@
 						}
 						else {
 							LoadComments();
-							get_uploads();
+							get_uploads("{{parentName}}"); // gets project uploads and populates their place on the project page
 						}
 					}
 					else {
@@ -183,7 +185,7 @@
 					for (let i = 0; i < limit; i++) {
 						let comm = commList[i];
 						commHtml += '<div class="comment">';
-						commHtml += '<div class="memoMetadata">';
+						commHtml += '<div class="postMetadata">';
 						commHtml += '<h5 class="g1">';
 						commHtml += comm.username;
 						commHtml += ' adds:</h5>';
@@ -236,7 +238,7 @@
 						// Do something with the error
 						console.log(err) 
 						alert( err )
-						// window.location.href = "/memopage/{{ contentPost.userid }}";
+						// window.location.href = "/memoPage/{{ contentPost.userid }}";
 					}) 
 			}
 			else {

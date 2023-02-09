@@ -93,7 +93,7 @@ class DatabaseMgr:
             Column("projectid", Integer, primary_key=True, index=True), 
             Column("userid", Integer, ForeignKey("users.userid")),          # creator/owner of project 
             Column("username", String, ForeignKey("users.username")),       # same
-            Column("name", String),                                         # name of project, also becomes a tag with this name
+            Column("name", String, index=True),                             # name of project, also becomes a tag with this name
             Column("text", String),                                         # project description
             Column("status", String, default="unpublished"),                # unpublished means not visible to staff
             Column("tagid", Integer, ForeignKey("tag.tagid")),              # tagid defining the access role for this project 

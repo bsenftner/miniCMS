@@ -5,6 +5,7 @@ import glob
 from typing import List
 
 from app import config
+from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
 from app.api.models import UserInDB
 
@@ -24,8 +25,8 @@ router = APIRouter()
 async def upload(file: UploadFile = File(...), 
                  current_user: UserInDB = Depends(get_current_active_user)):
     
-    u = os.path.expanduser('~')
-    log.info(f"upload: {u}")
+    # u = os.path.expanduser('~')
+    # log.info(f"upload: {u}")
     
     if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
@@ -48,6 +49,53 @@ async def upload(file: UploadFile = File(...),
         await file.close()
 
     return {"message": f"Successfully uploaded {file.filename}"}
+
+
+# ------------------------------------------------------------------------------------------------------------------
+# endpoint for project uploads, restricted to users with that project's access
+@router.post("/{projectname}", status_code=200)
+async def project_upload(projectname: str, 
+                         file: UploadFile = File(...), 
+                         current_user: UserInDB = Depends(get_current_active_user)):
+    
+    isAdmin = user_has_role(current_user,"admin")
+    isProjMember = user_has_role(current_user, projectname)
+    
+    if not isAdmin and not isProjMember:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 
+                            detail=f"Not Authorized to upload {projectname} files") 
+        
+    proj = await crud.get_project_by_name( projectname )
+    if proj is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    
+    if proj.status == 'archived':
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Archived projects cannot receive uploads")
+    
+    # only allow admins and project owner if project is unpublished:
+    if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    if proj.status == 'published' and (not isAdmin and not isProjMember):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    try:
+        upload_path = config.get_base_path() / 'static/uploads' / projectname / file.filename
+        #
+        log.info(f"upload: attempting {upload_path}")
+        #
+        async with aiofiles.open(upload_path, 'wb') as f:
+            log.info(f"upload: file opened for writing...")
+            CHUNK_SIZE = 1024*1024
+            while contents := await file.read(CHUNK_SIZE):
+                await f.write(contents)
+                
+    except Exception:
+        return {"message": "There was an error uploading the file"}
+    finally:
+        await file.close()
+
+    return {"message": f"Successfully uploaded {projectname} {file.filename}"}
 
 # ----------------------------------------------------------------------------------------------
 # The response_model is a List with a str subtype. See import of List top of file. 
@@ -96,5 +144,69 @@ async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_u
         ret.append( fdesc )
         
     # log.info(f"read_all_uploads: got {ret}")
+    
+    return ret
+
+
+# ----------------------------------------------------------------------------------------------
+@router.get("/{projectname}", response_model=List)
+async def read_all_project_uploads(projectname: str, 
+                                   current_user: UserInDB = Depends(get_current_active_user)) -> List:
+    
+    log.info(f"read_all_project_uploads: here!")
+    
+    isAdmin = user_has_role(current_user,"admin")
+    isProjMember = user_has_role(current_user, projectname)
+    
+    if not isAdmin and not isProjMember:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    proj = await crud.get_project_by_name( projectname )
+    if proj is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    
+    if proj.status == 'archived':
+        log.info(f"read_all_project_uploads: working with archived project!!!       <<----")
+        # raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Artchived projects cannot receive uploads")
+    
+    # only allow admins and project owner if project is unpublished:
+    if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    # if project is published, user must be admin or project member
+    if proj.status == 'published' and (not isAdmin and not isProjMember):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    # finally...
+    upload_path = config.get_base_path() / 'static/uploads' / projectname / '*' 
+    
+    log.info(f"read_all_project_uploads: upload_path {upload_path}")
+    
+    result = []
+    result.extend(glob.glob(str(upload_path)))
+    
+    ret = []
+    for longPath in result:
+        parts = longPath.split('/')
+        count = len(parts)
+        filename = parts[count-1]
+        
+        parts = filename.split('.')
+        count = len(parts)
+        
+        # returns mimeObject:
+        mo = mimelib.url(longPath)
+        
+        link = '/static/uploads/' + projectname + '/' + filename
+        
+        fdesc = {
+            "filename": filename,
+            "type": mo.file_type,
+            "link": link
+        }
+        
+        ret.append( fdesc )
+        
+    log.info(f"read_all_project_uploads: got {ret}")
     
     return ret

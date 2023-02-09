@@ -8,8 +8,8 @@ import json
 
 from app import config
 from app.api import crud, users
-from app.api.models import User, MemoDB
-from app.send_email import send_email_async
+from app.api.models import User, MemoDB, ProjectDB
+# from app.send_email import send_email_async
 
 # page_frag.py contains common page fragments, like .header & .footer.
 # This is passed to page templates for repeated use of common html fragments: 
@@ -83,11 +83,11 @@ async def login( request: Request ):
 async def profilePage( request: Request,  
                        current_user: User = Depends(users.get_current_active_user) ):
 
-    config.log.info(f"profilePage: here!")
+    # config.log.info(f"profilePage: here!")
     
     memoList = await crud.get_all_memos(current_user)
     
-    config.log.info(f"profilePage: got the memos...")
+    # config.log.info(f"profilePage: got the memos...")
     
     return TEMPLATES.TemplateResponse(
         "profile.html",
@@ -101,27 +101,86 @@ async def profilePage( request: Request,
     
 # ------------------------------------------------------------------------------------------------------------------
 # serve the requested page thru a Jinja2 template:
-@router.get("/memopage/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+@router.get("/projectPage/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def projectPage( request: Request, projectid: int, 
+                       current_user: User = Depends(users.get_current_active_user) ):
+    
+    config.log.info("projectPage: here!!")
+     
+    proj: ProjectDB = await crud.get_project(projectid)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    weAreAllowed = crud.user_has_project_access( current_user, proj )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
+    
+    # returns list of project memos this user has access:
+    memoList = await crud.get_all_project_memos(current_user, projectid)
+    
+    return TEMPLATES.TemplateResponse(
+        "project.html",
+        { "request": request, 
+          "contentPost": proj, 
+          "frags": FRAGS, 
+          "access": 'private',
+          "memos": memoList,
+        }, 
+        # 'access' key is for template left sidebar construction
+    )
+
+# ------------------------------------------------------------------------------------------------------------------
+# serve project on an editor thru a template:
+@router.get("/ProjectEditor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def projectEditor( request: Request, id: int, current_user: User = Depends(users.get_current_active_user) ):
+    
+    proj: ProjectDB = await crud.get_project(id)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    if proj.userid != current_user.userid and not users.user_has_role(current_user,"admin"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to edit other's Projects")
+        
+    memoList = await crud.get_all_project_memos(current_user, id)
+    
+    return TEMPLATES.TemplateResponse(
+        "projectEditor.html", 
+        {"request": request, 
+         "contentPost": proj, 
+         "frags": FRAGS, 
+         "access": 'private', 
+         "memos": memoList,
+        }, 
+        # 'access' key is for template left sidebar construction
+    )
+    
+# ------------------------------------------------------------------------------------------------------------------
+# serve the requested page thru a Jinja2 template:
+@router.get("/memoPage/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoPage( request: Request, id: int, 
                     current_user: User = Depends(users.get_current_active_user) ):
     
-    # config.log.info("memoPage: here!!")
-     
     memo: MemoDB = await crud.get_memo(id)
     if not memo:
         raise HTTPException(status_code=404, detail="Memo not found")
-
-    weAreAllowed = crud.user_has_memo_access( current_user, memo )
-    if not weAreAllowed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo.")
     
-    # returns list of memos this user has access:
-    memoList = await crud.get_all_memos(current_user)
+    proj: ProjectDB = await crud.get_project(memo.projectid)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Memo Project not found")
+    
+    weAreAllowed = await crud.user_has_memo_access( current_user, memo )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo")
+    
+    # returns list of project memos this user has access:
+    memoList = await crud.get_all_project_memos(current_user, memo.projectid)
     
     return TEMPLATES.TemplateResponse(
         "memo.html",
         { "request": request, 
           "contentPost": memo, 
+          "parentName": proj.name,
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList,
@@ -164,17 +223,23 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
     memo: MemoDB = await crud.get_memo(id)
     if not memo:
         raise HTTPException(status_code=404, detail="Memo not found")
+    
+    proj: ProjectDB = await crud.get_project(memo.projectid)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Memo Project not found")
 
-    if memo.userid != current_user.userid and not users.user_has_role(current_user,"admin"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                            detail="Not Authorized to edit other's Memos")
+    weAreAllowed = await crud.user_has_memo_access( current_user, memo )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo")
         
-    memoList = await crud.get_all_memos(current_user)
+    # returns list of project memos this user has access:
+    memoList = await crud.get_all_project_memos(current_user, memo.projectid)
     
     return TEMPLATES.TemplateResponse(
         "memoEditor.html", 
         {"request": request, 
          "contentPost": memo, 
+         "parentName": proj.name,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,

@@ -20,7 +20,8 @@
 		<main>
 			<div id="mainContent">
 				{# a login form #}
-            	<h4>Login:</h4>
+            	<H1>Login</h1>
+				<br/>
 				<div id="userMsg"></div>
 				<form method="post">
 			    	<label for="username">Username:</label>
@@ -36,6 +37,7 @@
 				    	<a href="#" class="button" onclick="Login()">Login</a>
 						&nbsp;&nbsp;&nbsp;&nbsp;
 				    	<a href="#" class="button" onclick="ResetPassword()">Reset password</a>
+						<br/>
 						<br/>
 						For password reset, enter your username or the email used to register at this site.<br/>
 						After clicking the reset button you will receive an email with a new password.
@@ -97,39 +99,11 @@
 							document.getElementById("mainContent").innerHTML += newHtml
 						}
 
-						GetLatestMemos();
+						GetUserProjects();
 					}
 				});
 			}
 		}
-
-		/*
-		function GetLatestMemos() {
-			fetch("/memo")
-			.then(response => response.json())
-			.then( response =>  {
-
-				// console.log( response );
-
-				let meJson = response;
-				let newHtml = "</br><div>Please review the following for any new memos:</div>";
-				newHtml += '<div><ul>';
-				for (let i = 0; i < meJson.length; i++) {
-					newHtml += '<li>';
-					let memo = meJson[i];
-					newHtml += '<a href="/memopage/';
-					newHtml += memo.memoid;
-					newHtml += '">';
-					newHtml += memo.title;
-					if (memo.status == 'unpublished') {
-						newHtml += ' (unpublished)';
-					}
-					newHtml += '</a></li></br>';
-				}
-				newHtml += '</ul></div>';
-				document.getElementById("mainContent").innerHTML += newHtml
-			});
-		} */
 
         function VerifyEmail() { 
 			// get the verification code:
@@ -234,7 +208,7 @@
 
 	</script>
 
-	{% include 'common_latestMemos.html' %}
+	{% include 'common_userProjects.html' %}
 
 	{% include 'common_logout.html' %}
 

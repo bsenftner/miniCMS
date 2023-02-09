@@ -18,9 +18,10 @@
 
 		<main>
 			<div id="mainContent">
+				<H2> Project: {{parentName}} </H2>
 				{# the editor itself, embedded in a form, with a post's contents, and operation buttons #}
 				<form id="editorForm" method="post">
-					<label for="NewPostTitle">Title:</label>
+					<label for="NewPostTitle">Memo Title:</label>
   					<input type="text" id="NewPostTitle" name="label" value="{{contentPost.title}}">
 					<div class="editorContainer">
 						<div id="editor">
@@ -31,11 +32,12 @@
 				<div id="authorName">
 					Author: {{contentPost.username}}, UserId: {{contentPost.userid}} 
 					(The author cannot be changed.)
-					<div class="memoMetadata">
+					<div class="postMetadata">
 						<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Uploads & Links</a>
 					</div>
 				</div>
 
+				<script>gUpDownProj = "{{parentName}}";</script>
 				{% include 'common_uploadDownloadSet.html' %}
 
 				<div id="statusList">
@@ -181,7 +183,7 @@
 				}
 			}
 
-			get_uploads(); // read and then populate the upload links grid
+			get_uploads("{{parentName}}"); // gets project uploads and populates their place on the project page
 		}
 		//
 		function page_init() {
@@ -190,7 +192,7 @@
 
 		function MemoEditCancel() { 
 			if (Number("{{ contentPost.memoid }}") > 0) {
-				window.location.href = "/memopage/{{ contentPost.memoid }}"; 
+				window.location.href = "/memoPage/{{ contentPost.memoid }}"; 
 			}
 			else {
 				window.location.href = "/profile"; 
@@ -239,8 +241,8 @@
 						alert( 'Please fix the following and try again: ' + response.detail )
 					}
 					else if (response.hasOwnProperty('memoid')) {
-					//	window.location.href = "/memopage/" + response.id.toString();
-						window.location.href = "/memopage/" + response.memoid;
+					//	window.location.href = "/memoPage/" + response.id.toString();
+						window.location.href = "/memoPage/" + response.memoid;
 					}
 					else {
 						console.log( response )
@@ -250,7 +252,7 @@
 					// Do something with the error
 					console.log(err) 
 					alert( err )
-					// window.location.href = "/memopage/{{ contentPost.userid }}";
+					// window.location.href = "/memoPage/{{ contentPost.userid }}";
 				}) 
 		}
 		function MemoSubmit() {
@@ -288,7 +290,7 @@
 			.then(response => 
 			{
 				if (response.ok) {
-					window.location.href = "/memopage/{{ contentPost.memoid }}";
+					window.location.href = "/memoPage/{{ contentPost.memoid }}";
 				}
 				else {
 					alert( 'Problem updating. Are you sure the access groups are valid and separated by spaces?' )
@@ -298,7 +300,7 @@
 				// Do something with the error
 				console.log(err) 
 				alert( err )
-				window.location.href = "/memopage/{{ contentPost.memoid }}";
+				window.location.href = "/memoPage/{{ contentPost.memoid }}";
 			}) 
 		}
 		function MemoUpdate() {
@@ -328,7 +330,7 @@
 					// Do something with the error
 					console.log(err) 
 					alert( err )
-					window.location.href = "/memopage/{{ contentPost.memoid }}";
+					window.location.href = "/memoPage/{{ contentPost.memoid }}";
 				});
 		}
 		function MemoDelete() {

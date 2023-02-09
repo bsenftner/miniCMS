@@ -68,12 +68,26 @@ async def delete_tag(id: int):
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a project
 def user_has_project_access( user: UserInDB, project: ProjectDB ) -> bool:
-    # first admins and the author automatically get access:
-    weAreAllowed = user_has_role(user, 'admin') or user.userid == project.userid
+    # first admins automatically get access:
+    weAreAllowed = user_has_role(user, 'admin')
     if not weAreAllowed:
         # for everyone else:
         if user_has_role(user, project.name) and project.status == 'published':
             weAreAllowed = True
+    return weAreAllowed
+
+# ----------------------------------------------------------------------------------------------
+# a utility for getting the permission to access a project
+async def user_has_project_access_by_id( user: UserInDB, projectid: int ) -> bool:
+    # first admins automatically get access:
+    weAreAllowed = user_has_role(user, 'admin')
+    if not weAreAllowed:
+        # for everyone else:
+        proj: ProjectDB = await get_project(projectid)
+        if not proj:
+            weAreAllowed = False
+        else:
+            weAreAllowed = user_has_project_access(user, proj)
     return weAreAllowed
 
 # -----------------------------------------------------------------------------------------
@@ -99,7 +113,14 @@ async def get_project(id: int) -> ProjectDB:
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().where(id == db_mgr.get_project_table().c.projectid)
     return await db_mgr.get_db().fetch_one(query=query)
-    
+
+# -----------------------------------------------------------------------------------------
+# for getting projects by their name:
+async def get_project_by_name(name: str) -> ProjectDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_project_table().select().where(name == db_mgr.get_project_table().c.name)
+    return await db_mgr.get_db().fetch_one(query=query)
+
 # -----------------------------------------------------------------------------------------
 # returns all projects user has access
 async def get_all_projects(user: UserInDB) -> List[ProjectDB]:
@@ -147,16 +168,23 @@ async def delete_project(id: int):
 
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a memo
-def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
-    # first admins and the memo author automatically get access:
-    weAreAllowed = user_has_role(user, 'admin') or user.userid == memo.userid
+async def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
+    # first admins automatically get access:
+    weAreAllowed = user_has_role(user, 'admin')
     if not weAreAllowed:
-        # for everyone else, the memo must be at least published:
-        if memo.status == 'published':
-            if memo.access == 'public':
+        # for everyone else, first make sure user has the memo's project access:
+        weAreAllowed = await user_has_project_access_by_id(user, memo.projectid)
+        if weAreAllowed:
+            # user has project access, is the memo published?
+            if memo.status == 'published':
                 weAreAllowed = True
-            elif memo.access in user.roles:
+            elif memo.userid == user.userid:
+                # memo is unpublished, but user is author, so access is granted (so they can finish the memo!)
                 weAreAllowed = True
+            else:
+                # memo is not published, user is not author or admin
+                weAreAllowed = False
+                
     return weAreAllowed
 
 # -----------------------------------------------------------------------------------------
@@ -202,7 +230,8 @@ async def get_all_memos(user: UserInDB) -> List[MemoDB]:
     for m in memoList:
         # log.info(f"get_all_memos: working with memo.memoid {m.memoid}")
         # log.info(f"get_all_memos: memo.access {m.access}")
-        if user_has_memo_access( user, m ):
+        user_access = await user_has_memo_access( user, m )
+        if user_access:
             if m.status == 'unpublished':
                 m.title += ' (unpublished)'
             finalMemoList.append(m)
@@ -221,6 +250,27 @@ async def get_all_public_memos() -> List[MemoDB]:
     finalMemoList = []
     for m in memoList:
         if 'public' == m.access and 'published' == m.status:
+            finalMemoList.append(m)
+            
+    return finalMemoList
+
+# -----------------------------------------------------------------------------------------
+# returns all project memo posts:
+async def get_all_project_memos(user: UserInDB, projectid: int) -> List[MemoDB]:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # query = db_mgr.get_memo_table().select().order_by(asc(db_mgr.get_memo_table().c.memoid))
+    
+    query = db_mgr.get_memo_table().select().where(projectid == db_mgr.get_memo_table().c.projectid).order_by(asc(db_mgr.get_memo_table().c.memoid))
+    
+    memoList = await db_mgr.get_db().fetch_all(query=query)
+            
+     # now filter them by the roles held by the user:
+    finalMemoList = []
+    for m in memoList:
+        user_access = await user_has_memo_access( user, m )
+        if user_access:
+            if m.status == 'unpublished':
+                m.title += ' (unpublished)'
             finalMemoList.append(m)
             
     return finalMemoList

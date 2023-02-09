@@ -76,10 +76,17 @@
 
 			// This will upload the file after having read it
 			const upload = (file) => {
-				fetch('/upload', { // Your POST endpoint
-	  				method: 'POST',
-	  				headers: {},
-	  				body: data // This is your file object
+
+				let domain = (new URL(window.location));
+				const prebsjnk = domain.origin;
+				let furl = prebsjnk + '/upload';
+				if (gUpDownProj != null) {
+					// gUpDownProj is expected to be the project name, if it exists:
+					furl += '/' + gUpDownProj;
+				}
+
+				fetch( furl, { // POST endpoint
+	  				method: 'POST', headers: {}, body: data // This is your file object
 				}).then(
 	  				response => response.json() // if the response is a JSON object
 				 ).then(
@@ -88,7 +95,12 @@
 						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
 						//
 						// populate listbox for upload selection:
-						get_uploads();
+						if (gUpDownProj != null) {
+							get_uploads(gUpDownProj);
+						}
+						else {
+							get_uploads();
+						}
 						//
 						// clear the file upload ctrl, now that the file has been uploaded
 						fileInputCtrl = document.getElementById("NewUploadInput")
@@ -117,10 +129,14 @@
         }
 
 		// get list of uploaded files and populate upload selection list:
-		const get_uploads = () => {
+		function get_uploads( project ) {
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
-			const furl = prebsjnk + '/upload';
+			let furl = prebsjnk + '/upload';
+			if (project != null) {
+				// project is expected to be the project name, if passed:
+				furl += '/' + project;
+			}
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
 				  headers: {}
