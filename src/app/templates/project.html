@@ -22,12 +22,13 @@
 			<div id="mainContent">
 				{# title and post contents, with an optional edit button #}
 				<H1> Project: {{contentPost.name}} </H1>
-				<div class="ql-editor">
+                <div class="ql-editor">
 					{{contentPost.text | safe}}
 				</div>
                 <div class="postMetadata">
-				    <h5 class="g1">Creator: {{contentPost.username}}</h5>
-				    <h5 class="g2">Status: {{contentPost.status}}</h5>
+				    <h5 class="g1">Project Description</h5>
+				    <h5 class="g2">Creator: {{contentPost.username}}</h5>
+				    <h5 class="g3">Status: {{contentPost.status}}</h5>
                 </div>
 			</div>
             <div id="membersTop">
@@ -54,15 +55,17 @@
                 </div>
             </div>
 
-            <div id="uploadDownloadTop">
-                <h2>Project Files:</h2>
-            </div>
+			<div class="postMetadata">
+				<h2 class="g1">Project Files:</h2>
+				<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project Files</a>
+			</div>
             <script>gUpDownProj = "{{contentPost.name}}";</script>
 			{% include 'common_uploadDownloadSet.html' %}
 
-            <div id="memosTop">
-                <h2>Project Memos:</h2>
-            </div>
+			<div class="postMetadata">
+				<h2 class="g1">Project Memos:</h2>
+				<a href="#" class="button g3" id="newMemoBttn" onclick="NewProjectMemo()">New Project Memo</a>
+			</div>
             {% for m in memos %} 
                 <a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a>
                 <br>
@@ -131,18 +134,18 @@
 							}
 							else if (gUser.roles.includes("admin")) {
 								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="ProjectEdit()">Edit Published Project</a>';
+									'<a href="#" class="button" onclick="ProjectEdit()">Admin Edit Published Project</a>';
 							}
 						}
 						else if (gUser.roles.includes("admin")) {
 							// user is admin (and not author):
 							if (status.includes('unpublished')) {
 								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="ProjectEdit()">Edit Unpublished Project (not your Project)</a>';
+									'<a href="#" class="button" onclick="ProjectEdit()">Admin Edit Unpublished Project (not yours)</a>';
 							}
 							else if (status.includes('published')) {
 								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="ProjectEdit()">Edit Published Project (not your Project)</a>';
+									'<a href="#" class="button" onclick="ProjectEdit()">Admin Edit Published Project (not yours)</a>';
 							}
 						} 
                         
@@ -203,9 +206,11 @@
 			);
 		}; /* */
 
-		function ProjectEdit() { window.location.href = "/ProjectEditor/{{ contentPost.projectid }}"; }
+		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
 
-		function UserSettings() { window.location.href = "/Settings"; }
+		function NewProjectMemo() { window.location.href = "/newProjectMemo/{{ contentPost.projectid }}"; }
+
+		function UserSettings() { window.location.href = "/settings"; }
 
 		function UserProfile() { window.location.href = "/profile"; }
 

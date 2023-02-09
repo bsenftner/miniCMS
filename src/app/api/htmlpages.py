@@ -135,8 +135,10 @@ async def projectPage( request: Request, projectid: int,
 
 # ------------------------------------------------------------------------------------------------------------------
 # serve project on an editor thru a template:
-@router.get("/ProjectEditor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def projectEditor( request: Request, id: int, current_user: User = Depends(users.get_current_active_user) ):
+@router.get("/projectEditor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def projectEditor( request: Request, 
+                         id: int, 
+                         current_user: User = Depends(users.get_current_active_user) ):
     
     proj: ProjectDB = await crud.get_project(id)
     if not proj:
@@ -160,9 +162,40 @@ async def projectEditor( request: Request, id: int, current_user: User = Depends
     )
     
 # ------------------------------------------------------------------------------------------------------------------
+# serve project on an editor thru a template:
+@router.get("/newProject", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def projectEditor( request: Request, 
+                         current_user: User = Depends(users.get_current_active_user) ):
+    
+    if not users.user_has_role(current_user,"admin"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
+    
+    proj = ProjectDB( name='yourProjectName',
+                      text='Edit this to describe your project.',\
+                      userid=current_user.userid,
+                      username=current_user.username,
+                      status='unpublished',
+                      tagid=0,
+                      projectid=0)
+        
+    memoList = []
+    
+    return TEMPLATES.TemplateResponse(
+        "projectEditor.html", 
+        {"request": request, 
+         "contentPost": proj, 
+         "frags": FRAGS, 
+         "access": 'private', 
+         "memos": memoList,
+        }, 
+        # 'access' key is for template left sidebar construction
+    )
+    
+# ------------------------------------------------------------------------------------------------------------------
 # serve the requested page thru a Jinja2 template:
 @router.get("/memoPage/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def memoPage( request: Request, id: int, 
+async def memoPage( request: Request, 
+                    id: int, 
                     current_user: User = Depends(users.get_current_active_user) ):
     
     memo: MemoDB = await crud.get_memo(id)
@@ -220,11 +253,13 @@ async def memoPublic( request: Request, id: int  ):
     
 
 # ------------------------------------------------------------------------------------------------------------------
-# serve memo on an editor thru a template:
-@router.get("/Editor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def editor( request: Request, id: int, current_user: User = Depends(users.get_current_active_user) ):
+# serve existing memo on an editor thru a template:
+@router.get("/memoEditor/{memoid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def editor( request: Request, 
+                  memoid: int, 
+                  current_user: User = Depends(users.get_current_active_user) ):
     
-    memo: MemoDB = await crud.get_memo(id)
+    memo: MemoDB = await crud.get_memo(memoid)
     if not memo:
         raise HTTPException(status_code=404, detail="Memo not found")
     
@@ -253,24 +288,33 @@ async def editor( request: Request, id: int, current_user: User = Depends(users.
     
 # ------------------------------------------------------------------------------------------------------------------
 # serve an empty editor page that saves as a memo thru a template:
-@router.get("/Editor", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def editor( request: Request, current_user: User = Depends(users.get_current_active_user) ):
+@router.get("/newProjectMemo/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def editor( request: Request, 
+                  projectid: int,
+                  current_user: User = Depends(users.get_current_active_user) ):
+    
+    proj: ProjectDB = await crud.get_project(projectid)
+    if not proj:
+        raise HTTPException(status_code=404, detail="Memo Project not found")
     
     memo = MemoDB( memoid=0,
                    title='your memo title',
                    text='Edit this to be your memo.',
                    status='unpublished',
-                   tags='',
-                   access='staff',
+                   tags=proj.name,
+                   access='staff ',
                    userid=current_user.userid,
-                   username=current_user.username )
+                   username=current_user.username,
+                   projectid=proj.projectid)
     
-    memoList = await crud.get_all_memos(current_user)
+    # returns list of project memos this user has access:
+    memoList = await crud.get_all_project_memos(current_user, memo.projectid)
     
     return TEMPLATES.TemplateResponse(
         "memoEditor.html", 
         { "request": request, 
           "contentPost": memo, 
+          "parentName": proj.name,
           "frags": FRAGS, 
           "access": 'private', 
           "memos": memoList
@@ -281,8 +325,9 @@ async def editor( request: Request, current_user: User = Depends(users.get_curre
     
 # ------------------------------------------------------------------------------------------------------------------
 # serve a user profile page thru a template:
-@router.get("/Settings", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def user_settings_page( request: Request, current_user: User = Depends(users.get_current_active_user) ):
+@router.get("/settings", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def user_settings_page( request: Request, 
+                              current_user: User = Depends(users.get_current_active_user) ):
     
     # default info available to the page: 
     page_data = {

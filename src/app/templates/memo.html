@@ -20,8 +20,8 @@
 		{# the main content area #}
 		<main>
 			<div id="mainContent">
-				{# title and post contents, with an optional edit button #}
-				<H2> Project: {{parentName}} </H2>
+				{# title and post contents, with various controls #}
+				<H2> Project: <a href="#" onclick="ProjectPage()">{{parentName}}</a> </H2>
 				<H1> Memo: {{contentPost.title}} </H1>
 				<div class="ql-editor">
 					{{contentPost.text | safe}}
@@ -249,7 +249,11 @@
 		}
                 
 
-		function MemoEdit() { window.location.href = "/Editor/{{ contentPost.memoid }}"; }
+		function ProjectPage() { window.location.href = "/projectPage/{{ contentPost.projectid }}"; }
+
+		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
+
+		function MemoEdit() { window.location.href = "/memoEditor/{{ contentPost.memoid }}"; }
 
 		function Login() { window.location.href = "/login"; }
 

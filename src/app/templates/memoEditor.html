@@ -31,12 +31,11 @@
 				</form>
 				<div id="authorName">
 					Author: {{contentPost.username}}, UserId: {{contentPost.userid}} 
-					(The author cannot be changed.)
-					<div class="postMetadata">
-						<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Uploads & Links</a>
-					</div>
 				</div>
-
+				<div class="postMetadata">
+					<h2 class="g1">Project Files:</h2>
+					<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project Files</a>
+				</div>
 				<script>gUpDownProj = "{{parentName}}";</script>
 				{% include 'common_uploadDownloadSet.html' %}
 
@@ -125,6 +124,8 @@
         // configure the TinyMCE editor 
         tinymce.init({
             selector: '#editor',
+			// content_css: '/static/index.css',
+			content_style: "body { font-size: 14pt; font-family: sans-serif; }",
             convert_urls: false,
             plugins: 'anchor autolink charmap code codesample emoticons image link lists media searchreplace table visualblocks wordcount',
             toolbar: 'undo redo | code | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',

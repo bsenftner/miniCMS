@@ -4,14 +4,15 @@
         {{ alink | safe }}
     {% endfor %}
 
+    <h3>Memos:</h3>
     {# not expecting a huge number of memo posts, so here's all of them #}
     {% if access == 'public' -%}
     {% for m in memos %} 
-        <br/><br/><a href="/publicmemo/{{ m.memoid }}">{{ m.title }}</a>
+        <a href="/publicmemo/{{ m.memoid }}">{{ m.title }}</a><br/><br/>
     {% endfor %}
     {% else -%}
     {% for m in memos %} 
-        <br/><br/><a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a>
+        <a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a><br/><br/>
     {% endfor %}
     {% endif %}
 </nav>

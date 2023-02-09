@@ -127,6 +127,7 @@
         // configure the TinyMCE editor 
         tinymce.init({
             selector: '#editor',
+			content_style: "body { font-size: 14pt; font-family: sans-serif; }",
             convert_urls: false,
             plugins: 'anchor autolink charmap code codesample emoticons image link lists media searchreplace table visualblocks wordcount',
             toolbar: 'undo redo | code | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
@@ -142,8 +143,9 @@
 
 			gUser = userdata;
 
-			// user is logged in, change right sidebar links:
-							
+			// user is logged in:
+
+			// change right sidebar links:							
 			document.getElementById("aside").innerHTML = 
 							`<a href="#" class="button" onclick="Profile()">Profile</a>
 							 <br/><br/>
@@ -155,25 +157,56 @@
 			// make sure project status is reflected in the selection widget:
 			document.getElementById("statusSelectBox").value = "{{contentPost.status}}"
 
-            /*
-			if (Number("{{contentPost.memoid}}") == 0) {
-				// we're creating a new memo, so change the button options:
+			if (Number("{{contentPost.projectid}}") == 0) {
+
+				// we're creating a new project, make sure user is allowed:
+				if (userdata.hasOwnProperty('roles')) {
+					if (!userdata.roles.includes('admin')) {
+						// only admins can create projects: 
+						window.location.href = '/';
+					}
+				}
+				else { // user should not be here:
+					window.location.href = '/';
+				}
+
+				// user is allowed, so change the button options:
 				document.getElementById("divBeneathTheEditor").innerHTML =
 					`<a href="#" class="button" onclick="ProjectEditCancel()">Cancel</a>
-					<a href="#" class="button" onclick="MemoSubmit()">Post A New Memo</a>
+					 <a href="#" class="button" onclick="ProjectSubmit()">Create A New Project</a>
 					`; 
-			} */
 
-			if (userdata.hasOwnProperty('roles')) {
-				if (!userdata.roles.includes("{{contentPost.name}}") && !userdata.roles.includes('admin')) {
-                    // this user does not have permission to see or edit this project 
-                    window.location.href = '/';
+				document.getElementById("membersTop").style.display = "none";
+				//
+				document.getElementById("projectMembersHeader").innerHTML =
+					`<em>Create the project first.</em>
+						 After the project is saved, editing shows project member and file controls.`;
+				//
+				document.getElementById("projectMembers").style.display = "none";
+
+				document.getElementById("uploadDownloadTop").innerHTML = '';
+				//
+				document.getElementById("uploadDownloadSet").style.display = "none";
+
+			} /* */
+			else { // we are editing an existing project:
+
+				if (userdata.hasOwnProperty('roles')) {
+					if (!userdata.roles.includes("{{contentPost.name}}") && !userdata.roles.includes('admin')) {
+						// this user does not have permission to see or edit this project 
+						window.location.href = '/';
+					}
 				}
+				else { // user should not be here:
+					window.location.href = '/';
+				}
+
+				get_users();                         // get all the users and populate the project membership controls
+	
+				get_uploads("{{contentPost.name}}"); // read and then populate the upload links grid
 			}
 
-            get_users();                         // get all the users and populate the project membership controls
 
-			get_uploads("{{contentPost.name}}"); // read and then populate the upload links grid
 		}
 		//
 		function page_init() {
@@ -330,8 +363,7 @@
 						alert( 'Please fix the following and try again: ' + response.detail )
 					}
 					else if (response.hasOwnProperty('projectid')) {
-					//	window.location.href = "/memopage/" + response.id.toString();
-						window.location.href = "/projectPage/" + response.memoid;
+						window.location.href = "/projectPage/" + response.projectid;
 					}
 					else {
 						console.log( response )

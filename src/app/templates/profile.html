@@ -42,9 +42,6 @@
 		{# the right sidebar #}
 		<aside>
 			<div id="aside">
-				<a href="#" class="button" onclick="Login()">Login</a>
-				<br/>
-				<a href="#" class="button" onclick="Register()">Register</a>
 			</div>
 		</aside>
   
@@ -75,14 +72,7 @@
 
 					if (response.hasOwnProperty('roles')) {
 
-						// user is logged in, change right sidebar links:
-						document.getElementById("aside").innerHTML = 
-						`<a href="#" class="button" onclick="NewMemo()">New Memo</a>
-						<br/><br/>
-						<a href="#" class="button" onclick="UserSettings()">Settings</a>
-						<br/><br/>
-						<a href="#" class="button" onclick="Logout()">Logout</a>
-						`;
+						// user is logged in:
 
 						// if user is unverified put the email verification controls beneath their initial page contents:
 						if (response.roles.includes('unverified')) {
@@ -97,10 +87,17 @@
 										  '</div></div>';
 							document.getElementById("mainContent").innerHTML += newHtml
 						}
-
+						
+						// change right sidebar links
 						if (response.roles.includes("admin")) {
 							// user is admin:
+							document.getElementById("aside").innerHTML = `<a href="#" class="button" onclick="NewProject()">New Project</a><br/><br/>`
 						}
+						document.getElementById("aside").innerHTML += 
+						`<a href="#" class="button" onclick="UserSettings()">Settings</a>
+						<br/><br/>
+						<a href="#" class="button" onclick="Logout()">Logout</a>
+						`;
 
 						GetUserProjects();
 
@@ -144,15 +141,13 @@
 
         function Cancel() { window.location.href = "/"; }
 
-		function NewMemo() { window.location.href = "/Editor"; }
-
-		function MemoEdit() { window.location.href = "/Editor/{{ contentPost.id }}"; }
+		function NewProject() { window.location.href = "/newProject"; }
 
 		function Login() { window.location.href = "/login"; }
 
 		function Register() { window.location.href = "/register"; }
 
-		function UserSettings() { window.location.href = "/Settings"; }
+		function UserSettings() { window.location.href = "/settings"; }
 
 	</script>
 

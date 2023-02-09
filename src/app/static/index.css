@@ -277,8 +277,6 @@ div.postMetadata {
     grid-template-rows: 1fr;
     grid-column-gap: 10px;
     grid-row-gap: 0px;
-    /* background: #eee;
-    margin: 8px; */
 }
 div.postMetadata h5.g1 { 
   grid-area: 1 / 1 / 2 / 2; 
@@ -296,9 +294,21 @@ div.postMetadata h5.g5 {
   grid-area: 1 / 5 / 2 / 6; 
 }
 
+
+div.postMetadata h2.g1 { 
+  grid-area: 1 / 1 / 2 / 2; 
+}
+div.postMetadata a.g3 { 
+  grid-area: 1 / 3 / 2 / 4;  
+  font-size: 16px;
+  height: 2.4em;
+  margin-top: 1.5em;
+}
 div.postMetadata a.g5 { 
   grid-area: 1 / 5 / 2 / 6; 
   font-size: 16px;
+  height: 2.4em;
+  margin: 1.5em 0 0 0;
 }
 
 div#commentsTop {
