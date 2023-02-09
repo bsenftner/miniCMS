@@ -127,9 +127,26 @@ async def read_users(request: Request,
                     current_user: UserInDB = Depends(users.get_current_active_user)) -> List[UserPublic]:
     
     if not users.user_has_role( current_user, 'admin' ):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access User list.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access User list")
     
     userList = await crud.get_all_users()
+    
+    return userList
+
+# --------------------------------------------------------------------------------------------------------------
+# return list of project users:
+@router.get("/users/{projectname}", 
+            status_code=status.HTTP_200_OK, 
+            summary="Get list of current users, admin use only", 
+            response_model=List[UserPublic])
+async def read_users(request: Request, 
+                     projectname: str,
+                     current_user: UserInDB = Depends(users.get_current_active_user)) -> List[UserPublic]:
+    
+    if not users.user_has_role( current_user, 'admin' ) and not users.user_has_role( current_user, projectname ):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access Project User list")
+    
+    userList = await crud.get_all_users_by_role(projectname)
     
     return userList
 

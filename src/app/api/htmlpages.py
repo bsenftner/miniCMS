@@ -118,12 +118,16 @@ async def projectPage( request: Request, projectid: int,
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, projectid)
     
+    # returns list of all project users:
+    userList = await crud.get_all_users_by_role( proj.name )
+    
     return TEMPLATES.TemplateResponse(
         "project.html",
         { "request": request, 
           "contentPost": proj, 
           "frags": FRAGS, 
           "access": 'private',
+          "users": userList,
           "memos": memoList,
         }, 
         # 'access' key is for template left sidebar construction

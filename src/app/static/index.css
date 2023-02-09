@@ -547,6 +547,6 @@ div#userMsg3 {
 
 div.memolist ul li, div.projectlist ul li {
   list-style-type: none;
-  font-size: 22px;
+  font-size: 2.35em;
   font-weight: bold;
 }

@@ -458,7 +458,6 @@ async def get_user_by_name(username: str):
     query = db_mgr.get_users_table().select().where(db_mgr.get_users_table().c.username == username)
     return await db_mgr.get_db().fetch_one(query)
 
-
 async def get_user_by_email(email: str):
     db_mgr = get_database_mgr()
     query = db_mgr.get_users_table().select().where(db_mgr.get_users_table().c.email == email)
@@ -475,13 +474,31 @@ async def get_all_users() -> List[UserPublic]:
     # now filter them:
     finalUserList = []
     for u in userList:
-        up = UserPublic(username = u.username, userid = u.userid, roles = u.roles, email = u.email)
-        # up.username = u.username 
-        # up.userid = u.userid 
-        # up.roles = u.roles 
-        # up.email = u.email 
+        up = UserPublic(username = u.username, userid = u.userid, roles = u.roles, email = u.email) 
         finalUserList.append(up)
             
+    return finalUserList
+
+
+# -----------------------------------------------------------------------------------------
+# returns all users by role:
+async def get_all_users_by_role(role: str) -> List[UserPublic]:
+    # first get all the users:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_users_table().select().order_by(asc(db_mgr.get_users_table().c.userid))
+    userList = await db_mgr.get_db().fetch_all(query=query)
+            
+    # now filter them:
+    finalUserList = []
+    for u in userList:
+        # break the user's role string into tokens, one for each role:
+        roleList = u.roles.split()
+        # loop over the roleList retaining those matching the input:
+        for r in roleList:
+            if r == role:
+                up = UserPublic(username = u.username, userid = u.userid, roles = u.roles, email = u.email) 
+                finalUserList.append(up)
+    
     return finalUserList
 
 # -----------------------------------------------------------------------------------------

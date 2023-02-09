@@ -94,8 +94,8 @@
 			setTimeout( slidesInit, 3000 );
 		});
 		//
-		let gUser = {};     // current user 
-        let gUsers = {};    // all users
+		let gUser = {};       	   // current user 
+        let gUsers = {};    // all project users
 		//
 		function page_init() {
 
@@ -146,7 +146,8 @@
 							}
 						} 
                         
-                        get_users();    // populates the project's user list
+                        // populates the project's user list
+						get_users()
 
 						get_uploads("{{contentPost.name}}"); // gets project uploads and populates their place on the project page
 					}
@@ -161,7 +162,7 @@
                 
         // get list of users and populate project membership controls:
 		const get_users = () => {
-			fetch('/users/', { // GET endpoint
+			fetch('/users/{{contentPost.name}}', { // GET endpoint
 				  method: 'GET',
 				  headers: {}
 			}).then(
@@ -200,7 +201,7 @@
 					console.log( error ) // Handle the error response object
 				}
 			);
-		};
+		}; /* */
 
 		function ProjectEdit() { window.location.href = "/ProjectEditor/{{ contentPost.projectid }}"; }
 
