@@ -55,16 +55,16 @@
                 </div>
             </div>
 
-			<div class="postMetadata">
-				<h2 class="g1">Project Files:</h2>
-				<a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project Files</a>
+			<div class="twoColumns">
+				<h2 class="twoCols0">Project Files:</h2>
+				<a href="#" class="button twoCols1" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project Files</a>
 			</div>
             <script>gUpDownProj = "{{contentPost.name}}";</script>
 			{% include 'common_uploadDownloadSet.html' %}
 
-			<div class="postMetadata">
-				<h2 class="g1">Project Memos:</h2>
-				<a href="#" class="button g3" id="newMemoBttn" onclick="NewProjectMemo()">New Project Memo</a>
+			<div class="twoColumns">
+				<h2 class="twoCols0">Project Memos:</h2>
+				<a href="#" class="button twoCols1" id="newMemoBttn" onclick="NewProjectMemo()">New Project Memo</a>
 			</div>
             {% for m in memos %} 
                 <a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a>

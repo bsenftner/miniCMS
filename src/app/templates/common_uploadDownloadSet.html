@@ -129,6 +129,7 @@
         }
 
 		// get list of uploaded files and populate upload selection list:
+		// 'project' can be null/undefined and uploads go to general upload directory
 		function get_uploads( project ) {
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
@@ -192,6 +193,11 @@
 						</div>`;
 
 						uploadLinksWrapper.innerHTML += markup;
+					}
+					if (fileLinks.length < 1) {
+						// no poject files yet, so hide the empty uploaded files list:
+						let upDownSet = document.getElementById("uploadDownloadSet")
+						upDownSet.style.display = "none";
 					}
 				}
 			 ).catch(

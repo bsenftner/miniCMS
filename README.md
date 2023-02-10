@@ -1,6 +1,6 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Very much a work in progress at this point, informally declared version 0.8
+## Very much a work in progress at this point, informally declared version 0.9
 
 Features in place so far:
 
@@ -11,7 +11,9 @@ Features in place so far:
   - email verification
   - Settings page for account mgmnt
     - password and email change
-    - admins get a few more settings
+    - admins get a few more settings:
+      - Generate and download a site database backup
+      - Review site users, their account settings, projects and roles
   - End-user profile pages for end-webmaster to put a GUI for whatever is the purpose behind their using MiniCMS
 - 'Project' content type
   - A collection of files, memo and comments only accessible by Project members

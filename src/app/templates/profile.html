@@ -76,16 +76,7 @@
 
 						// if user is unverified put the email verification controls beneath their initial page contents:
 						if (response.roles.includes('unverified')) {
-							let newHtml = '<div id="emailVerifyDiv">' +
-										  '<h4>Please verify your email:</h4>' + 
-										  '<label for="vcode">Verification code:</label>' + 
-										  '<input type="text" id="vcode" name="label" value="">' + 
-										  '<br/><br/><div id="userVerifyMsg"></div>' + 
-										  '<div id="divLoginButtons">' + 
-										  '<a href="#" class="button" onclick="Cancel()">Cancel</a>' + 
-										  '<a href="#" class="button" onclick="VerifyEmail()">Verify Email</a>' + 
-										  '</div></div>';
-							document.getElementById("mainContent").innerHTML += newHtml
+							AddEmailVerifyMarkup( "mainContent" );
 						}
 						
 						// change right sidebar links
@@ -100,46 +91,14 @@
 						`;
 
 						GetUserProjects();
-
-						// GetLatestMemos();
 					}
 				});
 			}
 		}
 
-		function VerifyEmail() { 
-			// get the verification code:
-			userVCode = document.getElementById("vcode").value;
-			userVCode = userVCode.trim();
-			// post:
-			const params = { "text": userVCode };
-			//
-			const options = {
-				method: 'POST',
-				headers: {
-					  'Accept': 'application/json',
-					  'Content-Type': 'application/json',
-					  // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
-				},
-				body: JSON.stringify( params )  
-			};
-			fetch( '/users/verify', options )
-				.then( response => response.json() )
-				.then( response => {
-					// Do something with response.
-					console.log( response )
-					if (response.status=='Ok' || response.status=="Already verified") {
-						document.getElementById("emailVerifyDiv").innerHTML = "<h4>Email verified, thank you.</h4>";
-						setTimeout( ()=>{ window.location.reload(); }, 3000);
-					}
-					else{
-						document.getElementById("userVerifyMsg").innerHTML = 
-								"<h4>" + response.detail + "</h4>";
-					}
-				}); /* */
-		}
 
-        function Cancel() { window.location.href = "/"; }
+
+        
 
 		function NewProject() { window.location.href = "/newProject"; }
 
@@ -150,6 +109,8 @@
 		function UserSettings() { window.location.href = "/settings"; }
 
 	</script>
+
+	{% include 'common_emailVerify.html' %}
 
 	{% include 'common_userProjects.html' %}
 

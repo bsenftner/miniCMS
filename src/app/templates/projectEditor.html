@@ -373,7 +373,7 @@
 					// Do something with the error
 					console.log(err) 
 					alert( err )
-					// window.location.href = "/memopage/{{ contentPost.userid }}";
+					// window.location.href = "/projectPage/{{ contentPost.userid }}";
 				}) 
 		}
 		function ProjectSubmit() {
@@ -431,12 +431,12 @@
 				method: 'DELETE',
 				// headers: { "Authorization": "Bearer " + access_token } // only needed when JWT is not in cookie
 			};
-			fetch( '/memo/{{ contentPost.memoid }}', options )
+			fetch( '/project/{{ contentPost.projectid }}', options )
 				.then( response => response.json() )
 				.then( response => {
 					// Do something with response:
 					console.log( response )
-					if (response.memoid != '{{ contentPost.memoid }}')
+					if (response.projectid != '{{ contentPost.projectid }}')
 					{ 
 						console.log( "DELETE ERROR!" )
 						alert( "DELETE ERROR!" )
@@ -449,7 +449,7 @@
 					// Do something with the error
 					console.log(err) 
 					alert( err )
-					window.location.href = "/memopage/{{ contentPost.memoid }}";
+					window.location.href = "/projectPage/{{ contentPost.projectid }}";
 				});
 		}
 		function ProjectDelete() {
@@ -466,7 +466,7 @@
 
 		function Profile() { window.location.href = "/profile"; }
 
-		function UserSettings() { window.location.href = "/Settings"; }
+		function UserSettings() { window.location.href = "/settings"; }
 
 	</script>
 

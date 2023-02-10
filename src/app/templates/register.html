@@ -21,23 +21,25 @@
 			<div id="mainContent">
 				{# a new user registration form #}
             	<h4>New User Registration:</h4>
-			    	<label for="username">Username:</label>
-  			    	<input type="text" id="username" name="label" value="">
+                <div id="userRegistration">
+                    <label for="username">Username:</label>
+                        <input type="text" id="username" name="label" value="">
                     <br/>
                     <label for="email">Email Addr:</label>
-                    <input type="text" id="email" name="label" value="">
-                	<br/>
-                	<label for="password">Password:</label>
-                	<input type="password" id="password" name="label" value="">
-                	<br/>
-                	<label for="confirmPass">Confirm Password:</label>
-                	<input type="password" id="confirmPass" name="label" value="">
-                	<br/>
-					<h4>Password must be a minimum of 12 characters long.</h4>
-			    	<div id="divRegisterButtons">
-				    	<a href="#" class="button" onclick="Cancel()">Cancel</a>
-				    	<a href="#" class="button" onclick="Register()">Register</a>
-			    	</div>
+                        <input type="text" id="email" name="label" value="">
+                    <br/>
+                    <label for="password">Password:</label>
+                        <input type="password" id="password" name="label" value="">
+                    <br/>
+                    <label for="confirmPass">Confirm Password:</label>
+                        <input type="password" id="confirmPass" name="label" value="">
+                    <br/>
+                </div>
+				<h4>Password must be a minimum of 12 characters long.</h4>
+			    <div id="divRegisterButtons">
+					<a href="#" class="button" onclick="Cancel()">Cancel</a>
+					<a href="#" class="button" onclick="Register()">Register</a>
+			    </div>
 			</div>
             <div id="userMsg"></div>
 		</main>

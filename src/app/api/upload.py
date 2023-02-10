@@ -20,7 +20,7 @@ import json
 router = APIRouter()
 
 # ------------------------------------------------------------------------------------------------------------------
-# endpoint for uploads, restricted to admin accounts
+# endpoint for general uploads, restricted to admin accounts
 @router.post("/", status_code=200)
 async def upload(file: UploadFile = File(...), 
                  current_user: UserInDB = Depends(get_current_active_user)):
@@ -60,6 +60,8 @@ async def project_upload(projectname: str,
     
     isAdmin = user_has_role(current_user,"admin")
     isProjMember = user_has_role(current_user, projectname)
+    
+    log.info( f"project_upload: isAdmin is {isAdmin}, isProjMember is {isProjMember}")
     
     if not isAdmin and not isProjMember:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, 

@@ -89,53 +89,13 @@
 							'<a href="#" class="button" onclick="Logout()">Logout</a>';
 
 						if (response.roles.includes('unverified')) {
-							let newHtml = '<h4>Please verify your email:</h4>' + 
-										  '<label for="vcode">Verification code:</label>' + 
-										  '<input type="text" id="vcode" name="label" value="">' + 
-										  '<br/><br/><div id="userVerifyMsg"></div>' + 
-										  '<div id="divLoginButtons">' + 
-										  '<a href="#" class="button" onclick="Cancel()">Cancel</a>' + 
-										  '<a href="#" class="button" onclick="VerifyEmail()">Verify Email</a></div>';
-							document.getElementById("mainContent").innerHTML += newHtml
+							AddEmailVerifyMarkup( "mainContent" );
 						}
 
 						GetUserProjects();
 					}
 				});
 			}
-		}
-
-        function VerifyEmail() { 
-			// get the verification code:
-			userVCode = document.getElementById("vcode").value;
-			userVCode = userVCode.trim();
-			// post:
-			const params = { "text": userVCode };
-			//
-			const options = {
-				method: 'POST',
-				headers: {
-					  'Accept': 'application/json',
-					  'Content-Type': 'application/json',
-					  // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
-				},
-				body: JSON.stringify( params )  
-			};
-			fetch( '/users/verify', options )
-				.then( response => response.json() )
-				.then( response => {
-					// Do something with response.
-					console.log( response )
-					if (response.status=='Ok' || response.status=="Already verified") {
-						document.getElementById("mainContent").innerHTML = 
-								"<h4>Email verified, thank you.</h4>";
-					}
-					else{
-						document.getElementById("userVerifyMsg").innerHTML = 
-								"<h4>" + response.detail + "</h4>";
-					}
-					GetLatestMemos();
-				}); /* */
 		}
 
         function Cancel() { window.location.href = "/"; }
@@ -208,6 +168,8 @@
 
 	</script>
 
+	{% include 'common_emailVerify.html' %}
+	
 	{% include 'common_userProjects.html' %}
 
 	{% include 'common_logout.html' %}
