@@ -97,7 +97,7 @@ async def read_project(id: int = Path(..., gt=0),
 @router.get("/", response_model=List[ProjectDB])
 async def read_all_projects(current_user: UserInDB = Depends(get_current_active_user)) -> List[ProjectDB]:
     # get all the projects this user has access:
-    projList = await crud.get(current_user)
+    projList = await crud.get_all_projects(current_user)
     return projList
 
 # ----------------------------------------------------------------------------------------------
