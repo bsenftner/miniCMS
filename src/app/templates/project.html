@@ -166,7 +166,7 @@
                 
         // get list of users and populate project membership controls:
 		const get_users = () => {
-			fetch('/users/{{contentPost.name}}', { // GET endpoint
+			fetch('/users/{{projectTag}}', { // GET endpoint
 				  method: 'GET',
 				  headers: {}
 			}).then(
@@ -184,7 +184,7 @@
 					for (let i = 0; i < gUsers.length; i++) {
                         let username = gUsers[i].username;
 						let roles = gUsers[i].roles;
-                        let isMember =  roles.includes("{{contentPost.name}}");
+                        let isMember =  roles.includes("{{projectTag}}");
                         if (isMember) {
                             let markup = `
                                 <div class="divProjMembershipGridParent">

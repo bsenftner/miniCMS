@@ -271,7 +271,7 @@ async def memoPublic( request: Request, id: int  ):
 # ------------------------------------------------------------------------------------------------------------------
 # serve existing memo on an editor thru a template:
 @router.get("/memoEditor/{memoid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def editor( request: Request, 
+async def memoEditor( request: Request, 
                   memoid: int, 
                   current_user: User = Depends(users.get_current_active_user) ):
     
@@ -305,7 +305,7 @@ async def editor( request: Request,
 # ------------------------------------------------------------------------------------------------------------------
 # serve an empty editor page that saves as a memo thru a template:
 @router.get("/newProjectMemo/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def editor( request: Request, 
+async def newMemoEditor( request: Request, 
                   projectid: int,
                   current_user: User = Depends(users.get_current_active_user) ):
     
@@ -336,6 +336,7 @@ async def editor( request: Request,
         { "request": request, 
           "contentPost": memo, 
           "parentName": proj.name,
+          "parentTag": tag.text,
           "frags": FRAGS, 
           "access": 'private', 
           "memos": memoList

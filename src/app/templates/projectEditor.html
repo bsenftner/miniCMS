@@ -249,7 +249,7 @@
 						let roles = gUsers[i].roles;
                         let userid = gUsers[i].userid;
                         let actionBttn = `<a href="#" class="button" onclick="AddUserProject(${userid})">Add to Project</a>`;
-                        let isMember =  roles.includes("{{contentPost.name}}");
+                        let isMember =  roles.includes("{{projectTag}}");
                         if (isMember) {
                             actionBttn = `<a href="#" class="button" onclick="RemoveUserProject(${userid})">Remove from Project</a>`;
                         }
@@ -312,7 +312,7 @@
             if (user != null) {
                 // post user role update:
 			    const params = {
-				    "text": user.roles + " {{contentPost.name}}",
+				    "text": user.roles + " {{projectTag}}",
 			    };
                 //
                 UpdateUserRoles( userid, params );
@@ -330,7 +330,7 @@
             if (user != null) {
                 // post user role update:
 			    const params = {
-				    "text": user.roles.replace(" {{contentPost.name}}", "")
+				    "text": user.roles.replace(" {{projectTag}}", "")
 			    };
                 //
                 UpdateUserRoles( userid, params );
