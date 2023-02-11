@@ -34,12 +34,14 @@
 				{# title and post contents, with an optional edit button #}
 				<H1> {{contentPost.title}} </H1>
 				<div class="ql-editor">
-					{{contentPost.description | safe}}
+					{{contentPost.text | safe}}
 				</div>
-				<h5>Author: {{contentPost.author}}</h5>
-				<h5>Status: {{contentPost.status}}</h5>
-				<h5>Access: {{contentPost.access}}</h5>
-				<h5>Tags: {{contentPost.tags}}</h5>
+                <div class="postMetadata">
+				    <h5 class="g1">Author: {{contentPost.username}}</h5>
+				    <h5 class="g2">Status: {{contentPost.status}}</h5>
+				    <h5 class="g3">Access: {{contentPost.access}}</h5>
+				    <h5 class="g4">Tags: {{contentPost.tags}}</h5>
+                </div>
 			</div>
 			
 		</main>
@@ -102,13 +104,13 @@
 			}
 		}
 
-		function MemoEdit() { window.location.href = "/MemoEditor/{{ contentPost.memoid }}"; }
+		function MemoEdit() { window.location.href = "/memoEditor/{{ contentPost.memoid }}"; }
 
 		function Login() { window.location.href = "/login"; }
 
 		function Register() { window.location.href = "/register"; }
 
-		function UserSettings() { window.location.href = "/Settings"; }
+		function UserSettings() { window.location.href = "/settings"; }
 
 		function UserProfile() { window.location.href = "/profile"; }
 

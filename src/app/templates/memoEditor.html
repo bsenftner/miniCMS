@@ -65,13 +65,12 @@
 					<div id="AccessSelectionMsg">
 						Selecting <b>Admin</b> makes the memo only visible to management and the memo author. 
 						<br/>
-						Selecting <b>Staff</b> makes the memo visible to all employees. 
+						Selecting <b>Staff</b> makes the memo visible to Project Members. 
 						<br/>
 						Selecting <b>Public</b> makes the memo visible to anyone with a web browser.
 						<br/>
 						Public memos can only be created by admins. 
-						<br/>
-						Consider memos company notices and company-wide discussions. 
+						Consider Project Memos Project notices and Project-wide discussions. 
 					</div>
 				</div>
 				<div>
@@ -153,7 +152,8 @@
 			// make sure memo status is reflected in the selection widget:
 			document.getElementById("statusSelectBox").value = "{{contentPost.status}}"
 			//
-			document.getElementById("NewPostAccess").value = "{{contentPost.access}}"
+			let accessStr = "{{contentPost.access}}";
+			document.getElementById("NewPostAccess").value = accessStr.trim();
 
 			if (Number("{{contentPost.memoid}}") == 0) {
 				// we're creating a new memo, so change the button options:
@@ -169,18 +169,20 @@
 					let newPostAccess = document.getElementById("NewPostAccess")
 					//
 					let i;
-					//
 					for (i = newPostAccess.options.length; i >= 0; i--) {
 						newPostAccess.remove(i);
 					}
 					//
 					let optn = document.createElement("OPTION");
+					optn.text = 'Admin';
+					optn.value = 'admin'; 
+					newPostAccess.options.add(optn);
 					optn.text = 'Staff';
 					optn.value = 'staff'; 
 					newPostAccess.options.add(optn);
 
 					// and for simplicity of interface, hide these controls completely:
-					document.getElementById("divPostAccess").style.display = "none";
+					// document.getElementById("divPostAccess").style.display = "none";
 				}
 			}
 
@@ -221,7 +223,7 @@
 				"tags": newPostTags,
 				"userid": gUser.userid,
 				"username": gUser.username,
-				"projectid": 1, // temp
+				"projectid": Number("{{contentPost.projectid}}"), 
 			};
 		
 			const options = {
@@ -269,7 +271,7 @@
 				"tags": document.getElementById("NewPostTags").value, 
 				"userid": gUser.userid,
 				"username": gUser.username,
-				"projectid": 1, // temp
+				"projectid":Number("{{contentPost.projectid}}"),  // temp
 			}
 			//
 			const options = {

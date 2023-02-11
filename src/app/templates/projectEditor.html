@@ -84,6 +84,20 @@
 					</div>
 				</div>
 
+				<div>
+					<label for="ProjectTag">Project Tag:</label>
+  					<input type="text" id="ProjectTag" name="label" value="{{projectTag}}">
+					<div id="TagsMsg">
+						Please choose a <b>tag</b> for this <b>Project</b>. 
+						<b>Memos</b> created for this <b>Project</b> will
+						automatically receive this <b>tag</b>, and the <b>tag</b> will serve as 
+						the <b>Account Role</b> granting users access to this <b>Project</b> and it's 
+						information.
+						<b>Tags</b> are single words used to aid searching for <b>Project Memos</b> 
+						while also providing <b>User Project Access control.</b>
+					</div>
+				</div>
+
 				<div id="divBeneathTheEditor">
 					<a href="#" class="button" onclick="ProjectEditCancel()">Cancel</a>
 					<a href="#" class="button" onclick="ProjectUpdate()">Update</a>
@@ -333,17 +347,20 @@
 		}
 
 		function ProjectSubmitWork() {
-			// get the post label:
+			// get the project name:
 			var NewProjectName = document.getElementById("NewProjectName").value;
 			// Get HTML content
 			var newProjectDesc = tinymce.get("editor").getContent();
-			// get the post status:
+			// get the project status:
 			var newPostStatus = document.getElementById("statusSelectBox").value;
+			// get the project tag:
+			var newProjectTag = document.getElementById("ProjectTag").value;
 
 			// post as new project submission:
 			const params = {
 				"name": NewProjectName, 
 				"text": newProjectDesc,
+				"tag": newProjectTag
 			};
             //
 			const options = {

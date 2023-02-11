@@ -159,6 +159,12 @@
 					}
 				});
 			}
+			else {
+				// user is not logged in
+				document.getElementById("commentsTop").style.display = 'none';
+				document.getElementById("existingComments").style.display = 'none';
+				document.getElementById("commentEditorContainer").style.display = 'none';
+			}
 		}
 
         // configure the TinyMCE editor for comments:

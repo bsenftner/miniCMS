@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 from app import config
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
-from app.api.models import UserInDB, basicTextPayload, ProjectRequest, ProjectSchema, ProjectDB
+from app.api.models import UserInDB, basicTextPayload, ProjectRequest, ProjectUpdate, ProjectSchema, ProjectDB
 
 from typing import List
 
@@ -27,22 +27,22 @@ async def create_project(payload: ProjectRequest,
     if not user_has_role(current_user, "admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
     
-    # project name must be all letters or numbers, no spaces or puncuation:
-    if payload.name.isalnum() is False:
+    # project tag must be all letters or numbers, no spaces or puncuation:
+    if payload.tag.isalnum() is False:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
-                            detail="Bad Project name, only use letters and numbers in project names.")
+                            detail="Bad Project Tag, only use letters and numbers in Project Tags.")
     
     proj = await crud.get_project_by_name( payload.name )
     if proj is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A Project with this name already exists.")
     
     # a tag with the project name needs to also exist, so verify a tag with the requested project name does not exist yet:
-    tagid = await crud.get_tag_by_name( payload.name )
+    tagid = await crud.get_tag_by_name( payload.tag )
     if tagid is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A Tag with this name already exists.")
    
-    # good, we can create the project AFTER we create a tag with the project name:
-    tagPayload = basicTextPayload( text=payload.name )
+    # good, we can create the project AFTER we create a tag with the project tag:
+    tagPayload = basicTextPayload( text=payload.tag )
     tagid = await crud.post_tag( tagPayload )
     if tagid is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dependant data creation failure.")
@@ -103,31 +103,38 @@ async def read_all_projects(current_user: UserInDB = Depends(get_current_active_
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
 @router.put("/{id}", response_model=ProjectDB)
-async def update_project(payload: ProjectSchema, 
+async def update_project(payload: ProjectUpdate, 
                          id: int = Path(..., gt=0), 
                          current_user: UserInDB = Depends(get_current_active_user)) -> ProjectDB:
    
     log.info("update_project: here!!")
 
-    project: ProjectDB = await crud.get_project(id)
-
-    if project is None:
+    proj: ProjectDB = await crud.get_project(id)
+    if proj is None:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    weAreAllowed = crud.user_has_project_access( current_user, project )
+    weAreAllowed = crud.user_has_project_access( current_user, proj )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
 
-    projectid = await crud.put_project(id, payload)
+    putPayload = ProjectSchema(
+        name=payload.name, 
+        text=payload.text, 
+        userid=proj.userid,
+        username=proj.username,
+        status=payload.status,
+        tagid=proj.tagid
+    )
+    projectid = await crud.put_project(id, putPayload)
     
     response_object = {
                 "projectid": projectid,
                 "name": payload.name, 
                 "text": payload.text,
-                "userid": payload.userid,
-                "username": payload.username,
+                "userid": proj.userid,
+                "username": proj.username,
                 "status": payload.status,
-                "tagid": payload.tagid
+                "tagid": proj.tagid
             }
     return response_object
 

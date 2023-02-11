@@ -104,8 +104,6 @@ async def profilePage( request: Request,
 @router.get("/projectPage/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def projectPage( request: Request, projectid: int, 
                        current_user: User = Depends(users.get_current_active_user) ):
-    
-    config.log.info("projectPage: here!!")
      
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
@@ -114,6 +112,10 @@ async def projectPage( request: Request, projectid: int,
     weAreAllowed = crud.user_has_project_access( current_user, proj )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
+        
+    tag = await crud.get_tag( proj.tagid )
+    if not proj:
+        raise HTTPException(status_code=500, detail="Project Tag not found")
     
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, projectid)
@@ -125,6 +127,7 @@ async def projectPage( request: Request, projectid: int,
         "project.html",
         { "request": request, 
           "contentPost": proj, 
+          "projectTag": tag.text,
           "frags": FRAGS, 
           "access": 'private',
           "users": userList,
@@ -148,12 +151,18 @@ async def projectEditor( request: Request,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to edit other's Projects")
         
+    tag = await crud.get_tag( proj.tagid )
+    if not proj:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                            detail="Project Tag not found")
+        
     memoList = await crud.get_all_project_memos(current_user, id)
     
     return TEMPLATES.TemplateResponse(
         "projectEditor.html", 
         {"request": request, 
          "contentPost": proj, 
+         "projectTag": tag.text,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
@@ -184,6 +193,7 @@ async def projectEditor( request: Request,
         "projectEditor.html", 
         {"request": request, 
          "contentPost": proj, 
+         "projectTag": "",
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
@@ -231,13 +241,19 @@ async def memoPage( request: Request,
 @router.get("/publicmemo/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoPublic( request: Request, id: int  ):
     
+    config.log.info(f"memoPublic: got {id}")
+    
     memo: MemoDB = await crud.get_memo(id)
     if not memo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
 
+    config.log.info(f"memoPublic: memo.access is {memo.access}")
+    
     if 'public' not in memo.access:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Memo not publc.")
         
+    config.log.info(f"memoPublic: yep, we are public")
+    
     memoList = await crud.get_all_public_memos()
     
     return TEMPLATES.TemplateResponse(
@@ -297,12 +313,17 @@ async def editor( request: Request,
     if not proj:
         raise HTTPException(status_code=404, detail="Memo Project not found")
     
+    tag = await crud.get_tag( proj.tagid )
+    if not proj:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                            detail="Project Tag not found")
+    
     memo = MemoDB( memoid=0,
                    title='your memo title',
                    text='Edit this to be your memo.',
                    status='unpublished',
-                   tags=proj.name,
-                   access='staff ',
+                   tags=tag.text,
+                   access='staff',
                    userid=current_user.userid,
                    username=current_user.username,
                    projectid=proj.projectid)

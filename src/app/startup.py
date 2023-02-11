@@ -113,8 +113,9 @@ async def initialize_database_data( ) -> None:
     proj = await crud.get_project(1)
     if not proj:
         log.info("creating first project...")
-        first_project_payload = ProjectRequest(name="MiniCMS", 
-                                               text="<p>Author of this software's notes</p>")
+        first_project_payload = ProjectRequest(name="MiniCMS docs and debug tracking", 
+                                               text="<p>Author of this software's notes</p>",
+                                               tag="MiniCMS")
         log.info(f"posting {first_project_payload}...")
         projectid = await project.create_project(first_project_payload, adminUser)
         log.info(f"created first project with id {projectid}.")
@@ -130,7 +131,7 @@ async def initialize_database_data( ) -> None:
                                         text="<p>What shall we do today?</p>", 
                                         status="unpublished", 
                                         access="admin", 
-                                        tags="debug",
+                                        tags="MiniCMS",
                                         userid=1, 
                                         username=settings.ADMIN_USERNAME,
                                         projectid=1)

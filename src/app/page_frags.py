@@ -3,8 +3,9 @@ FRAGS = [
         "header": 
 """
 <div id="topPageHeader">
+    <img id="MiniCMSLogo" src="/static/MiniCMS.png">
     <h3>MiniCMS</h3>
-    <h4> A miniture document & content management system for secure, in-office and remote project collaboration</h4>
+    <h4> A miniture document & info management system for secure, in-office and remote project collaboration</h4>
     <h5> version 0.90</h5>
 </div>""",
 

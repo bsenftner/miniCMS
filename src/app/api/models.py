@@ -61,6 +61,12 @@ class TagDB(BaseModel):
 class ProjectRequest(BaseModel):
     name: str                                                   # project name
     text: str                                                   # project description
+    tag: str                                                    # project tag
+    
+class ProjectUpdate(BaseModel):
+    name: str                                                   # project name
+    text: str                                                   # project description
+    status: str                                                 # unpublished/published/archived
     
     
 class ProjectSchema(BaseModel):

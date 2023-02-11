@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
-from app.api.models import UserInDB, MemoDB, MemoSchema, ProjectDB
+from app.api.models import UserInDB, MemoDB, MemoSchema, ProjectDB, TagDB
 
 from typing import List
 
@@ -21,7 +21,7 @@ router = APIRouter()
 async def create_memo(payload: MemoSchema, 
                       current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
     
-    log.info(f"create_memo: current_user is {current_user}")
+    log.info(f"create_memo: payload is {payload}")
     
     proj: ProjectDB = await crud.get_project(payload.projectid)
     if not proj:
@@ -29,7 +29,17 @@ async def create_memo(payload: MemoSchema,
     
     weAreAllowed = crud.user_has_project_access( current_user, proj )
     if not weAreAllowed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create memo for project.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to create memo for project.")
+        
+    tag: TagDB = await crud.get_tag( proj.tagid )
+    if not tag:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+                            detail="Memo Project Tag not found")
+    
+    if not tag.text in payload.tags:
+        payload.tags += ' '
+        payload.tags += tag.text
         
     log.info(f"create_memo: posting {payload}")
     
@@ -101,6 +111,14 @@ async def update_memo(payload: MemoSchema,
     
     if memo.userid != current_user.userid and not user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to change other's Memos")
+        
+    tag: TagDB = await crud.get_tag( proj.tagid )
+    if not tag:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Memo Project Tag not found")
+    
+    if not tag.text in payload.tags:
+        payload.tags += ' '
+        payload.tags += tag.text
     
     # make sure to retain original memo author:
     payload.userid = memo.userid

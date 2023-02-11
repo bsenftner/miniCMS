@@ -170,7 +170,7 @@ async def delete_project(id: int):
 # a utility for getting the permission to access a memo
 async def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
     # first admins automatically get access:
-    weAreAllowed = user_has_role(user, 'admin')
+    weAreAllowed = user_has_role(user, 'admin') or memo.access == 'public'
     if not weAreAllowed:
         # for everyone else, first make sure user has the memo's project access:
         weAreAllowed = await user_has_project_access_by_id(user, memo.projectid)
@@ -182,7 +182,7 @@ async def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
                 # memo is unpublished, but user is author, so access is granted (so they can finish the memo!)
                 weAreAllowed = True
             else:
-                # memo is not published, user is not author or admin
+                # memo is unpublished, user is not author or admin
                 weAreAllowed = False
                 
     return weAreAllowed
