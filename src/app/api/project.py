@@ -80,16 +80,20 @@ async def read_project(id: int = Path(..., gt=0),
     
     log.info("read_project: here!!")
     
-    project = await crud.get_project(id)
+    proj: ProjectDB = await crud.get_project(id)
     
-    if project is None:
+    if proj is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    tag = await crud.get_tag( proj.tagid )
+    if not proj:
+        raise HTTPException(status_code=500, detail="Project Tag not found")
     
-    weAreAllowed = crud.user_has_project_access( current_user, project )
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
-    return project
+    return proj
 
 # ----------------------------------------------------------------------------------------------
 # The response_model is a List with a ProjectDB subtype. See import of List top of file. 
@@ -113,14 +117,18 @@ async def update_project(payload: ProjectUpdate,
     if proj is None:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    weAreAllowed = crud.user_has_project_access( current_user, proj )
+    tag = await crud.get_tag( proj.tagid )
+    if not proj:
+        raise HTTPException(status_code=500, detail="Project Tag not found")
+        
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
 
     putPayload = ProjectSchema(
         name=payload.name, 
         text=payload.text, 
-        userid=proj.userid,
+        userid=proj.userid,             # retaining original author
         username=proj.username,
         status=payload.status,
         tagid=proj.tagid
@@ -129,12 +137,12 @@ async def update_project(payload: ProjectUpdate,
     
     response_object = {
                 "projectid": projectid,
-                "name": payload.name, 
-                "text": payload.text,
-                "userid": proj.userid,
-                "username": proj.username,
-                "status": payload.status,
-                "tagid": proj.tagid
+                "name": putPayload.name, 
+                "text": putPayload.text,
+                "userid": putPayload.userid,
+                "username": putPayload.username,
+                "status": putPayload.status,
+                "tagid": putPayload.tagid
             }
     return response_object
 

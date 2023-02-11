@@ -108,20 +108,21 @@ async def projectPage( request: Request, projectid: int,
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
-
-    weAreAllowed = crud.user_has_project_access( current_user, proj )
-    if not weAreAllowed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
         
     tag = await crud.get_tag( proj.tagid )
     if not proj:
         raise HTTPException(status_code=500, detail="Project Tag not found")
-    
-    # returns list of project memos this user has access:
-    memoList = await crud.get_all_project_memos(current_user, projectid)
+
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
     # returns list of all project users:
     userList = await crud.get_all_users_by_role( proj.name )
+    
+    # returns list of project memos this user has access:
+    # note: if project is unpublished the title is altered to have "(unpublished)" at the end
+    memoList = await crud.get_all_project_memos(current_user, projectid)
     
     return TEMPLATES.TemplateResponse(
         "project.html",

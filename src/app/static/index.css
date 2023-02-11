@@ -173,7 +173,7 @@ div#commentEditorContainer {
 }
 
 div#uploadDownloadSet {
-  margin-bottom: 15px;
+  margin: 5px;
   border: #bababa;
   border-width: thin;
   border-style: solid;
@@ -421,8 +421,11 @@ div.twoColumnsMargined {
   grid-template-rows: 1fr;
   grid-column-gap: 0px;
   grid-row-gap: 0px; 
-  margin-top: -20px;
-  margin-bottom: 20px;
+  margin-top: -25px;
+  margin-bottom: 5px;
+}
+div.twoColumnsMargined h2 {
+  margin: 20px 10px 10px;
 }
 div.twoCols0 {
   grid-area: 1 / 1 / 2 / 2;

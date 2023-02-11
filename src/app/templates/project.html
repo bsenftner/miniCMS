@@ -68,8 +68,7 @@
 				<a href="#" class="button twoCols1" id="newMemoBttn" onclick="NewProjectMemo()">New Project Memo</a>
 			</div>
             {% for m in memos %} 
-                <a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a>
-                <br>
+                <h3><a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a></h3>
             {% endfor %}
 		</main>
 
@@ -98,10 +97,12 @@
 			setTimeout( slidesInit, 3000 );
 		});
 		//
-		let gUser = {};       	   // current user 
-        let gUsers = {};    // all project users
+		let gUser = {};     // current user 
+        let gMembers = {};  // all project members
 		//
 		function page_init() {
+
+			ToggleUploadDownloadSet()
 
 			const access_token = localStorage.getItem('token');
 			if (typeof access_token !== 'undefined') {
@@ -176,14 +177,14 @@
 				  success => {
 					console.log( success )  
 					//
-					gUsers = success;       // remember API return data
+					gMembers = success;       // remember API return data
                     //
 					let divProjectMembers = document.getElementById("projectMembers")
 					divProjectMembers.innerHTML = '';
 
-					for (let i = 0; i < gUsers.length; i++) {
-                        let username = gUsers[i].username;
-						let roles = gUsers[i].roles;
+					for (let i = 0; i < gMembers.length; i++) {
+                        let username = gMembers[i].username;
+						let roles = gMembers[i].roles;
                         let isMember =  roles.includes("{{projectTag}}");
                         if (isMember) {
                             let markup = `

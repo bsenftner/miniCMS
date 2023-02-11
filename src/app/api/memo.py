@@ -26,16 +26,16 @@ async def create_memo(payload: MemoSchema,
     proj: ProjectDB = await crud.get_project(payload.projectid)
     if not proj:
         raise HTTPException(status_code=404, detail="Memo Project not found")
-    
-    weAreAllowed = crud.user_has_project_access( current_user, proj )
-    if not weAreAllowed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                            detail="Not Authorized to create memo for project.")
         
     tag: TagDB = await crud.get_tag( proj.tagid )
     if not tag:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                             detail="Memo Project Tag not found")
+    
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
+    if not weAreAllowed:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to create memo for project.")
     
     if not tag.text in payload.tags:
         payload.tags += ' '
@@ -104,17 +104,17 @@ async def update_memo(payload: MemoSchema,
     proj: ProjectDB = await crud.get_project(memo.projectid)
     if not proj:
         raise HTTPException(status_code=404, detail="Memo Project not found")
+        
+    tag: TagDB = await crud.get_tag( proj.tagid )
+    if not tag:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Memo Project Tag not found")
     
-    weAreAllowed = crud.user_has_project_access( current_user, proj )
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized for project.")
     
     if memo.userid != current_user.userid and not user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to change other's Memos")
-        
-    tag: TagDB = await crud.get_tag( proj.tagid )
-    if not tag:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Memo Project Tag not found")
     
     if not tag.text in payload.tags:
         payload.tags += ' '

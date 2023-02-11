@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy import asc 
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
-from app.api.models import  MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
+from app.api.models import MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
 from app.api.models import ProjectSchema, ProjectDB
 
 from app.db import DatabaseMgr, get_database_mgr
@@ -67,12 +67,12 @@ async def delete_tag(id: int):
 
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a project
-def user_has_project_access( user: UserInDB, project: ProjectDB ) -> bool:
+def user_has_project_access( user: UserInDB, proj: ProjectDB, projTag: TagDB ) -> bool:
     # first admins automatically get access:
     weAreAllowed = user_has_role(user, 'admin')
     if not weAreAllowed:
         # for everyone else:
-        if user_has_role(user, project.name) and project.status == 'published':
+        if user_has_role(user, projTag.text) and proj.status == 'published':
             weAreAllowed = True
     return weAreAllowed
 
@@ -87,7 +87,11 @@ async def user_has_project_access_by_id( user: UserInDB, projectid: int ) -> boo
         if not proj:
             weAreAllowed = False
         else:
-            weAreAllowed = user_has_project_access(user, proj)
+            tag: TagDB = await get_tag(proj.tagid)
+            if not tag:
+                weAreAllowed = False
+            else:
+                weAreAllowed = user_has_project_access(user, proj, tag)
     return weAreAllowed
 
 # -----------------------------------------------------------------------------------------
@@ -124,15 +128,20 @@ async def get_project_by_name(name: str) -> ProjectDB:
 # -----------------------------------------------------------------------------------------
 # returns all projects user has access
 async def get_all_projects(user: UserInDB) -> List[ProjectDB]:
+    
+    log.info(f"get_all_projects: user is {user}")
+    
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().order_by(asc(db_mgr.get_project_table().c.projectid))
     projectList = await db_mgr.get_db().fetch_all(query=query)   
 
     # now filter them by the roles held by the user:
     finalList = []
-    for p in projectList:
-        if user_has_project_access( user, p ):
-            finalList.append(p)
+    for proj in projectList:
+        tag: TagDB = await get_tag(proj.tagid)
+        if tag:
+            if user_has_project_access( user, proj, tag ):
+                finalList.append(proj)
             
     return finalList
 
