@@ -127,7 +127,7 @@ async def initialize_database_data( ) -> None:
     memo = await crud.get_memo(1)
     if not memo:
         log.info("creating first memo...")
-        first_memo_payload = MemoSchema(title="Hello Admins", 
+        first_memo_payload = MemoSchema(title="About", 
                                         text="<p>What shall we do today?</p>", 
                                         status="unpublished", 
                                         access="admin", 

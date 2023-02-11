@@ -27,7 +27,8 @@ async def create_project(payload: ProjectRequest,
     if not user_has_role(current_user, "admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
     
-    # project tag must be all letters or numbers, no spaces or puncuation:
+    # project tag must be all letters or numbers, no spaces or puncuation 
+    # (going to be used as directory name as well as an access role name)
     if payload.tag.isalnum() is False:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, 
                             detail="Bad Project Tag, only use letters and numbers in Project Tags.")
@@ -37,8 +38,8 @@ async def create_project(payload: ProjectRequest,
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A Project with this name already exists.")
     
     # a tag with the project name needs to also exist, so verify a tag with the requested project name does not exist yet:
-    tagid = await crud.get_tag_by_name( payload.tag )
-    if tagid is not None:
+    tag = await crud.get_tag_by_name( payload.tag )
+    if tag is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A Tag with this name already exists.")
    
     # good, we can create the project AFTER we create a tag with the project tag:
@@ -47,8 +48,8 @@ async def create_project(payload: ProjectRequest,
     if tagid is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dependant data creation failure.")
 
-    # projects all receive their own upload directory. 
-    proj_upload_path = config.get_base_path() / 'static/uploads' / payload.name
+    # projects all receive their own upload directory with the name of the tag text
+    proj_upload_path = config.get_base_path() / 'static/uploads' / payload.tag
     if not os.path.exists(proj_upload_path):
         log.info(f"create_project: creating upload directory {proj_upload_path}")
         os.makedirs(proj_upload_path)
@@ -118,12 +119,13 @@ async def update_project(payload: ProjectUpdate,
         raise HTTPException(status_code=404, detail="Project not found")
         
     tag = await crud.get_tag( proj.tagid )
-    if not proj:
+    if not tag:
         raise HTTPException(status_code=500, detail="Project Tag not found")
         
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to access project.")
 
     putPayload = ProjectSchema(
         name=payload.name, 
@@ -131,7 +133,7 @@ async def update_project(payload: ProjectUpdate,
         userid=proj.userid,             # retaining original author
         username=proj.username,
         status=payload.status,
-        tagid=proj.tagid
+        tagid=proj.tagid                # do not allow tagid to change
     )
     projectid = await crud.put_project(id, putPayload)
     

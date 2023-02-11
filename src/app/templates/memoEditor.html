@@ -76,7 +76,10 @@
 				<div>
 					<label for="NewPostTags">Tags:</label>
   					<input type="text" id="NewPostTags" name="label" value="{{contentPost.tags}}">
-					<div id="TagsMsg">Tags are words used to group memos of similar topic together, separated by spaces.</div>
+					<div id="TagsMsg">
+						Tags aid searching for memos of similar topic. 
+						Memos receive their Project's tag automatically.
+					</div>
 				</div>
 				<div id="divBeneathTheEditor">
 					<a href="#" class="button" onclick="MemoEditCancel()">Cancel</a>
@@ -182,7 +185,7 @@
 					newPostAccess.options.add(optn);
 
 					// and for simplicity of interface, hide these controls completely:
-					// document.getElementById("divPostAccess").style.display = "none";
+					document.getElementById("divPostAccess").style.display = "none";
 				}
 			}
 
@@ -190,6 +193,7 @@
 		}
 		//
 		function page_init() {
+			ToggleUploadDownloadSet();
 			ifAccessDoWithUser(page_init_work);
 		}
 

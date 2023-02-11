@@ -129,7 +129,7 @@ async def get_project_by_name(name: str) -> ProjectDB:
 # returns all projects user has access
 async def get_all_projects(user: UserInDB) -> List[ProjectDB]:
     
-    log.info(f"get_all_projects: user is {user}")
+    # log.info(f"get_all_projects: user is {user}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().order_by(asc(db_mgr.get_project_table().c.projectid))

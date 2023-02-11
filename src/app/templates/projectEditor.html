@@ -215,6 +215,17 @@
 					window.location.href = '/';
 				}
 
+				document.getElementById("ProjectTag").disabled = true; // project tag not editible   
+				//
+				document.getElementById("TagsMsg").innerHTML = 
+					`Created <b>Project</b> cannot have their <b>tag</b> changed. 
+					<b>Memos</b> created for this <b>Project</b> automatically receive 
+					this <b>tag</b>, and the <b>tag</b> serves as an <b>Account Role</b> within 
+					user accounts granting access to this <b>Project</b> and it's information.
+					<b>Tags</b> are single words used to aid searching for <b>Project Memos</b> 
+					while also providing <b>User Project Access control.</b>
+					`;
+
 				get_users();                         // get all the users and populate the project membership controls
 	
 				get_uploads("{{contentPost.name}}"); // read and then populate the upload links grid
