@@ -119,10 +119,19 @@ async def get_project(id: int) -> ProjectDB:
     return await db_mgr.get_db().fetch_one(query=query)
 
 # -----------------------------------------------------------------------------------------
-# for getting projects by their name:
-async def get_project_by_name(name: str) -> ProjectDB:
+# for getting projects by their tagid:
+async def get_project_by_name(name: int) -> ProjectDB:
+    log.info(f"get_project_by_name: looking for {name}")
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().where(name == db_mgr.get_project_table().c.name)
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting projects by their tagid:
+async def get_project_by_tagid(tagid: int) -> ProjectDB:
+    log.info(f"get_project_by_tagid: looking for {tagid}")
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_project_table().select().where(tagid == db_mgr.get_project_table().c.tagid)
     return await db_mgr.get_db().fetch_one(query=query)
 
 # -----------------------------------------------------------------------------------------

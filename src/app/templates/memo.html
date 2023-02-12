@@ -53,7 +53,7 @@
 					<h2 class="twoCols0">Project Files:</h2>
 					<a href="#" class="button twoCols1" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Uploads & Links</a>
 				</div>
-				<script>gUpDownProj = "{{parentName}}";</script>
+				<script>gUpDownProjId = "{{contentPost.projectid}}";</script>
 				{% include 'common_uploadDownloadSet.html' %}
 
 				<a href="#" class="button" onclick="PostComment()">Post Comment</a>
@@ -151,7 +151,7 @@
 						}
 						else {
 							LoadComments();
-							get_uploads("{{parentName}}"); // gets project uploads and populates their place on the project page
+							get_uploads("{{contentPost.projectid}}"); // gets project uploads and populates their place on the project page
 						}
 					}
 					else {

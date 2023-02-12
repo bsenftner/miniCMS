@@ -80,9 +80,9 @@
 				let domain = (new URL(window.location));
 				const prebsjnk = domain.origin;
 				let furl = prebsjnk + '/upload';
-				if (gUpDownProj != null) {
-					// gUpDownProj is expected to be the project name, if it exists:
-					furl += '/' + gUpDownProj;
+				if (gUpDownProjId != null) {
+					// gUpDownProjId is expected to be the project id, if it exists:
+					furl += '/' + gUpDownProjId;
 				}
 
 				fetch( furl, { // POST endpoint
@@ -95,8 +95,8 @@
 						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
 						//
 						// populate listbox for upload selection:
-						if (gUpDownProj != null) {
-							get_uploads(gUpDownProj);
+						if (gUpDownProjId != null) {
+							get_uploads(gUpDownProjId);
 						}
 						else {
 							get_uploads();
@@ -129,14 +129,14 @@
         }
 
 		// get list of uploaded files and populate upload selection list:
-		// 'project' can be null/undefined and uploads go to general upload directory
-		function get_uploads( project ) {
+		// 'projectid' can be null/undefined and uploads go to general upload directory
+		function get_uploads( projectid ) {
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
 			let furl = prebsjnk + '/upload';
-			if (project != null) {
+			if (projectid != null) {
 				// project is expected to be the project name, if passed:
-				furl += '/' + project;
+				furl += '/' + projectid;
 			}
 			fetch(furl, { // GET endpoint
 				  method: 'GET',

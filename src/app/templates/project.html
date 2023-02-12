@@ -60,7 +60,7 @@
 				<h2 class="twoCols0">Project Files:</h2>
 				<a href="#" class="button twoCols1" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project Files</a>
 			</div>
-            <script>gUpDownProj = "{{contentPost.name}}";</script>
+            <script>gUpDownProjId = "{{contentPost.projectid}}";</script>
 			{% include 'common_uploadDownloadSet.html' %}
 
 			<div class="twoColumns">
@@ -154,7 +154,7 @@
                         // populates the project's user list
 						get_users()
 
-						get_uploads("{{contentPost.name}}"); // gets project uploads and populates their place on the project page
+						get_uploads("{{contentPost.projectid}}"); // gets project uploads and populates their place on the project page
 					}
 					else {
 						// something is wrong, user should not be on this page:

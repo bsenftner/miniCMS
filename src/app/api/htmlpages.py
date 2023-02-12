@@ -110,7 +110,7 @@ async def projectPage( request: Request, projectid: int,
         raise HTTPException(status_code=404, detail="Project not found")
         
     tag = await crud.get_tag( proj.tagid )
-    if not proj:
+    if not tag:
         raise HTTPException(status_code=500, detail="Project Tag not found")
 
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
@@ -153,7 +153,7 @@ async def projectEditor( request: Request,
                             detail="Not Authorized to edit other's Projects")
         
     tag = await crud.get_tag( proj.tagid )
-    if not proj:
+    if not tag:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                             detail="Project Tag not found")
         
@@ -315,7 +315,7 @@ async def newMemoEditor( request: Request,
         raise HTTPException(status_code=404, detail="Memo Project not found")
     
     tag = await crud.get_tag( proj.tagid )
-    if not proj:
+    if not tag:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                             detail="Project Tag not found")
     

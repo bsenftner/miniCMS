@@ -49,9 +49,10 @@ async def create_project(payload: ProjectRequest,
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Dependant data creation failure.")
 
     # projects all receive their own upload directory with the name of the tag text
-    proj_upload_path = config.get_base_path() / 'static/uploads' / payload.tag
+    # proj_upload_path = config.get_base_path() / 'static/uploads' / payload.tag
+    proj_upload_path = config.get_base_path() / 'uploads' / payload.tag
     if not os.path.exists(proj_upload_path):
-        log.info(f"create_project: creating upload directory {proj_upload_path}")
+        log.info(f"create_project: creating project upload directory {proj_upload_path}")
         os.makedirs(proj_upload_path)
    
     projPayload = ProjectSchema(name=payload.name,
@@ -87,7 +88,7 @@ async def read_project(id: int = Path(..., gt=0),
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
         
     tag = await crud.get_tag( proj.tagid )
-    if not proj:
+    if not tag:
         raise HTTPException(status_code=500, detail="Project Tag not found")
     
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )

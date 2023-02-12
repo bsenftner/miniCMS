@@ -66,7 +66,7 @@
                     <h2>Project Files:</h2>
                     <a href="#" class="button g5" id="showHideUploadsDownloads" onclick="ToggleUploadDownloadSet()">Show / Hide Project File Controls</a>
                 </div>
-                <script>gUpDownProj = "{{contentPost.name}}";</script>
+                <script>gUpDownProjId = "{{contentPost.projectid}}";</script>
 				{% include 'common_uploadDownloadSet.html' %}
 
 				<div id="statusList">
@@ -228,7 +228,7 @@
 
 				get_users();                         // get all the users and populate the project membership controls
 	
-				get_uploads("{{contentPost.name}}"); // read and then populate the upload links grid
+				get_uploads("{{contentPost.projectid}}"); // read and then populate the upload links grid
 			}
 
 

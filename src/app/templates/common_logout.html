@@ -16,6 +16,7 @@ function Logout() {
             if (response.hasOwnProperty('username')) {
 
                 localStorage.removeItem('token');
+                localStorage.removeItem('webusername');
                     
                 document.getElementById("mainContent").innerHTML = 
                         "<h4>By now, " + response.username + ".</h4>";
