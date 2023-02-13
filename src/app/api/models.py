@@ -1,5 +1,6 @@
 from typing import Union
 from pydantic import BaseModel, Field, EmailStr, constr
+from datetime import datetime
 
 # create a "Pydantic Model" of the data we want to maintain in the database
 # by inheriting from BaseModel. This inherits data parsing and validation 
@@ -79,6 +80,7 @@ class ProjectSchema(BaseModel):
 
 class ProjectDB(ProjectSchema):
     projectid: int = Field(index=True)
+    created_date: datetime
     
     
 

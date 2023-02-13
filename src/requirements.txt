@@ -21,6 +21,7 @@ python-dotenv==0.21.0
 email-validator
 
 mimelib==0.1.1
+python-dateutil==2.8.2
 
 # dev
 # basic test framework

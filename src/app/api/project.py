@@ -18,9 +18,9 @@ router = APIRouter()
 
 # ----------------------------------------------------------------------------------------------
 # declare a POST endpoint on the root 
-@router.post("/", response_model=ProjectDB, status_code=201)
+@router.post("/", response_model=int, status_code=201)
 async def create_project(payload: ProjectRequest, 
-                         current_user: UserInDB = Depends(get_current_active_user)) -> ProjectDB:
+                         current_user: UserInDB = Depends(get_current_active_user)) -> int:
     
     log.info(f"create_project: received {payload}")
     
@@ -62,17 +62,20 @@ async def create_project(payload: ProjectRequest,
                                 status="unpublished",
                                 tagid=tagid)
     projectid = await crud.post_project(projPayload)
-    log.info(f"create_project: returning id {projectid}")
-    response_object = {
-        "projectid": projectid,
-        "name": projPayload.name, 
-        "text": projPayload.text,
-        "userid": projPayload.userid,
-        "username": projPayload.username,
-        "status": projPayload.status,
-        "tagid": projPayload.tagid
-    }
-    return response_object
+    return projectid
+ #   projectid = await crud.post_project(projPayload)
+ #   log.info(f"create_project: returning id {projectid}")
+ #   response_object = {
+ #       "projectid": projectid,
+ #       "name": projPayload.name, 
+ #       "text": projPayload.text,
+ #       "userid": projPayload.userid,
+ #       "username": projPayload.username,
+ #       "status": projPayload.status,
+ #       "tagid": projPayload.tagid,
+ #       
+ #   }
+ #   return response_object
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
@@ -108,10 +111,10 @@ async def read_all_projects(current_user: UserInDB = Depends(get_current_active_
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
-@router.put("/{id}", response_model=ProjectDB)
+@router.put("/{id}", response_model=int)
 async def update_project(payload: ProjectUpdate, 
                          id: int = Path(..., gt=0), 
-                         current_user: UserInDB = Depends(get_current_active_user)) -> ProjectDB:
+                         current_user: UserInDB = Depends(get_current_active_user)) -> int:
    
     log.info("update_project: here!!")
 
@@ -137,17 +140,18 @@ async def update_project(payload: ProjectUpdate,
         tagid=proj.tagid                # do not allow tagid to change
     )
     projectid = await crud.put_project(id, putPayload)
-    
-    response_object = {
-                "projectid": projectid,
-                "name": putPayload.name, 
-                "text": putPayload.text,
-                "userid": putPayload.userid,
-                "username": putPayload.username,
-                "status": putPayload.status,
-                "tagid": putPayload.tagid
-            }
-    return response_object
+    return projectid
+
+#    response_object = {
+#                "projectid": projectid,
+#                "name": putPayload.name, 
+#                "text": putPayload.text,
+#                "userid": putPayload.userid,
+#                "username": putPayload.username,
+#                "status": putPayload.status,
+#                "tagid": putPayload.tagid
+#            }
+#    return response_object
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  

@@ -60,7 +60,7 @@ class DatabaseMgr:
             Column("access", String),
             Column("tags", String),
             Column("created_date", DateTime, default=func.now(), nullable=False),
-            Column("updated_date", DateTime, default=func.now(), nullable=False),
+            Column("updated_date", DateTime, default=func.now(), onupdate=func.now(), nullable=False),
         )
         
         self.comment_tb = Table(
