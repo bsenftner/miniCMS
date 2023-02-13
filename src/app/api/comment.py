@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
-from app.api.models import UserInDB, MemoDB, CommentSchema, CommentDB
+from app.api.models import UserInDB, MemoDB, CommentSchema, CommentDB, CommentResponse
 
 from typing import List
 
@@ -17,9 +17,9 @@ router = APIRouter()
 
 # ----------------------------------------------------------------------------------------------
 # declare a POST endpoint on the root 
-@router.post("/", response_model=CommentDB, status_code=201)
+@router.post("/", response_model=CommentResponse, status_code=201)
 async def create_comment(payload: CommentSchema, 
-                         current_user: UserInDB = Depends(get_current_active_user)) -> CommentDB:
+                         current_user: UserInDB = Depends(get_current_active_user)) -> CommentResponse:
     
     # log.info(f"create_comment: current_user is {current_user}")
         
@@ -53,11 +53,12 @@ async def create_comment(payload: CommentSchema,
     
     response_object = {
         "commid": commid,
-        "text": payload.text,
-        "memoid": payload.memoid,
-        "userid": payload.userid,
-        "username": payload.username,
-        "parent": payload.parent,
+        # "text": payload.text,
+        # "memoid": payload.memoid,
+        # "userid": payload.userid,
+        # "username": payload.username,
+        # "parent": payload.parent,
+        # "created_date": payload
     }
     return response_object
 
@@ -116,9 +117,9 @@ async def read_all_memo_comments(memoid: int,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
         
     # get all the comments associated with this memo:
-    memoList = await crud.get_all_memo_comments( memodb.memoid )
+    memoCommentList = await crud.get_all_memo_comments( memodb.memoid )
             
-    return memoList
+    return memoCommentList
 
 # ----------------------------------------------------------------------------------------------
 # Note: therer is NO PUT for comments; once created they cannot be changed.

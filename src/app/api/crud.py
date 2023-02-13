@@ -363,14 +363,15 @@ async def get_all_memo_comments(memoid: int) -> List[CommentDB]:
         
     finalCommList = []
     for c in commIdList:
-        commid = c.commid
+        # commid = c.commid
         # log.info(f"get_all_memo_comments: preping comment with id {commid}")
         fullComm = CommentDB( commid = c.commid,
                               text = c.text,
                               memoid = c.memoid,
                               userid = c.userid,
                               username = c.username,
-                              parent = c.parent )
+                              parent = c.parent,
+                              created_date = c.created_date)
         finalCommList.append(fullComm)
             
     # log.info(f"get_all_memo_comments: finalCommList {finalCommList}")

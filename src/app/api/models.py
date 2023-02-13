@@ -58,7 +58,13 @@ class CommentDB(BaseModel):
     userid: int = Field(...,foreign_key="UserInDB.userid")
     username: str = Field(..., foreign_key="UserInDB.userid")
     parent: Union[int,None] = Field(default=None, foreign_key="CommentDB.commid")
+    created_date: datetime
 
+class CommentResponse(BaseModel):
+    commid: int
+    
+    
+    
 
 class TagDB(BaseModel):
     tagid: int = Field(index=True)

@@ -198,10 +198,15 @@
 					for (let i = 0; i < limit; i++) {
 						let comm = commList[i];
 						commHtml += '<div class="comment">';
-						commHtml += '<div class="postMetadata">';
-						commHtml += '<h5 class="g1">';
+						commHtml += '<div>';
+						commHtml += '<h5>On ';
+						let createTime = new Date(comm.created_date + 'Z');  // the 'Z' says this is UTC 
+						commHtml += createTime.toDateString();
+						commHtml += ' at ';
+						commHtml += createTime.toTimeString();
+						commHtml += ' <b>';
 						commHtml += comm.username;
-						commHtml += ' adds:</h5>';
+						commHtml += '</b> adds:</h5>';
 						commHtml += '</div>';
 						commHtml += comm.text;
 						commHtml += '</div>';
