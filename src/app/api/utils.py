@@ -7,6 +7,9 @@ from fastapi import status
 from typing import Optional
 from typing import Dict
 
+from datetime import datetime
+from dateutil import tz
+
 # ---------------------------------------------------------------------------------------
 class OAuth2PasswordBearerWithCookie(OAuth2):
     def __init__(
@@ -38,3 +41,15 @@ class OAuth2PasswordBearerWithCookie(OAuth2):
                 return None
         return param
     
+
+# ---------------------------------------------------------------------------------------
+def convertDateToLocal( date: datetime ) -> datetime:
+    
+    # fix date to be local time:
+    from_zone = tz.tzutc()
+    # to_zone = tz.tzlocal()
+    to_zone = tz.gettz('America/Denver')    # make user's local timezone
+    utc_dt = date.replace(tzinfo=from_zone)
+    local_dt = utc_dt.astimezone(to_zone)
+    
+    return local_dt

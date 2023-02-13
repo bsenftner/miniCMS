@@ -35,6 +35,12 @@ class MemoSchema(BaseModel):
  
 class MemoDB(MemoSchema):
     memoid: int = Field(index=True)
+    created_date: datetime
+    updated_date: datetime
+    
+class MemoResponse(BaseModel):
+    memoid: int
+    
 
  
     
@@ -71,12 +77,12 @@ class ProjectUpdate(BaseModel):
     
     
 class ProjectSchema(BaseModel):
-    name: str = Field(index=True)                               # project name, also a tag
+    name: str = Field(index=True)                               # project name
     text: str                                                   # project description
     userid: int = Field(...,foreign_key="UserInDB.userid")      # owner/creator
     username: str = Field(..., foreign_key="UserInDB.userid")
     status: str                                                 # unpublished/published/archived
-    tagid: int = Field(..., index=True, foreign_key="TagDB.tagid") # tag id equal to our project name
+    tagid: int = Field(..., index=True, foreign_key="TagDB.tagid") # tag id equal to our project tag
 
 class ProjectDB(ProjectSchema):
     projectid: int = Field(index=True)

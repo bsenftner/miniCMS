@@ -361,7 +361,7 @@ input#NewPostTitle, input#NewProjectName, input#ProjectTag {
 input#NewPostTags {
   width: 60%;
   margin: 10px 0;
-  font-size: 18px;
+  font-size: 2em;
   font-weight: bold;
 }
 
@@ -441,6 +441,25 @@ a.twoCols1  {
   margin: 1.5em 0 0 0;
 }
 
+div.fourColumns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px; 
+}
+div.fourCols0 {
+  grid-area: 1 / 1 / 2 / 2;
+}
+div.fourCols1 {
+  grid-area: 1 / 2 / 2 / 3;
+}
+div.fourCols2 {
+  grid-area: 1 / 3 / 2 / 4;
+}
+div.fourCols3 {
+  grid-area: 1 / 4 / 2 / 5;
+}
 
 .ql-video.ql-align-center {
   margin: 0 auto;
@@ -529,7 +548,7 @@ div#authorName {
 }
 
 select#statusSelectBox, select#NewPostAccess {
-  font-size: 18px;
+  font-size: 2em;
   font-weight: bold;
 }
 

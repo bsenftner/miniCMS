@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
-from app.api.models import UserInDB, MemoDB, MemoSchema, ProjectDB, TagDB
+from app.api.models import UserInDB, MemoDB, MemoSchema, MemoResponse, ProjectDB, TagDB
 
 from typing import List
 
@@ -17,9 +17,9 @@ router = APIRouter()
 
 # ----------------------------------------------------------------------------------------------
 # declare a POST endpoint on the root 
-@router.post("/", response_model=MemoDB, status_code=201)
+@router.post("/", response_model=MemoResponse, status_code=201)
 async def create_memo(payload: MemoSchema, 
-                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
+                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoResponse:
     
     log.info(f"create_memo: payload is {payload}")
     
@@ -47,18 +47,20 @@ async def create_memo(payload: MemoSchema,
 
     log.info(f"create_memo: returning id {memoid}")
     
-    response_object = {
-        "memoid": memoid,
-        "userid": payload.userid,
-        "username": payload.username,
-        "title": payload.title,
-        "text": payload.text,
-        "status": payload.status,
-        "access": payload.access,
-        "tags": payload.tags,
-        "projectid": payload.projectid,
-    }
-    return response_object
+    return { "memoid": memoid }
+
+#    response_object = {
+#        "memoid": memoid,
+#        "userid": payload.userid,
+#        "username": payload.username,
+#        "title": payload.title,
+#        "text": payload.text,
+#        "status": payload.status,
+#        "access": payload.access,
+#        "tags": payload.tags,
+#        "projectid": payload.projectid,
+#    }
+#    return response_object
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
@@ -90,10 +92,10 @@ async def read_all_memos(current_user: UserInDB = Depends(get_current_active_use
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
-@router.put("/{id}", response_model=MemoDB)
+@router.put("/{id}", response_model=MemoResponse)
 async def update_memo(payload: MemoSchema, 
                       id: int = Path(..., gt=0), 
-                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoDB:
+                      current_user: UserInDB = Depends(get_current_active_user)) -> MemoResponse:
    
     # log.info("update_memo: here!!")
 
@@ -126,18 +128,20 @@ async def update_memo(payload: MemoSchema,
     
     memoid = await crud.put_memo(id, memo.userid, payload)
     
-    response_object = {
-        "memoid": memoid,
-        "userid": payload.userid,                 
-        "username": payload.username,
-        "title": payload.title,
-        "text": payload.text,
-        "status": payload.status,
-        "access": payload.access,
-        "tags": payload.tags,
-        "projectid": payload.projectid,
-    }
-    return response_object
+    return { "memoid": memoid }
+
+#    response_object = {
+#        "memoid": memoid,
+#        "userid": payload.userid,                 
+#        "username": payload.username,
+#        "title": payload.title,
+#        "text": payload.text,
+#        "status": payload.status,
+#        "access": payload.access,
+#        "tags": payload.tags,
+#        "projectid": payload.projectid,
+#    }
+#    return response_object
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  

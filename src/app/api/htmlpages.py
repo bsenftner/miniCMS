@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
 from datetime import datetime
-from dateutil import tz
+# from dateutil import tz
 
 from starlette.responses import RedirectResponse
 
@@ -12,6 +12,7 @@ import json
 from app import config
 from app.api import crud, users
 from app.api.models import User, MemoDB, ProjectDB
+from app.api.utils import convertDateToLocal
 # from app.send_email import send_email_async
 
 # page_frag.py contains common page fragments, like .header & .footer.
@@ -135,12 +136,13 @@ async def projectPage( request: Request, projectid: int,
     # note: if project is unpublished the title is altered to have "(unpublished)" at the end
     memoList = await crud.get_all_project_memos(current_user, projectid)
     
-    # fix date to be local:
-    from_zone = tz.tzutc()
-    # to_zone = tz.tzlocal()
-    to_zone = tz.gettz('America/Denver')    # make user's local timezone
-    utc_dt = proj.created_date.replace(tzinfo=from_zone)
-    local_dt = utc_dt.astimezone(to_zone)
+    # # fix date to be local time:
+    # from_zone = tz.tzutc()
+    # # to_zone = tz.tzlocal()
+    # to_zone = tz.gettz('America/Denver')    # make user's local timezone
+    # utc_dt = proj.created_date.replace(tzinfo=from_zone)
+    # local_dt = utc_dt.astimezone(to_zone)
+    local_dt = convertDateToLocal( proj.created_date )
      
     return TEMPLATES.TemplateResponse(
         "project.html",
@@ -178,11 +180,14 @@ async def projectEditor( request: Request,
         
     memoList = await crud.get_all_project_memos(current_user, id)
     
+    local_dt = convertDateToLocal( proj.created_date )
+    
     return TEMPLATES.TemplateResponse(
         "projectEditor.html", 
         {"request": request, 
          "contentPost": proj, 
          "projectTag": tag.text,
+         "projectCreated": local_dt.strftime("%c"),
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
@@ -199,6 +204,10 @@ async def projectEditor( request: Request,
     if not users.user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
     
+    # the app runs in UTC local time:
+    created_date = datetime.now()
+    local_dt = convertDateToLocal( created_date )
+    
     proj = ProjectDB( name='yourProjectName',
                       text='Edit this to describe your project.',\
                       userid=current_user.userid,
@@ -206,7 +215,7 @@ async def projectEditor( request: Request,
                       status='unpublished',
                       tagid=0,
                       projectid=0,
-                      created_date=datetime.now())
+                      created_date=created_date)
         
     memoList = []
     
@@ -215,6 +224,7 @@ async def projectEditor( request: Request,
         {"request": request, 
          "contentPost": proj, 
          "projectTag": "",
+         "projectCreated": local_dt.strftime("%c"),
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
@@ -244,11 +254,16 @@ async def memoPage( request: Request,
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, memo.projectid)
     
+    localCreated_dt = convertDateToLocal( memo.created_date )
+    localUpdated_dt = convertDateToLocal( memo.updated_date )
+    
     return TEMPLATES.TemplateResponse(
         "memo.html",
         { "request": request, 
           "contentPost": memo, 
           "parentName": proj.name,
+          "memoCreated": localCreated_dt.strftime("%c"),
+          "memoUpdated": localUpdated_dt.strftime("%c"),
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList,
@@ -277,10 +292,15 @@ async def memoPublic( request: Request, id: int  ):
     
     memoList = await crud.get_all_public_memos()
     
+    localCreated_dt = convertDateToLocal( memo.created_date )
+    localUpdated_dt = convertDateToLocal( memo.updated_date )
+    
     return TEMPLATES.TemplateResponse(
         "index.html",
         { "request": request, 
           "contentPost": memo, 
+          "memoCreated": localCreated_dt.strftime("%c"),
+          "memoUpdated": localUpdated_dt.strftime("%c"),
           "frags": FRAGS, 
           "access": 'public',
           "memos": memoList 
@@ -311,10 +331,15 @@ async def memoEditor( request: Request,
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, memo.projectid)
     
+    localCreated_dt = convertDateToLocal( memo.created_date )
+    localUpdated_dt = convertDateToLocal( memo.updated_date )
+         
     return TEMPLATES.TemplateResponse(
         "memoEditor.html", 
         {"request": request, 
          "contentPost": memo, 
+         "memoCreated": localCreated_dt.strftime("%c"),
+         "memoUpdated": localUpdated_dt.strftime("%c"),
          "parentName": proj.name,
          "frags": FRAGS, 
          "access": 'private', 
@@ -339,6 +364,10 @@ async def newMemoEditor( request: Request,
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                             detail="Project Tag not found")
     
+    # the app runs in UTC local time:
+    created_date = datetime.now()
+    local_dt = convertDateToLocal( created_date )
+    
     memo = MemoDB( memoid=0,
                    title='your memo title',
                    text='Edit this to be your memo.',
@@ -347,7 +376,9 @@ async def newMemoEditor( request: Request,
                    access='staff',
                    userid=current_user.userid,
                    username=current_user.username,
-                   projectid=proj.projectid)
+                   projectid=proj.projectid,
+                   created_date=datetime.now(),
+                   updated_date=datetime.now)
     
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, memo.projectid)
@@ -358,6 +389,8 @@ async def newMemoEditor( request: Request,
           "contentPost": memo, 
           "parentName": proj.name,
           "parentTag": tag.text,
+          "memoCreated": local_dt.strftime("%c"),
+          "memoUpdated": local_dt.strftime("%c"),  # new memo, so both are same
           "frags": FRAGS, 
           "access": 'private', 
           "memos": memoList

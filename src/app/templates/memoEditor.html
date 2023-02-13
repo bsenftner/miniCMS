@@ -29,8 +29,19 @@
   						</div>
 					</div>
 				</form>
-				<div id="authorName">
-					Author: {{contentPost.username}}, UserId: {{contentPost.userid}} 
+				<div id="authorName" class="fourColumns">
+					<div class="fourCol0">
+						Creator: {{contentPost.username}}
+					</div>
+					<div class="fourCol1">
+						User Id: {{contentPost.userid}}
+					</div>
+					<div class="fourCol2">
+						Created: {{memoCreated}}
+					</div>
+					<div class="fourCol3">
+						Last Update: {{memoUpdated}}
+					</div>
 				</div>
 				<div class="twoColumns">
 					<h2 class="twoCols0">Project Files:</h2>
