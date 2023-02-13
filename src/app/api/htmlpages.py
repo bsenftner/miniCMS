@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException, Request, status, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 
+from datetime import datetime
+from dateutil import tz
+
 from starlette.responses import RedirectResponse
 
 import json
@@ -108,11 +111,19 @@ async def projectPage( request: Request, projectid: int,
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
         raise HTTPException(status_code=404, detail="Project not found")
-        
+    
     tag = await crud.get_tag( proj.tagid )
     if not tag:
         raise HTTPException(status_code=500, detail="Project Tag not found")
 
+    config.log.info(f"projectPage: proj.name {proj.name}")
+    config.log.info(f"projectPage: proj.projectid {proj.projectid}")
+    config.log.info(f"projectPage: proj.status {proj.status}")
+    config.log.info(f"projectPage: tag.text {tag.text}")
+    config.log.info(f"projectPage: proj.created_date {proj.created_date}")
+    date_timeStr = proj.created_date.strftime("%m/%d/%Y, %H:%M:%S %p")
+    config.log.info(f"projectPage: proj.created_date {date_timeStr}")
+    
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
@@ -124,11 +135,19 @@ async def projectPage( request: Request, projectid: int,
     # note: if project is unpublished the title is altered to have "(unpublished)" at the end
     memoList = await crud.get_all_project_memos(current_user, projectid)
     
+    # fix date to be local:
+    from_zone = tz.tzutc()
+    # to_zone = tz.tzlocal()
+    to_zone = tz.gettz('America/Denver')    # make user's local timezone
+    utc_dt = proj.created_date.replace(tzinfo=from_zone)
+    local_dt = utc_dt.astimezone(to_zone)
+     
     return TEMPLATES.TemplateResponse(
         "project.html",
         { "request": request, 
           "contentPost": proj, 
           "projectTag": tag.text,
+          "projectCreated": local_dt.strftime("%c"),
           "frags": FRAGS, 
           "access": 'private',
           "users": userList,
@@ -186,7 +205,8 @@ async def projectEditor( request: Request,
                       username=current_user.username,
                       status='unpublished',
                       tagid=0,
-                      projectid=0)
+                      projectid=0,
+                      created_date=datetime.now())
         
     memoList = []
     
