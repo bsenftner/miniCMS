@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Response
-from app.api.models import Token, UserInDB, UserPublic, UserReg, basicTextPayload, UserActionRec
+from app.api.models import Token, UserInDB, UserPublic, UserReg, basicTextPayload
 from app.api.users import UserAction, get_current_active_user, user_has_role, validate_new_user_info
 from app.api import encrypt 
 

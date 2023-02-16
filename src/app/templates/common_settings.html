@@ -1,5 +1,6 @@
                 
-                <h2>Account Roles: {{data.roles}}</h2>
+            <div id="YourAccountSet">
+                <h3>Account Roles: {{data.roles}}</h3>
                 
                 <p>Any changes below trigger an email notification.</p>
 
@@ -37,5 +38,18 @@
                     <a href="#" class="button" onclick="DisableAccount()">Disable Account</a>
                     
                 </div>
+            </div>
 
-                
+<script>
+
+    // called when user clicks the "Show / Hide Your Account" button
+    function ToggleYourAccountSet() {
+        let yourAcctSet = document.getElementById("YourAccountSet")
+        if (yourAcctSet.style.display === "none") {
+            yourAcctSet.style.display = "block";
+          } else {
+            yourAcctSet.style.display = "none";
+          }
+    }
+
+</script>

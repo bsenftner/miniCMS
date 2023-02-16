@@ -414,6 +414,9 @@ div.twoColumns {
   grid-column-gap: 0px;
   grid-row-gap: 0px; 
 }
+div.twoColumns h2 {
+  margin: 10px 10px 10px;
+}
 
 div.twoColumnsMargined {
   display: grid;
@@ -517,28 +520,37 @@ input#vcode {
 
 div#userList {
   display: grid;
+  grid-template-columns: 0.5fr 0.5fr 1fr; 
+  grid-template-rows: 1fr;
+  grid-column-gap: 10px;
+  grid-row-gap: 0px; 
   margin-top: 20px;
   margin-bottom: 20px;
 }
 div#userSelectionDiv {
-  grid-column: 1;
-}
-div#userSelectionDiv span {
-  font-size: 18px;
-  font-weight: bold;
-  vertical-align: top;
+  grid-area: 1 / 1 / 2 / 2;
 }
 select#userSelectBox {
-  min-width: 50%;
-  margin-left: 20px;
+  min-width: 100%;
 }
 select#userSelectBox option {
   font-weight: bold;
   font-size: 20px;
 }
 div#userInfoDiv {
-  grid-column: 2;
+  grid-area: 1 / 2 / 2 / 3;
   margin-top: -20px;
+}
+div#userActionDiv {
+  grid-area: 1 / 3 / 2 / 4;
+  margin-top: -20px;
+}
+select#userActionBox {
+  min-width: 100%;
+}
+select#userActionBox option {
+  font-weight: bold;
+  font-size: 16px;
 }
 
 div#authorName {

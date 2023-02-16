@@ -42,21 +42,27 @@
 					<a href="#" class="button" id="backupDownloadBttn" onclick="DownloadBackup()">Please select a backup to download first</a>
 				</div>
   				
-                <h3>User Accounts:</h3>
+                <h2>User Accounts:</h2>
 				<div id="userList">
 					<div id="userSelectionDiv">
-						<span>Users:</span>
 						<select id="userSelectBox" size="4" onchange="onUserSelectChangeFunc();"></select>
 						<div id="userSelectionMsg">
 							Select a user to examine. 
 						</div>
 					</div>
 					<div id="userInfoDiv">
-						Please select a user from the list.
+						Please select a user from the list at left.
+					</div>
+					<div id="userActionsDiv">
+						<select id="userActionBox" size="7" onchange="onUserActionChangeFunc();"></select>
 					</div>
 				</div>
 
-                <h3>Your Account:</h3>
+				<div class="twoColumns">
+					<h2 class="twoCols0">Your Account:</h2>
+					<a href="#" class="button twoCols1" onclick="ToggleYourAccountSet()">Show/Hide Your Account</a>
+				</div>
+                
 				{% include 'common_settings.html' %}
 
 			</div>
@@ -90,6 +96,8 @@
 
 			get_available_backups();
 			get_user_list();
+
+			ToggleYourAccountSet();
 		}
 		//
 		function page_init() {
@@ -181,11 +189,53 @@
 					    'UserId: '   + gUsers[i].userid + '</br>' +
 						'Roles: ' + gUsers[i].roles + '</br>' +
 						'Email: ' + gUsers[i].email + '</h3>';
-
+					
+					get_user_actions( selected );
 					break;
 				}
 			}
 		}
+
+		// get list of user actions and populate selection list:
+		function get_user_actions( userId ) {
+
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/user_action/user/' + userId;
+
+			fetch(furl, { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+				  success => {
+					console.log( success ) // Handle the success response object
+					actionSelectBox = document.getElementById("userActionBox")
+					//
+					let i;
+					for (i = actionSelectBox.options.length; i >= 0; i--) {
+						actionSelectBox.remove(i);
+					}
+					//
+					var limit = success.length;
+					for (i = 0; i < limit; i++) {
+						let optn = document.createElement("OPTION");
+						let msg = success[i].created_date + ': ' + success[i].action;
+						if (success[i].description.length > 0) {
+							msg += ', ' + success[i].description;
+						} 
+						optn.text = msg;
+						optn.value = i;
+						actionSelectBox.options.add(optn);
+					}
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		};
 
 		// get list of backup files and populate download selection list:
 		const get_available_backups = () => {
@@ -222,7 +272,7 @@
 					console.log( error ) // Handle the error response object
 				}
 			);
-		  };
+		};
 
 		// called when the backup files dropdown selection changes:
 		function onBackupSelectChangeFunc() {

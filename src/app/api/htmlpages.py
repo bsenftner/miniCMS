@@ -10,7 +10,8 @@ from starlette.responses import RedirectResponse
 import json
 
 from app import config
-from app.api import crud, users
+from app.api import crud
+from app.api.users import get_current_active_user, user_has_role, UserAction
 from app.api.models import User, MemoDB, ProjectDB
 from app.api.utils import convertDateToLocal
 # from app.send_email import send_email_async
@@ -85,9 +86,9 @@ async def login( request: Request ):
 # serve the requested page thru a Jinja2 template:
 @router.get("/profile", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def profilePage( request: Request,  
-                       current_user: User = Depends(users.get_current_active_user) ):
+                       current_user: User = Depends(get_current_active_user) ):
 
-    # config.log.info(f"profilePage: here!")
+    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_USER_PROFILE'), "" )
     
     memoList = await crud.get_all_memos(current_user)
     
@@ -107,26 +108,35 @@ async def profilePage( request: Request,
 # serve the requested page thru a Jinja2 template:
 @router.get("/projectPage/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def projectPage( request: Request, projectid: int, 
-                       current_user: User = Depends(users.get_current_active_user) ):
+                       current_user: User = Depends(get_current_active_user) ):
      
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_GET_PROJECT'), 
+                                       f"requested project {projectid}, Project not found" )
         raise HTTPException(status_code=404, detail="Project not found")
     
     tag = await crud.get_tag( proj.tagid )
     if not tag:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_GET_PROJECT'), 
+                                       f"requested project {projectid}, '{proj.name}', Tag not found" )
         raise HTTPException(status_code=500, detail="Project Tag not found")
 
-    config.log.info(f"projectPage: proj.name {proj.name}")
-    config.log.info(f"projectPage: proj.projectid {proj.projectid}")
-    config.log.info(f"projectPage: proj.status {proj.status}")
-    config.log.info(f"projectPage: tag.text {tag.text}")
-    config.log.info(f"projectPage: proj.created_date {proj.created_date}")
-    date_timeStr = proj.created_date.strftime("%m/%d/%Y, %H:%M:%S %p")
-    config.log.info(f"projectPage: proj.created_date {date_timeStr}")
+    # config.log.info(f"projectPage: proj.name {proj.name}")
+    # config.log.info(f"projectPage: proj.projectid {proj.projectid}")
+    # config.log.info(f"projectPage: proj.status {proj.status}")
+    # config.log.info(f"projectPage: tag.text {tag.text}")
+    # config.log.info(f"projectPage: proj.created_date {proj.created_date}")
+    # date_timeStr = proj.created_date.strftime("%m/%d/%Y, %H:%M:%S %p")
+    # config.log.info(f"projectPage: proj.created_date {date_timeStr}")
     
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_GET_PROJECT'), 
+                                       f"requested project {projectid}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
     # returns list of all project users:
@@ -136,14 +146,13 @@ async def projectPage( request: Request, projectid: int,
     # note: if project is unpublished the title is altered to have "(unpublished)" at the end
     memoList = await crud.get_all_project_memos(current_user, projectid)
     
-    # # fix date to be local time:
-    # from_zone = tz.tzutc()
-    # # to_zone = tz.tzlocal()
-    # to_zone = tz.gettz('America/Denver')    # make user's local timezone
-    # utc_dt = proj.created_date.replace(tzinfo=from_zone)
-    # local_dt = utc_dt.astimezone(to_zone)
+    # fix date to be local time:
     local_dt = convertDateToLocal( proj.created_date )
-     
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserAction.index('GET_PROJECT'), 
+                                   f"project {projectid}, '{proj.name}'" )
+    
     return TEMPLATES.TemplateResponse(
         "project.html",
         { "request": request, 
@@ -163,24 +172,37 @@ async def projectPage( request: Request, projectid: int,
 @router.get("/projectEditor/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def projectEditor( request: Request, 
                          id: int, 
-                         current_user: User = Depends(users.get_current_active_user) ):
+                         current_user: User = Depends(get_current_active_user) ):
     
     proj: ProjectDB = await crud.get_project(id)
     if not proj:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_EDIT_PROJECT'), 
+                                       f"requested project {id}, Project not found" )
         raise HTTPException(status_code=404, detail="Project not found")
 
-    if proj.userid != current_user.userid and not users.user_has_role(current_user,"admin"):
+    if proj.userid != current_user.userid and not user_has_role(current_user,"admin"):
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_EDIT_PROJECT'), 
+                                       f"requested project {id}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to edit other's Projects")
         
     tag = await crud.get_tag( proj.tagid )
     if not tag:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_EDIT_PROJECT'), 
+                                       f"requested project {id}, '{proj.name}', Tag not found" )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                             detail="Project Tag not found")
         
     memoList = await crud.get_all_project_memos(current_user, id)
     
     local_dt = convertDateToLocal( proj.created_date )
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserAction.index('EDIT_PROJECT'), 
+                                   f"project {id}, '{proj.name}'" )
     
     return TEMPLATES.TemplateResponse(
         "projectEditor.html", 
@@ -199,9 +221,10 @@ async def projectEditor( request: Request,
 # serve project on an editor thru a template:
 @router.get("/newProject", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def projectEditor( request: Request, 
-                         current_user: User = Depends(users.get_current_active_user) ):
+                         current_user: User = Depends(get_current_active_user) ):
     
-    if not users.user_has_role(current_user,"admin"):
+    if not user_has_role(current_user,"admin"):
+        await crud.rememberUserAction( current_user.userid, UserAction.index('NONADMIN_ATTEMPTED_EDIT_NEW_PROJECT'), "" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
     
     # the app runs in UTC local time:
@@ -217,6 +240,8 @@ async def projectEditor( request: Request,
                       projectid=0,
                       created_date=created_date)
         
+    await crud.rememberUserAction( current_user.userid, UserAction.index('EDIT_NEW_PROJECT'), "" )
+    
     memoList = []
     
     return TEMPLATES.TemplateResponse(
@@ -237,7 +262,7 @@ async def projectEditor( request: Request,
 @router.get("/memoPage/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoPage( request: Request, 
                     id: int, 
-                    current_user: User = Depends(users.get_current_active_user) ):
+                    current_user: User = Depends(get_current_active_user) ):
     
     memo: MemoDB = await crud.get_memo(id)
     if not memo:
@@ -314,7 +339,7 @@ async def memoPublic( request: Request, id: int  ):
 @router.get("/memoEditor/{memoid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoEditor( request: Request, 
                   memoid: int, 
-                  current_user: User = Depends(users.get_current_active_user) ):
+                  current_user: User = Depends(get_current_active_user) ):
     
     memo: MemoDB = await crud.get_memo(memoid)
     if not memo:
@@ -353,7 +378,7 @@ async def memoEditor( request: Request,
 @router.get("/newProjectMemo/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def newMemoEditor( request: Request, 
                   projectid: int,
-                  current_user: User = Depends(users.get_current_active_user) ):
+                  current_user: User = Depends(get_current_active_user) ):
     
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
@@ -403,7 +428,7 @@ async def newMemoEditor( request: Request,
 # serve a user profile page thru a template:
 @router.get("/settings", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def user_settings_page( request: Request, 
-                              current_user: User = Depends(users.get_current_active_user) ):
+                              current_user: User = Depends(get_current_active_user) ):
     
     # default info available to the page: 
     page_data = {
@@ -420,7 +445,7 @@ async def user_settings_page( request: Request,
         
     # if an ordinary user get user_page, if admin get admin_page: 
     page = 'user_page.html'
-    if users.user_has_role( current_user, "admin"):
+    if user_has_role( current_user, "admin"):
         page = 'admin_page.html'
         
         # get site_config note to add to the admin page 

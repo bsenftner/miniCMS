@@ -154,4 +154,4 @@ class UserActionResponse(BaseModel):
     action: str 
     username: str
     description: str
-    created_date: datetime
+    created_date: str

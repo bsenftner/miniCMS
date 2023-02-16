@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 from app.api import crud, users
 from app.api.users import get_current_active_user, user_has_role, UserAction
 from app.api.models import UserInDB, basicTextPayload, UserActionDB, UserActionResponse
+from app.api.utils import convertDateToLocal
 
 from typing import List
 
@@ -29,11 +30,12 @@ async def read_user_action(id: int = Path(..., gt=0),
     if action is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Action not found")
     
+    local_dt = convertDateToLocal( action.created_date )
     retAction = UserActionResponse(
                     action=UserAction[action.actionCode],
                     username=current_user.username,
                     description=action.description,
-                    created_date=action.created_date
+                    created_date=local_dt.strftime("%c")
                 )
     
     return retAction
@@ -58,11 +60,12 @@ async def read_all_user_actions(current_user: UserInDB = Depends(get_current_act
     for a in actionList:
         for u in userList:
             if a.userid==u.userid:
+                local_dt = convertDateToLocal( a.created_date )
                 retAction = UserActionResponse(
                     action=UserAction[a.actionCode],
                     username=u.username,
                     description=a.description,
-                    created_date=a.created_date
+                    created_date=local_dt.strftime("%c")
                 )
         retList.append(retAction)
         
@@ -89,11 +92,13 @@ async def read_all_this_users_actions(userid: int,
     
     retList = []
     for a in actionList:
+        # the app runs in UTC local time:
+        local_dt = convertDateToLocal( a.created_date )
         retAction = UserActionResponse(
             action=UserAction[a.actionCode],
             username=user.username,
             description=a.description,
-            created_date=a.created_date
+            created_date=local_dt.strftime("%c")
         )
         retList.append(retAction)
         
