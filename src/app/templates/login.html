@@ -34,7 +34,7 @@
                 	<br/>
 			    	<div id="divLoginButtons">
 				    	<a href="#" class="button" onclick="Cancel()">Cancel</a>
-				    	<a href="#" class="button" onclick="Login()">Login</a>
+				    	<a href="#" id="loginBttn" class="button" onclick="Login()">Login</a>
 						&nbsp;&nbsp;&nbsp;&nbsp;
 				    	<a href="#" class="button" onclick="ResetPassword()">Reset password</a>
 						<br/>
@@ -67,6 +67,9 @@
 		  });
 		function page_init() {
 
+			AddReturnListener("username"); // if user presses return when these are 
+			AddReturnListener("password"); // in focus, that will trigger a Login button click
+
 			// look for an existing access_token indicating the user is logged in:
 			const access_token = localStorage.getItem('token');
 			if (typeof access_token !== 'undefined') {
@@ -96,6 +99,25 @@
 					}
 				});
 			}
+		}
+
+		function ReturnAction(event) {
+			// If the user presses the "Enter" key on the keyboard
+			if (event.key === "Enter") {
+				// Cancel the default action, if needed
+				event.preventDefault();
+				// Trigger the button element with a click
+				document.getElementById("loginBttn").click();
+			}
+		}
+		function AddReturnListener( elem ) {
+			// Get the DOM element we want sensitive to return presses:
+			let returnSensitiveArea = document.getElementById(elem);
+			if (returnSensitiveArea) {
+				// Execute a function when the user presses a key on the keyboard
+				returnSensitiveArea.addEventListener("keypress", ReturnAction ); 
+			}
+			
 		}
 
         function Cancel() { window.location.href = "/"; }

@@ -14,11 +14,36 @@ from jose import JWTError, jwt
 from typing import Any, Union
 from datetime import datetime, timedelta
 
+from enum import IntEnum
+
 # add OAuth2, declaring the url to get user auth tokens:
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token", scheme_name="JWT")
 oauth2_scheme = OAuth2PasswordBearerWithCookie(tokenUrl="token", scheme_name="JWT")
 
 
+UserAction = [
+    'CREATE_ACCESS_TOKEN',
+    'BAD_USERNAME_OR_PASSWORD',
+    'DISABLED_USER_LOGIN_ATTEMPT',
+    'REFRESHED_ACCESS_TOKEN',
+    'CREATED_NEW_USER',
+    'USER_LOGOUT',
+    'FAILED_EMAIL_VERIFY',
+    'VERIFIED_EMAIL',
+    'UNKNOWN_USER_RESET_PASSWORD_ATTEMPT',
+    'UNVERIFIED_USER_PASSWORD_RESET_ATTEMPT',
+    'USER_RESET_PASSWORD',
+    'NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT',
+    'USER_ROLES_ASSIGNMENT',
+    'UNVERIFIED_USER_SET_PASSWORD_ATTEMPT',
+    'USER_SET_PASSWORD',
+    'UNVERIFIED_USER_SET_EMAIL_ATTEMPT',
+    'FAILED_USER_SET_EMAIL',
+    'USER_SET_EMAIL',
+    'DISABLE_USER',
+    'NONADMIN_USER_ACTION_REQUEST']
+
+    
 
 # -------------------------------------------------------------------------------------
 async def get_user(username: str) -> UserInDB:

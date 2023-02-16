@@ -111,12 +111,21 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
 
+        self.action_tb = Table(
+            "action",
+            self.metadata,
+            Column("actionid", Integer, primary_key=True),
+            Column("userid", Integer, index=True),              # logged in user who performed the action
+            Column("actionCode", Integer, index=True),          # UserAction values, what they did
+            Column("description", String),                      # additional info here
+            Column("created_date", DateTime, default=func.now(), nullable=False),
+        )
+        
         # databases query builder
         self.database = Database(get_settings().DATABASE_URL)
 
         # create db tables if they don't already exist:
         self.metadata.create_all(self.engine)
-        
         
     def get_db(self):
         return self.database
@@ -138,6 +147,9 @@ class DatabaseMgr:
         
     def get_notes_table(self):
         return self.notes_tb
+        
+    def get_action_table(self):
+        return self.action_tb
 
 
 # ----------------------------------------------------------------------------------------------

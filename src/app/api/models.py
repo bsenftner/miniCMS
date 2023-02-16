@@ -69,7 +69,7 @@ class CommentResponse(BaseModel):
 class TagDB(BaseModel):
     tagid: int = Field(index=True)
     text: str = Field(index=True)
-    
+
 
 class ProjectRequest(BaseModel):
     name: str                                                   # project name
@@ -139,3 +139,19 @@ class UserPublic(BaseModel):
 class basicTextPayload(BaseModel):
     text: str
     
+
+class UserActionRec(BaseModel):
+    actionCode: int = Field(index=True) # what happended, one of the UserAction enum values
+    description: str                    # additional info about what happened
+    
+
+class UserActionDB(UserActionRec):
+    actionid: int = Field(index=True)
+    userid: int = Field(index=True)     # who performed the action
+    created_date: datetime
+    
+class UserActionResponse(BaseModel):
+    action: str 
+    username: str
+    description: str
+    created_date: datetime

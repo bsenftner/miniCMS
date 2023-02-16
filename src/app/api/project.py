@@ -170,13 +170,6 @@ async def delete_project(id: int = Path(..., gt=0),
     # 1) get all memos associated with this project 
     # 2) delete them one by one (which also deletes their comments)
     # 3) finally delete the project itself 
-    #
-    # NOTE: what about uploaded files?
-    # TODO: 1) make uploads go into a project specific project directory 
-    #           seems to work
-    # TODO: 2) create a project directory for any uploads to be saved into   
-    #           seems to work 
-    # TODO: 3) make all memos belong to a project 
     
     await crud.delete_project(id)
 

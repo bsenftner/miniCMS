@@ -3,7 +3,7 @@ from sqlalchemy import asc
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
 from app.api.models import MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
-from app.api.models import ProjectSchema, ProjectDB
+from app.api.models import ProjectSchema, ProjectDB, UserActionRec, UserActionDB
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -11,6 +11,47 @@ from app.api.users import user_has_role
 
 from app.config import log
 
+
+# ---------------------------------------------------------------------------------------
+async def rememberUserAction( userid: int, action: int, desc: str ):
+    payload = UserActionRec(actionCode=action, description=desc)
+    await post_user_action( payload, userid )
+    
+# -----------------------------------------------------------------------------------------
+# for creating new user actions
+async def post_user_action(payload: UserActionRec, userid: int ):
+    log.info(f"post_user_action: payload is {payload}")
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_action_table().insert().values(userid=userid,
+                                                      actionCode=payload.actionCode,
+                                                      description=payload.description)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
+
+
+# -----------------------------------------------------------------------------------------
+# for getting individual user actions by id:
+async def get_user_action(actionid: int) -> UserActionDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_action_table().select().where(actionid == db_mgr.get_action_table().c.actionid)
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# returns all user actions:
+async def get_all_user_actions() -> List[UserActionDB]:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_action_table().select().order_by(asc(db_mgr.get_action_table().c.actionid))
+    return await db_mgr.get_db().fetch_all(query=query)   
+
+# -----------------------------------------------------------------------------------------
+# returns all user actions attributed to a user
+async def get_all_this_users_actions(user: UserInDB) -> List[UserActionDB]:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_action_table().select().where(user.userid == db_mgr.get_action_table().c.userid)
+    actionList = await db_mgr.get_db().fetch_all(query=query)   
+            
+    return actionList
 
 # -----------------------------------------------------------------------------------------
 # for creating new tags
@@ -119,9 +160,8 @@ async def get_project(id: int) -> ProjectDB:
     return await db_mgr.get_db().fetch_one(query=query)
 
 # -----------------------------------------------------------------------------------------
-# for getting projects by their tagid:
+# for getting projects by their name:
 async def get_project_by_name(name: int) -> ProjectDB:
-    log.info(f"get_project_by_name: looking for {name}")
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().where(name == db_mgr.get_project_table().c.name)
     return await db_mgr.get_db().fetch_one(query=query)
@@ -129,7 +169,6 @@ async def get_project_by_name(name: int) -> ProjectDB:
 # -----------------------------------------------------------------------------------------
 # for getting projects by their tagid:
 async def get_project_by_tagid(tagid: int) -> ProjectDB:
-    log.info(f"get_project_by_tagid: looking for {tagid}")
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().where(tagid == db_mgr.get_project_table().c.tagid)
     return await db_mgr.get_db().fetch_one(query=query)
