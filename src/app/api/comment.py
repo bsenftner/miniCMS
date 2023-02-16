@@ -4,7 +4,7 @@
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
-from app.api.users import get_current_active_user, user_has_role
+from app.api.users import get_current_active_user, user_has_role, UserAction
 from app.api.models import UserInDB, MemoDB, CommentSchema, CommentDB, CommentResponse
 
 from typing import List
@@ -21,18 +21,16 @@ router = APIRouter()
 async def create_comment(payload: CommentSchema, 
                          current_user: UserInDB = Depends(get_current_active_user)) -> CommentResponse:
     
-    # log.info(f"create_comment: current_user is {current_user}")
-        
-    # log.info(f"create_comment: posting {payload}")
-    
     # memo must exist to receive a comment:
     memo = await crud.get_memo(payload.memoid)
     if memo is None:
-       raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_POST_NEW_COMMENT'), f"Memo {id}, not found" )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memo not found")
     
     # user must have memo access to comment on the memo:
     memo_access = await crud.user_has_memo_access(current_user, memo)
     if not memo_access:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_POST_NEW_COMMENT'), "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
     
     if payload.parent == 0:
@@ -44,23 +42,12 @@ async def create_comment(payload: CommentSchema,
         if pcomm is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Parent comment not found.")
     
-    # log.info(f"create_comment: doing post...")
-    
     # post comment: 
     commid = await crud.post_comment(payload)
 
-    # log.info(f"create_comment: returning id {commid}")
+    await crud.rememberUserAction( current_user.userid, UserAction.index('POST_NEW_COMMENT'), f"id {commid}" )
     
-    response_object = {
-        "commid": commid,
-        # "text": payload.text,
-        # "memoid": payload.memoid,
-        # "userid": payload.userid,
-        # "username": payload.username,
-        # "parent": payload.parent,
-        # "created_date": payload
-    }
-    return response_object
+    return { "commid": commid }
 
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
@@ -135,17 +122,22 @@ async def delete_comment(id: int = Path(..., gt=0),
     
     comment: CommentDB = await crud.get_comment(id)
     if comment is None:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_DELETE_COMMENT'), f"Comment {id}, not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
     
     memo = await crud.get_memo(comment.memoid)
     if memo is None:
         if not user_has_role(current_user,"admin"):
+            await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_DELETE_COMMENT'), f"Comment {id}, No Memo" )
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
     else:
         memo_access = await crud.user_has_memo_access(current_user, memo)
         if not memo_access:
+            await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_DELETE_COMMENT'), f"Comment {id}, Not Memo Authorized" )
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized.")
         
     await crud.delete_comment(id)
 
+    await crud.rememberUserAction( current_user.userid, UserAction.index('DELETE_COMMENT'), f"Comment {id}" )
+    
     return comment

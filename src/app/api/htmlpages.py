@@ -112,31 +112,20 @@ async def projectPage( request: Request, projectid: int,
      
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserAction.index('FAILED_GET_PROJECT'), 
-                                       f"requested project {projectid}, Project not found" )
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT'), 
+                                       f"ProjectPage {projectid}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
     
     tag = await crud.get_tag( proj.tagid )
     if not tag:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserAction.index('FAILED_GET_PROJECT'), 
-                                       f"requested project {projectid}, '{proj.name}', Tag not found" )
+        await crud.rememberUserAction( current_user.userid,  UserAction.index('FAILED_GET_PROJECT'), 
+                                       f"ProjectPage {projectid}, '{proj.name}', Tag not found" )
         raise HTTPException(status_code=500, detail="Project Tag not found")
-
-    # config.log.info(f"projectPage: proj.name {proj.name}")
-    # config.log.info(f"projectPage: proj.projectid {proj.projectid}")
-    # config.log.info(f"projectPage: proj.status {proj.status}")
-    # config.log.info(f"projectPage: tag.text {tag.text}")
-    # config.log.info(f"projectPage: proj.created_date {proj.created_date}")
-    # date_timeStr = proj.created_date.strftime("%m/%d/%Y, %H:%M:%S %p")
-    # config.log.info(f"projectPage: proj.created_date {date_timeStr}")
     
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserAction.index('FAILED_GET_PROJECT'), 
-                                       f"requested project {projectid}, '{proj.name}', not authorized" )
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT'), 
+                                       f"ProjectPage {projectid}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
     # returns list of all project users:
@@ -149,9 +138,8 @@ async def projectPage( request: Request, projectid: int,
     # fix date to be local time:
     local_dt = convertDateToLocal( proj.created_date )
     
-    await crud.rememberUserAction( current_user.userid, 
-                                   UserAction.index('GET_PROJECT'), 
-                                   f"project {projectid}, '{proj.name}'" )
+    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_PROJECT'), 
+                                   f"projectPage {projectid}, '{proj.name}'" )
     
     return TEMPLATES.TemplateResponse(
         "project.html",
@@ -178,13 +166,13 @@ async def projectEditor( request: Request,
     if not proj:
         await crud.rememberUserAction( current_user.userid, 
                                        UserAction.index('FAILED_EDIT_PROJECT'), 
-                                       f"requested project {id}, Project not found" )
+                                       f"projectEditor {id}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
 
     if proj.userid != current_user.userid and not user_has_role(current_user,"admin"):
         await crud.rememberUserAction( current_user.userid, 
                                        UserAction.index('FAILED_EDIT_PROJECT'), 
-                                       f"requested project {id}, '{proj.name}', not authorized" )
+                                       f"projectEditor {id}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to edit other's Projects")
         
@@ -192,7 +180,7 @@ async def projectEditor( request: Request,
     if not tag:
         await crud.rememberUserAction( current_user.userid, 
                                        UserAction.index('FAILED_EDIT_PROJECT'), 
-                                       f"requested project {id}, '{proj.name}', Tag not found" )
+                                       f"projectEditor {id}, '{proj.name}', Tag not found" )
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                             detail="Project Tag not found")
         
@@ -200,9 +188,8 @@ async def projectEditor( request: Request,
     
     local_dt = convertDateToLocal( proj.created_date )
     
-    await crud.rememberUserAction( current_user.userid, 
-                                   UserAction.index('EDIT_PROJECT'), 
-                                   f"project {id}, '{proj.name}'" )
+    await crud.rememberUserAction( current_user.userid, UserAction.index('EDIT_PROJECT'), 
+                                   f"projectEditor {id}, '{proj.name}'" )
     
     return TEMPLATES.TemplateResponse(
         "projectEditor.html", 
@@ -266,15 +253,22 @@ async def memoPage( request: Request,
     
     memo: MemoDB = await crud.get_memo(id)
     if not memo:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_MEMO'), f"memoPage {id}, not found" )
         raise HTTPException(status_code=404, detail="Memo not found")
     
     proj: ProjectDB = await crud.get_project(memo.projectid)
     if not proj:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_MEMO'), 
+                                       f"memoPage {id}, Project {memo.projectid} not found" )
         raise HTTPException(status_code=404, detail="Memo Project not found")
     
     weAreAllowed = await crud.user_has_memo_access( current_user, memo )
     if not weAreAllowed:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_MEMO'), "Not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo")
+    
+    desc = f"memoPage {id} '{memo.title}'"
+    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_MEMO'), desc )
     
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, memo.projectid)
@@ -343,16 +337,23 @@ async def memoEditor( request: Request,
     
     memo: MemoDB = await crud.get_memo(memoid)
     if not memo:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_EDIT_MEMO'), f"requested memo {memoid}, not found" )
         raise HTTPException(status_code=404, detail="Memo not found")
     
     proj: ProjectDB = await crud.get_project(memo.projectid)
     if not proj:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_EDIT_MEMO'), 
+                                       f"requested memo {id}, Project {memo.projectid} not found" )
         raise HTTPException(status_code=404, detail="Memo Project not found")
 
     weAreAllowed = await crud.user_has_memo_access( current_user, memo )
     if not weAreAllowed:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_EDIT_MEMO'), "Not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access memo")
         
+    desc = f"memo {memoid} '{memo.title}'"
+    await crud.rememberUserAction( current_user.userid, UserAction.index('EDIT_MEMO'), desc )
+    
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, memo.projectid)
     
@@ -377,17 +378,20 @@ async def memoEditor( request: Request,
 # serve an empty editor page that saves as a memo thru a template:
 @router.get("/newProjectMemo/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def newMemoEditor( request: Request, 
-                  projectid: int,
-                  current_user: User = Depends(get_current_active_user) ):
+                         projectid: int,
+                         current_user: User = Depends(get_current_active_user) ):
     
     proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_EDIT_NEW_MEMO'), f"Project {projectid} not found" )
         raise HTTPException(status_code=404, detail="Memo Project not found")
     
     tag = await crud.get_tag( proj.tagid )
     if not tag:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                            detail="Project Tag not found")
+        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_EDIT_NEW_MEMO'), f"Project Tag {proj.tagid} not found" )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Project Tag not found")
+    
+    await crud.rememberUserAction( current_user.userid, UserAction.index('EDIT_NEW_MEMO'), f"for Project '{proj.name}'" )
     
     # the app runs in UTC local time:
     created_date = datetime.now()
@@ -430,6 +434,8 @@ async def newMemoEditor( request: Request,
 async def user_settings_page( request: Request, 
                               current_user: User = Depends(get_current_active_user) ):
     
+    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_OWN_SETTINGS_PAGE'), "" )
+    
     # default info available to the page: 
     page_data = {
         'username': current_user.username,
@@ -439,9 +445,6 @@ async def user_settings_page( request: Request,
     
     # list of memo posts:
     memoList = await crud.get_all_memos(current_user)
-    
-    for m in memoList:
-        config.log.info(f"user_settings_page: working with memo.memoid {m.memoid}")
         
     # if an ordinary user get user_page, if admin get admin_page: 
     page = 'user_page.html'
