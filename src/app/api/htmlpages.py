@@ -407,7 +407,7 @@ async def newMemoEditor( request: Request,
                    username=current_user.username,
                    projectid=proj.projectid,
                    created_date=datetime.now(),
-                   updated_date=datetime.now)
+                   updated_date=datetime.now())
     
     # returns list of project memos this user has access:
     memoList = await crud.get_all_project_memos(current_user, memo.projectid)
