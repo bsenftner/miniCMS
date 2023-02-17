@@ -51,7 +51,7 @@
 						</div>
 					</div>
 					<div id="userInfoDiv">
-						Please select a user from the list at left.
+						<b>Please select a user from the list at left.</b>
 					</div>
 					<div id="userActionsDiv">
 						<select id="userActionBox" size="7" onchange="onUserActionChangeFunc();"></select>
@@ -166,7 +166,7 @@
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
 						optn.text = success[i].username;
-						optn.value = success[i].userid; // i+1;
+						optn.value = success[i].userid; 
 						userSelectBox.options.add(optn);
 					}
 				}
@@ -185,10 +185,10 @@
 				if (gUsers[i].userid == selected) {
 
 					document.getElementById("userInfoDiv").innerHTML = 
-					'<h3>Username: ' + gUsers[i].username + '</br>' +
+					'<h4>Username: ' + gUsers[i].username + '</br>' +
 					    'UserId: '   + gUsers[i].userid + '</br>' +
 						'Roles: ' + gUsers[i].roles + '</br>' +
-						'Email: ' + gUsers[i].email + '</h3>';
+						'Email: ' + gUsers[i].email + '</h4>';
 					
 					get_user_actions( selected );
 					break;

@@ -219,7 +219,7 @@ async def read_all_project_uploads(projectid: int,
         
             parts = filename.split('.')
             count = len(parts)
-        
+    
             # returns mimeObject:
             mo = mimelib.url(longPath)
         
@@ -228,6 +228,7 @@ async def read_all_project_uploads(projectid: int,
         
             fdesc = {
                 "filename": filename,
+                "projectid": proj.projectid,
                 "type": mo.file_type,
                 "link": link
             }

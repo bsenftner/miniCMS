@@ -154,6 +154,7 @@
 					let fileLinks = success;
 					for (let i = 0; i < fileLinks.length; i++) {
 						let filename = fileLinks[i].filename;
+						let pid = fileLinks[i].projectid;
 						let fnParts = filename.split('.');
 						let ext = fnParts[ fnParts.length - 1 ].toLowerCase();
 						let fileType = fileLinks[i].type;
@@ -165,7 +166,12 @@
 						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link to clipboard</a>`;
 
                         if (fileType == 'media') {
-							docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link to clipboard</a>`;
+							if (projectid != null) {
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${pid}/${filename}')">Copy link to clipboard</a>`;
+							}
+							else {
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link to clipboard</a>`;
+							}
 						}
                         else if (fileType == 'binary') {
                             if (ext == 'pdf') {

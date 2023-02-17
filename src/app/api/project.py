@@ -77,7 +77,6 @@ async def read_project(id: int = Path(..., gt=0),
                        current_user: UserInDB = Depends(get_current_active_user)) -> ProjectDB:
     
     proj: ProjectDB = await crud.get_project(id)
-    
     if proj is None:
         await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT'), 
                                        f"Project {id}, not found" )
