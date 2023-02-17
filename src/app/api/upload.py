@@ -279,6 +279,6 @@ async def get_project_file(projectid: int,
     # finally...
     upload_path = config.get_base_path() / 'uploads' / tag.text / filename 
     
-    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_PROJECT_FILE'), f"Project '{proj.name}'m file {upload_path}" )
+    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_PROJECT_FILE'), f"Project '{proj.name}', file {upload_path}" )
     
     return upload_path

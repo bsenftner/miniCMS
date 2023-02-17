@@ -69,11 +69,11 @@ async def project_video_endpoint(projectid: int,
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
         await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
-                                       f"Project {id}, '{proj.name}', not authorized" )
+                                       f"Project {projectid}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
     await crud.rememberUserAction( current_user.userid, UserAction.index('PLAY_PROJECT_VIDEO'), 
-                                   f"project {id}, video '{video_file}'" )
+                                   f"project {projectid}, video '{video_file}'" )
     
     start, end = 0, 0
     if range:
