@@ -7,7 +7,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
-    create_engine,
+    create_engine
 )
 from sqlalchemy.sql import func
 
@@ -19,11 +19,13 @@ from app.config import get_settings
 
 from functools import lru_cache
 
+import sqlalchemy # only for the __version__ expression below
 
 # ----------------------------------------------------------------------------------------------
 class DatabaseMgr:
     def __init__(self):
         # SQLAlchemy
+        print(sqlalchemy.__version__)
         url = get_settings().DATABASE_URL
         if url and url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql://", 1)
