@@ -1,6 +1,8 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Exiting 'work in progress' state, entering Alpha, version 0.98
+## Holding on version 0.98 as the Python library Databases is being removed, and the SQLModel lib is added in replacement
+
+### All required functionality is in place for secure project document & associated info management with remote located project members. However, this implementation is not as efficient as it could be, which at scale raises use expense. So, I'm fixing that with SQLModel. Expect a few days for that change and the project's 1.0 release
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
