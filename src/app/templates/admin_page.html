@@ -190,18 +190,45 @@
 						'Roles: ' + gUsers[i].roles + '</br>' +
 						'Email: ' + gUsers[i].email + '</h4>';
 					
-					get_user_actions( selected );
+					get_user_action_count( selected );
+					get_user_actions( selected ); // not cached, so is "live"
 					break;
 				}
 			}
 		}
 
 		// get list of user actions and populate selection list:
+		function get_user_action_count( userId ) {
+
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/user_action/count/' + userId;
+
+			fetch(furl, { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+				  success => {
+					console.log( success ) // Handle the success response object
+					userInfoDiv = document.getElementById("userInfoDiv")
+					//
+					userInfoDiv.innerHTML += '<h4>User actions:' + success['count'] + '</h4>';
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		};
+
+		// get list of user actions and populate selection list:
 		function get_user_actions( userId ) {
 
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/user_action/user/' + userId;
+			let furl = prebsjnk + '/user_action/user/' + userId + '/10/0'; // limit & offset
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',

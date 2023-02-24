@@ -1,4 +1,6 @@
 from typing import List
+
+import sqlalchemy as sa
 from sqlalchemy import asc 
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
@@ -46,12 +48,33 @@ async def get_all_user_actions() -> List[UserActionDB]:
 
 # -----------------------------------------------------------------------------------------
 # returns all user actions attributed to a user
-async def get_all_this_users_actions(user: UserInDB) -> List[UserActionDB]:
+async def get_all_this_users_actions(user: UserInDB, limit: int = 25, offset: int = 0) -> List[UserActionDB]:
+    
+    log.info(f"get_all_this_users_actions: limit is {limit}, offset is {offset}")
+    
     db_mgr: DatabaseMgr = get_database_mgr()
-    query = db_mgr.get_action_table().select().where(user.userid == db_mgr.get_action_table().c.userid)
+    query = db_mgr.get_action_table().select().where(user.userid == db_mgr.get_action_table().c.userid).limit(limit).offset(offset)
     actionList = await db_mgr.get_db().fetch_all(query=query)   
             
     return actionList
+
+# -----------------------------------------------------------------------------------------
+# returns the number of the user actions attributed to a user
+async def get_this_users_action_count(user: UserInDB):
+    
+    # log.info(f"get_this_users_action_count: user is {user.userid}, {user.username}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    
+    # query = db_mgr.get_action_table().select().filter_by().count()
+    query = "SELECT COUNT(*) FROM action"
+    
+    result = await db_mgr.get_db().fetch_one(query=query)
+    
+    # log.info(f"get_this_users_action_count: result is {result['count']}:")
+    # log.info({**result})
+    
+    return result['count']
 
 # -----------------------------------------------------------------------------------------
 # for creating new tags
