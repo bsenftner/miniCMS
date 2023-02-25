@@ -51,9 +51,14 @@
 						</div>
 					</div>
 					<div id="userInfoDiv">
-						<b>Please select a user from the list at left.</b>
+						<h4>Selected User:</h4>
 					</div>
-					<div id="userActionsDiv">
+					<div id="userActionDiv">
+						<h4>Selected User Actions (website activity):</h4>
+						<label for="userActionOffset">Offset:</label>
+  						<input type="text" id="userActionOffset" name="label" value="0">
+						<label for="userActionLimit">Showing:</label>
+						<input type="text" id="userActionLimit" name="label" value="50">
 						<select id="userActionBox" class="resizeable" size="7" onchange="onUserActionChangeFunc();"></select>
 					</div>
 				</div>
@@ -96,6 +101,9 @@
 
 			get_available_backups();
 			get_user_list();
+
+			AddUserActionsReturnListener( "userActionOffset" )
+			AddUserActionsReturnListener( "userActionLimit" )
 
 			ToggleYourAccountSet();
 		}
@@ -141,6 +149,8 @@
 
 		
 		let gUsers = {}
+		let gSelectedUserId = -1;
+		let gSelectedUserIndex = -1;
 		//
 		// get list of users and populate user selection list:
 		const get_user_list = () => {
@@ -161,6 +171,8 @@
 					}
 					//
 					gUsers = success; // remember
+					gSelectedUserId = -1;
+					gSelectedUserIndex = -1;
 					//
 					limit = success.length;
 					for (i = 0; i < limit; i++) {
@@ -180,18 +192,23 @@
 		// called when the user selection changes:
 		function onUserSelectChangeFunc() {
 			let userSelectBox = document.getElementById("userSelectBox")
-			let selected = userSelectBox.value;
+			gSelectedUserId = userSelectBox.value;
 			for (i = 0; i < gUsers.length; i++) {
-				if (gUsers[i].userid == selected) {
+				if (gUsers[i].userid == gSelectedUserId) {
+
+					gSelectedUserIndex = i;
 
 					document.getElementById("userInfoDiv").innerHTML = 
-					'<h4>Username: ' + gUsers[i].username + '</br>' +
+						'<h4>Selected User: </br></br>' +
+						'Username: ' + gUsers[i].username + '</br>' +
 					    'UserId: '   + gUsers[i].userid + '</br>' +
 						'Roles: ' + gUsers[i].roles + '</br>' +
-						'Email: ' + gUsers[i].email + '</h4>';
-					
-					get_user_action_count( selected );
-					get_user_actions( selected ); // not cached, so is "live"
+						'Email: ' + gUsers[i].email + '</br></br>' +
+						'User Actions: (loading...)</h4>';
+
+					get_user_action_count( gSelectedUserId );
+					get_user_actions( gSelectedUserId ); // not cached, so is "live"
+
 					break;
 				}
 			}
@@ -212,9 +229,28 @@
 			 ).then(
 				  success => {
 					console.log( success ) // Handle the success response object
-					userInfoDiv = document.getElementById("userInfoDiv")
-					//
-					userInfoDiv.innerHTML += '<h4>User actions:' + success['count'] + '</h4>';
+					
+					if (gSelectedUserIndex == -1) {
+						if (gSelectedUserId == -1) {
+							onUserSelectChangeFunc();
+						}
+						else {
+							for (i = 0; i < gUsers.length; i++) {
+								if (gUsers[i].userid == gSelectedUserId) {
+									gSelectedUserIndex = i;
+									break;
+								}
+							}
+						}
+					}
+
+					document.getElementById("userInfoDiv").innerHTML = 
+						'<h4>Selected User: </br></br>' +
+						'Username: ' + gUsers[i].username + '</br>' +
+					    'UserId: '   + gUsers[gSelectedUserIndex].userid + '</br>' +
+						'Roles: ' + gUsers[gSelectedUserIndex].roles + '</br>' +
+						'Email: ' + gUsers[gSelectedUserIndex].email + '</br></br>' +
+						'User Actions: ' + success['count'] + '</h4>';
 				}
 			 ).catch(
 				  error => {
@@ -223,12 +259,43 @@
 			);
 		};
 
+		function UserActionsReturnAction(event) {
+			// If the user presses the "Enter" key on the keyboard
+			if (event.key === "Enter") {
+				// Cancel the default action, if needed
+				event.preventDefault();
+				// Trigger what we want to happen:
+				if (gSelectedUserId > 0) {
+					get_user_actions( gSelectedUserId )
+				}
+			}
+		}
+		function AddUserActionsReturnListener( elem ) {
+			// Get the DOM element we want sensitive to return presses:
+			let returnSensitiveArea = document.getElementById(elem);
+			if (returnSensitiveArea) {
+				// Execute a function when the user presses a key on the keyboard
+				returnSensitiveArea.addEventListener("keypress", UserActionsReturnAction ); 
+			}
+			
+		}
+
 		// get list of user actions and populate selection list:
 		function get_user_actions( userId ) {
 
+			let actionOffset = document.getElementById("userActionOffset").value;
+			let actionLimit = document.getElementById("userActionLimit").value;
+
+			if (actionOffset < 0) {
+				actionOffset = 0;
+			}
+			if (actionLimit < 0) {
+				actionLimit = 50;
+			}
+
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/user_action/user/' + userId + '/10/0'; // limit & offset
+			let furl = prebsjnk + '/user_action/user/' + userId + '/' + actionLimit + '/' + actionOffset;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',

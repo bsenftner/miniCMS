@@ -545,14 +545,19 @@ select#userSelectBox option {
 }
 div#userInfoDiv {
   grid-area: 1 / 2 / 2 / 3;
-  margin-top: -20px;
 }
 div#userInfoDiv h4 {
-  width: 100%;
+  width: 100%;  
+  margin-top: -40px;
 }
 div#userActionDiv {
   grid-area: 1 / 3 / 2 / 4;
-  margin-top: -20px;
+}
+div#userActionDiv h4 {
+  margin-top: -40px;
+}
+div#userActionDiv label {
+  font-size: 1.0em;
 }
 select#userActionBox {
   width: 100%;
