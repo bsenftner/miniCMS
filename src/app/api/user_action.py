@@ -124,6 +124,6 @@ async def count_all_this_users_actions(userid: int,
     # get all the actions of this user:
     count = await crud.get_this_users_action_count(user)
         
-    # log.info(f"count_all_this_users_actions: count is {count}")
+    log.info(f"count_all_this_users_actions: userid is {user.userid}, count is {count}")
     
     return JSONResponse(content={"count": count})

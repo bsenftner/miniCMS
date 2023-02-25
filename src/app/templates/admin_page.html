@@ -177,8 +177,8 @@
 					limit = success.length;
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
-						optn.text = success[i].username;
-						optn.value = success[i].userid; 
+						optn.text = gUsers[i].username;
+						optn.value = gUsers[i].userid; 
 						userSelectBox.options.add(optn);
 					}
 				}
@@ -206,20 +206,18 @@
 						'Email: ' + gUsers[i].email + '</br></br>' +
 						'User Actions: (loading...)</h4>';
 
-					get_user_action_count( gSelectedUserId );
-					get_user_actions( gSelectedUserId ); // not cached, so is "live"
-
+					get_user_action_count( gSelectedUserId, gSelectedUserIndex ); // not cached, so is "live"
 					break;
 				}
 			}
 		}
 
 		// get list of user actions and populate selection list:
-		function get_user_action_count( userId ) {
+		function get_user_action_count( userIdParam, userIndexParam ) {
 
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/user_action/count/' + userId;
+			let furl = prebsjnk + '/user_action/count/' + userIdParam;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
@@ -230,26 +228,14 @@
 				  success => {
 					console.log( success ) // Handle the success response object
 					
-					if (gSelectedUserIndex == -1) {
-						if (gSelectedUserId == -1) {
-							onUserSelectChangeFunc();
-						}
-						else {
-							for (i = 0; i < gUsers.length; i++) {
-								if (gUsers[i].userid == gSelectedUserId) {
-									gSelectedUserIndex = i;
-									break;
-								}
-							}
-						}
-					}
+					get_user_actions( userIdParam ); 
 
 					document.getElementById("userInfoDiv").innerHTML = 
 						'<h4>Selected User: </br></br>' +
-						'Username: ' + gUsers[i].username + '</br>' +
-					    'UserId: '   + gUsers[gSelectedUserIndex].userid + '</br>' +
-						'Roles: ' + gUsers[gSelectedUserIndex].roles + '</br>' +
-						'Email: ' + gUsers[gSelectedUserIndex].email + '</br></br>' +
+						'Username: ' + gUsers[userIndexParam].username + '</br>' +
+					    'UserId: '   + gUsers[userIndexParam].userid + '</br>' +
+						'Roles: ' + gUsers[userIndexParam].roles + '</br>' +
+						'Email: ' + gUsers[userIndexParam].email + '</br></br>' +
 						'User Actions: ' + success['count'] + '</h4>';
 				}
 			 ).catch(
