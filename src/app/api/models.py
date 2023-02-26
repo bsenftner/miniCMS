@@ -9,13 +9,13 @@ from datetime import datetime
 
 # here is a "note": something with a title, a description, and data 
 class NoteSchema(BaseModel):
-    title: str = Field(..., min_length=3, max_length=50)
-    description: str = Field(..., min_length=3, max_length=50)
+    title: str
+    description: str
     data: str
 
 # A "Note" in the database is simply an id plus our NoteSchema: 
 class NoteDB(NoteSchema):
-    id: int
+    id: int = Field(index=True)
     owner: int
 
 

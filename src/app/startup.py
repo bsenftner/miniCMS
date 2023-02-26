@@ -42,7 +42,7 @@ async def initialize_database_data( ) -> None:
     if not note:
         
         log.info('site_config not found, creating...')
-        data = { "protect_contact": True }  # old, unused data; but there is no data for the webapp to maintain yet
+        data = { "public_registration": True }  # expose the registration page to the public, allow public registration to site
         
         dataP = json.dumps(data) # dump to string
         

@@ -13,7 +13,7 @@ from app import config
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
 from app.api.user_action import UserAction, UserActionLevel
-from app.api.models import User, MemoDB, ProjectDB
+from app.api.models import User, MemoDB, ProjectDB, TagDB
 from app.api.utils import convertDateToLocal
 # from app.send_email import send_email_async
 
@@ -113,7 +113,8 @@ async def profilePage( request: Request,
 async def projectPage( request: Request, projectid: int, 
                        current_user: User = Depends(get_current_active_user) ):
      
-    proj: ProjectDB = await crud.get_project(projectid)
+    proj, tag = await crud.get_project_and_tag(projectid)
+    # proj: ProjectDB = await crud.get_project(projectid)
     if not proj:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -121,7 +122,7 @@ async def projectPage( request: Request, projectid: int,
                                        f"ProjectPage {projectid}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
     
-    tag = await crud.get_tag( proj.tagid )
+    # tag = await crud.get_tag( proj.tagid )
     if not tag:
         await crud.rememberUserAction( current_user.userid,  
                                        UserActionLevel.index('SITEBUG'),
@@ -173,8 +174,8 @@ async def projectEditor( request: Request,
                          id: int, 
                          current_user: User = Depends(get_current_active_user) ):
     
-    # proj, tag = await crud.get_project_and_tag(id)
-    proj: ProjectDB = await crud.get_project(id)
+    proj, tag = await crud.get_project_and_tag(id)
+    # proj: ProjectDB = await crud.get_project(id)
     if not proj:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -182,6 +183,7 @@ async def projectEditor( request: Request,
                                        f"projectEditor {id}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
 
+    # edit access is for project owner and admins only:
     if proj.userid != current_user.userid and not user_has_role(current_user,"admin"):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
@@ -190,7 +192,7 @@ async def projectEditor( request: Request,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to edit other's Projects")
         
-    tag = await crud.get_tag( proj.tagid )
+    # tag = await crud.get_tag( proj.tagid )
     if not tag:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),

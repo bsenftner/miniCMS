@@ -20,8 +20,8 @@
 			<div id="mainContent">
                 <h2>Account & Admin Settings for {{ data.username }}:</h2>
 				
-				<input type="checkbox" name="protect_contact" id="protect_contact" class="chkbox" />
-        		<label for="protect_contact" class="chkbox">This is unused. It remains as a developer example of admin settings.</label>
+				<input type="checkbox" name="public_registration" id="public_registration" class="chkbox" />
+        		<label for="public_registration" class="chkbox">Expose site registration page to public, allow public registration</label>
 
 				<div id="adminMsg"></div>
                 <br/>
@@ -95,9 +95,9 @@
 
 			// user is logged in:
 							
-			var state = "{{ data.protect_contact }}"
+			var state = "{{ data.public_registration }}"
 			state = (state=="True")
-			document.getElementById("protect_contact").checked = state;
+			document.getElementById("public_registration").checked = state;
 
 			get_available_backups();
 			get_user_list();
@@ -115,16 +115,17 @@
 		function SaveAdminSettingsWork() {
 			
 			// get admin settings:
-			const protectContent = document.getElementById("protect_contact").checked;
+			const allowPublicRegistration = document.getElementById("public_registration").checked;
                 		
-			// package as "note"
+			// package as "note" (example of json inside json)
 			const someData = {
-				"title": "protect_contact", 
+				"title": "site_config", 
 				"description": "configuration data for admins", 
-				"data": JSON.stringify({ "protect_contact": protectContent }) ,
-			}
+				"data": JSON.stringify({ "public_registration": allowPublicRegistration }) ,
+			} 
 			
 			const options = {
+				credentials: 'include',
 				method: 'PUT', // Method itself
 				headers: {
 						 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
@@ -133,7 +134,12 @@
 				body: JSON.stringify(someData) // We send data in JSON format
 			}
 
-			fetch( '/notes/1/', options )
+			// make the HTTP put request using fetch api  (this ful building is required, apparently)
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/notes/1';
+			//
+			fetch( furl, options )
 					.then( response => response.json() )
 					.then( response => {
 						// Do something with response.

@@ -228,8 +228,11 @@ async def validate_email_address(email: str):
 # -------------------------------------------------------------------------------------
 async def validate_new_user_info(user: UserReg):
     
+    log.info(f'validate_new_user_info: got {user}')
+    
     existingUser = await get_user(user.username)
     if existingUser:
+        log.info('validate_new_user_info: exit 1')
         return { "success": False, 
                  "status_code": status.HTTP_409_CONFLICT, 
                  "msg": "Username already in use."
@@ -239,6 +242,7 @@ async def validate_new_user_info(user: UserReg):
     if ret['success']:
         user.email = ret['msg']
     else:
+        log.info('validate_new_user_info: exit 2')
         return { "success": False, 
                  "status_code": status.HTTP_406_NOT_ACCEPTABLE, 
                  "msg": ret['msg']
@@ -246,11 +250,14 @@ async def validate_new_user_info(user: UserReg):
     
     existingUser = await get_user_by_email(user.email)
     if existingUser:
+        log.info('validate_new_user_info: exit 3')
         return { "success": False, 
                  "status_code": status.HTTP_409_CONFLICT, 
                  "msg": "Email already in use."
                }
     
+    
+    log.info('validate_new_user_info: exit 4 - the good one')
     return { "success": True, 
              "status_code": status.HTTP_200_OK, 
              "msg": user.email 

@@ -33,11 +33,11 @@ async def create_note(payload: NoteSchema,
     if note:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Note already exists")
     
-    note_id = await crud.post_note(payload, current_user.id)
+    note_id = await crud.post_note(payload, current_user.userid)
 
     response_object = {
         "id": note_id,
-        "owner": current_user.id,
+        "owner": current_user.userid,
         "title": payload.title,
         "description": payload.description,
         "data": payload.data,
@@ -55,7 +55,7 @@ async def read_note(id: int = Path(..., gt=0),
     if note is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     
-    if current_user.id == note.owner or user_has_role( current_user, "admin"):
+    if current_user.userid == note.owner or user_has_role( current_user, "admin"):
         return note
     
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
@@ -78,7 +78,8 @@ async def read_all_notes(current_user: UserInDB = Depends(get_current_active_use
 # Note: id's type is validated as greater than 0  
 # data is also tested for being valid json
 @router.put("/{id}", response_model=NoteDB)
-async def update_note(payload: NoteSchema, id: int = Path(..., gt=0), 
+async def update_note(payload: NoteSchema, 
+                      id: int = Path(..., gt=0), 
                       current_user: UserInDB = Depends(get_current_active_user)) -> NoteDB:
     
     # print(f"Notes:PUT:: payload is {payload.data}!")
@@ -95,7 +96,7 @@ async def update_note(payload: NoteSchema, id: int = Path(..., gt=0),
         error = e.__class__.__name__
         raise HTTPException( status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    if note.owner != current_user.id and not user_has_role(current_user,"admin"):
+    if note.owner != current_user.userid and not user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to change other's notes")
         
@@ -121,7 +122,7 @@ async def delete_note(id: int = Path(..., gt=0),
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
 
-    if note.owner != current_user.id and not user_has_role(current_user,"admin"):
+    if note.owner != current_user.userid and not user_has_role(current_user,"admin"):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to delete other's notes")
         

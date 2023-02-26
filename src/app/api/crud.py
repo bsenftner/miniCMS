@@ -1,6 +1,5 @@
 from typing import List, Tuple
 
-# import sqlalchemy as sa
 from sqlalchemy import asc 
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
@@ -138,7 +137,7 @@ def user_has_project_access( user: UserInDB, proj: ProjectDB, projTag: TagDB ) -
     # first admins automatically get access:
     weAreAllowed = user_has_role(user, 'admin')
     if not weAreAllowed:
-        # for everyone else:
+        # for everyone else must be project member and project is published:
         if user_has_role(user, projTag.text) and proj.status == 'published':
             weAreAllowed = True
     return weAreAllowed
@@ -186,20 +185,13 @@ async def get_project(id: int) -> ProjectDB:
     return await db_mgr.get_db().fetch_one(query=query)
 
 # -----------------------------------------------------------------------------------------
-async def get_project_and_tag(projectid: int) -> Tuple[ProjectDB, TagDB]:
+async def get_project_and_tag(projectid: int) -> Tuple:
     
-    log.info(f"get_project_and_tag: here!!!!!!!!")
-    
-    db_mgr: DatabaseMgr = get_database_mgr()
-    projTB = db_mgr.get_project_table()
-    query = projTB.select().where(id == projTB.c.projectid)
-    proj: ProjectDB = await db_mgr.get_db().fetch_one(query=query)
+    proj: ProjectDB = await get_project(projectid)
     if not proj:
         return (None, None)
     
-    tagTB = db_mgr.get_tag_table()
-    query = tagTB.select().where(id == tagTB.c.tagid)
-    tag: TagDB = await db_mgr.get_db().fetch_one(query=query)
+    tag: TagDB = await get_tag(proj.tagid)
     if not tag:
         return (proj, None)
     

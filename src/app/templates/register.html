@@ -132,9 +132,21 @@
                 .then(data => { 
                     console.log(data);
                     const jsonData = JSON.parse(data);
-                    localStorage.setItem('webusername', jsonData.username);
-                    window.location.reload();
-                });
+                    if (jsonData.hasOwnProperty('detail')) {
+                        // problem!
+                        console.log(jsonData.detail) 
+					    alert( jsonData.detail )
+                    }
+                    else {
+                        localStorage.setItem('webusername', jsonData.username);
+                        window.location.reload();
+                    }
+                })
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+				}) 
             }
             
             
