@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Tuple
 
-import sqlalchemy as sa
+# import sqlalchemy as sa
 from sqlalchemy import asc 
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
 from app.api.models import MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
-from app.api.models import ProjectSchema, ProjectDB, UserActionRec, UserActionDB
+from app.api.models import ProjectSchema, ProjectDB, UserActionCreate, UserActionDB
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -15,17 +15,18 @@ from app.config import log
 
 
 # ---------------------------------------------------------------------------------------
-async def rememberUserAction( userid: int, action: int, desc: str ):
-    payload = UserActionRec(actionCode=action, description=desc)
+async def rememberUserAction( userid: int, actionLevel: int, action: int, desc: str ):
+    payload = UserActionCreate(actionLevel=actionLevel, actionCode=action, description=desc)
     await post_user_action( payload, userid )
     
 # -----------------------------------------------------------------------------------------
 # for creating new user actions
-async def post_user_action(payload: UserActionRec, userid: int ):
-    log.info(f"post_user_action: payload is {payload}")
+async def post_user_action(payload: UserActionCreate, userid: int ):
+    # log.info(f"post_user_action: payload is {payload}")
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
     query = db_mgr.get_action_table().insert().values(userid=userid,
+                                                      actionLevel=payload.actionLevel,
                                                       actionCode=payload.actionCode,
                                                       description=payload.description)
     # Executes the query and returns the generated ID
@@ -75,6 +76,8 @@ async def get_this_users_action_count(user: UserInDB):
     # log.info({**result})
     
     return result['count']
+
+
 
 # -----------------------------------------------------------------------------------------
 # for creating new tags
@@ -161,8 +164,8 @@ async def user_has_project_access_by_id( user: UserInDB, projectid: int ) -> boo
 # -----------------------------------------------------------------------------------------
 # for creating new projects
 async def post_project(payload: ProjectSchema):
-    log.info(f"post_project: here!")
-    log.info(f"post_project is {payload}")
+
+    #log.info(f"post_project: payload {payload}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
@@ -181,6 +184,26 @@ async def get_project(id: int) -> ProjectDB:
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().where(id == db_mgr.get_project_table().c.projectid)
     return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+async def get_project_and_tag(projectid: int) -> Tuple[ProjectDB, TagDB]:
+    
+    log.info(f"get_project_and_tag: here!!!!!!!!")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    projTB = db_mgr.get_project_table()
+    query = projTB.select().where(id == projTB.c.projectid)
+    proj: ProjectDB = await db_mgr.get_db().fetch_one(query=query)
+    if not proj:
+        return (None, None)
+    
+    tagTB = db_mgr.get_tag_table()
+    query = tagTB.select().where(id == tagTB.c.tagid)
+    tag: TagDB = await db_mgr.get_db().fetch_one(query=query)
+    if not tag:
+        return (proj, None)
+    
+    return (proj, tag)
 
 # -----------------------------------------------------------------------------------------
 # for getting projects by their name:

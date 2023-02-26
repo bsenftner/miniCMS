@@ -117,6 +117,7 @@ class DatabaseMgr:
             self.metadata,
             Column("actionid", Integer, primary_key=True),
             Column("userid", Integer, ForeignKey("users.userid")),  # user who performed the action
+            Column("actionLevel", Integer, index=True),         # UserActionLevel values, nature of what they did
             Column("actionCode", Integer, index=True),          # UserAction values, what they did
             Column("description", String),                      # additional info here
             Column("created_date", DateTime, default=func.now(), nullable=False),

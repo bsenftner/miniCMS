@@ -2,7 +2,8 @@ from fastapi import APIRouter, Header, Response, Depends, HTTPException, status
 
 from app import config
 from app.api import crud
-from app.api.users import get_current_active_user, user_has_role, UserAction
+from app.api.users import get_current_active_user, user_has_role
+from app.api.user_action import UserAction, UserActionLevel
 from app.api.models import UserInDB, ProjectDB
 
 # create a local router for paths created in this file
@@ -56,23 +57,31 @@ async def project_video_endpoint(projectid: int,
     
     proj: ProjectDB = await crud.get_project(projectid)
     if proj is None:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
                                        f"Project {projectid}, not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
         
     tag = await crud.get_tag( proj.tagid )
     if not tag:
-        await crud.rememberUserAction( current_user.userid,  UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
+        await crud.rememberUserAction( current_user.userid,  
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
                                        f"Project {projectid}, '{proj.name}', Tag not found" )
         raise HTTPException(status_code=500, detail="Project Tag not found")
     
     weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
     if not weAreAllowed:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_PLAY_PROJECT_VIDEO'), 
                                        f"Project {projectid}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
-    await crud.rememberUserAction( current_user.userid, UserAction.index('PLAY_PROJECT_VIDEO'), 
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('PLAY_PROJECT_VIDEO'), 
                                    f"project {projectid}, video '{video_file}'" )
     
     start, end = 0, 0

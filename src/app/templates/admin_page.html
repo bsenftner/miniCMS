@@ -302,6 +302,12 @@
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
 						let msg = success[i].created_date + ': ' + success[i].action;
+			/*			msg += ',';
+						let actionLen = success[i].action.length;
+						while (actionLen > 0) {
+							msg += &nbsp;
+							actionLen--;
+						} */
 						if (success[i].description.length > 0) {
 							msg += ', ' + success[i].description;
 						} 
