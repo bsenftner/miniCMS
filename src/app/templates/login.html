@@ -49,7 +49,9 @@
         {# the right sidebar #}
 		<aside>
 			<div id="aside">
+				{% if regers %}
 				<a href="#" class="button" onclick="Register()">Register</a>
+				{% endif %}
 			</div>
 		</aside>
   
@@ -122,8 +124,10 @@
 
         function Cancel() { window.location.href = "/"; }
 
+		{% if regers %}
 		function Register() { window.location.href = "/register"; }
-
+		{% endif %}
+		
 		function UserSettings() { window.location.href = "/settings"; }
 		
 		function Login() { 

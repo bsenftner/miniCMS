@@ -10,6 +10,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 import secrets
 import string
 
+import json
+
 from pydantic import EmailStr
 
 from typing import List
@@ -184,24 +186,32 @@ async def sign_up(user: UserReg):
     
     log.info(f'sign_up: got {user}')
     
-    site_config: NoteDB = await crud.get_note(1)
+    site_config: NoteDB = await crud.get_note(1) # site_config has id 1
+    if site_config:
+        site_config.data = json.loads(site_config.data)
+        # config.log.info(f"register: site_config.data is {site_config.data}")
+        if site_config.data['public_registration'] == False:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                                detail="Public registration is unauthorized")
+    
+    """ site_config: NoteDB = await crud.get_note(1)
     assert site_config != None
     log.info(f"sign_up: site_config.title is {site_config.title}")
     log.info(f"sign_up: site_config.description is {site_config.description}")
     log.info(f"sign_up: site_config.data is {site_config.data}")
     log.info(f"sign_up: site_config.id is {site_config.id}")
-    log.info(f"sign_up: site_config.owner is {site_config.owner}")
+    log.info(f"sign_up: site_config.owner is {site_config.owner}") """
     
     ret = await validate_new_user_info(user)
-    log.info(f"sign_up: ret is {ret}")
+    # log.info(f"sign_up: ret is {ret}")
     #
     success = ret["success"]
     status_code = ret["status_code"]
     msg = ret["msg"]
     #
-    log.info(f"sign_up: ret.success is {success}")
+    """ log.info(f"sign_up: ret.success is {success}")
     log.info(f"sign_up: ret.status_code is {status_code}")
-    log.info(f"sign_up: ret.msg is {msg}")
+    log.info(f"sign_up: ret.msg is {msg}") """
     
     if not success:
         raise HTTPException( status_code=status_code, 
