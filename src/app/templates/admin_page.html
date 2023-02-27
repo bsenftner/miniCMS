@@ -20,8 +20,8 @@
 			<div id="mainContent">
                 <h2>Account & Admin Settings for {{ data.username }}:</h2>
 				
-				<input type="checkbox" name="protect_contact" id="protect_contact" class="chkbox" />
-        		<label for="protect_contact" class="chkbox">This is unused. It remains as a developer example of admin settings.</label>
+				<input type="checkbox" name="public_registration" id="public_registration" class="chkbox" />
+        		<label for="public_registration" class="chkbox">Expose site registration page to public, allow public registration</label>
 
 				<div id="adminMsg"></div>
                 <br/>
@@ -51,11 +51,51 @@
 						</div>
 					</div>
 					<div id="userInfoDiv">
-						<b>Please select a user from the list at left.</b>
+						<h4>Selected User:</h4>
 					</div>
-					<div id="userActionsDiv">
+					<div id="userActionDiv">
+						<h4>Selected User Actions (website activity):</h4>
+						<label for="userActionOffset">Offset:</label>
+  						<input type="text" id="userActionOffset" name="label" value="0">
+						<label for="userActionLimit">Showing:</label>
+						<input type="text" id="userActionLimit" name="label" value="50">
 						<select id="userActionBox" class="resizeable" size="7" onchange="onUserActionChangeFunc();"></select>
 					</div>
+				</div>
+
+				<div class="twoColumns">
+					<h2 class="twoCols0">Create New Account:</h2>
+					<a href="#" class="button twoCols1" onclick="ToggleCreateAccountSet()">Show/Hide Create New Account</a>
+				</div>
+				<div id="CreateAccountSet">
+					<div id="userRegistration">
+						<br/>
+						<label for="username">Username:</label>
+							<input type="text" id="username" name="label" value="">
+						<br/>
+						<label for="email">Email Addr:</label>
+							<input type="text" id="email" name="label" value="">
+						<br/>
+						<label for="password">Password:</label>
+							<input type="password" id="password" name="label" value="">
+						<br/>
+						<label for="confirmPass">Confirm Password:</label>
+							<input type="password" id="confirmPass" name="label" value="">
+						<br/>
+					</div>
+					<h4>Use these controls to create new user accounts. 
+						If the Admin Setting for 'expose site registration to the public' 
+						is unchecked, the above controls are the only way to create new user accounts. 
+						Remember new user passwords must be a minimum of 12 characters long. After
+						creating a new user account, an email is sent to the registered new user's email 
+						containing an email verification code. Until that code is entered, the user may 
+						login but nothing works until email their is verified. 
+					</h4>
+					<div id="divRegisterButtons">
+						<a href="#" class="button" onclick="CreateUserAccount()">Create New User Account</a>
+					</div>
+					<div id="createMsg"></div>
+					<br/>
 				</div>
 
 				<div class="twoColumns">
@@ -90,13 +130,19 @@
 
 			// user is logged in:
 							
-			var state = "{{ data.protect_contact }}"
+			var state = "{{ data.public_registration }}"
 			state = (state=="True")
-			document.getElementById("protect_contact").checked = state;
+			document.getElementById("public_registration").checked = state;
 
 			get_available_backups();
 			get_user_list();
 
+			// if the user enters return inside either of these input ctrls,
+			// the selected user's appropriate activity is loaded
+			AddUserActionsReturnListener( "userActionOffset" )
+			AddUserActionsReturnListener( "userActionLimit" )
+
+			ToggleCreateAccountSet();
 			ToggleYourAccountSet();
 		}
 		//
@@ -107,16 +153,17 @@
 		function SaveAdminSettingsWork() {
 			
 			// get admin settings:
-			const protectContent = document.getElementById("protect_contact").checked;
+			const allowPublicRegistration = document.getElementById("public_registration").checked;
                 		
-			// package as "note"
+			// package as "note" (example of json inside json)
 			const someData = {
-				"title": "protect_contact", 
+				"title": "site_config", 
 				"description": "configuration data for admins", 
-				"data": JSON.stringify({ "protect_contact": protectContent }) ,
-			}
+				"data": JSON.stringify({ "public_registration": allowPublicRegistration }) ,
+			} 
 			
 			const options = {
+				credentials: 'include',
 				method: 'PUT', // Method itself
 				headers: {
 						 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
@@ -125,7 +172,12 @@
 				body: JSON.stringify(someData) // We send data in JSON format
 			}
 
-			fetch( '/notes/1/', options )
+			// make the HTTP put request using fetch api  (this ful building is required, apparently)
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/notes/1';
+			//
+			fetch( furl, options )
 					.then( response => response.json() )
 					.then( response => {
 						// Do something with response.
@@ -139,8 +191,78 @@
 			ifAccessDo(SaveAdminSettingsWork);
 		}
 
+		// called when user clicks the "Show / Hide Your Account" button
+		function ToggleCreateAccountSet() {
+			let yourAcctSet = document.getElementById("CreateAccountSet")
+			if (yourAcctSet.style.display === "none") {
+				yourAcctSet.style.display = "block";
+			  } else {
+				yourAcctSet.style.display = "none";
+			  }
+		}
 		
+		function CreateUserAccount() { 
+            
+            // get the user's info:
+			const regUser = document.getElementById("username").value;
+			const regEmail = document.getElementById("email").value;
+			const regPass = document.getElementById("password").value;
+			const regConf = document.getElementById("confirmPass").value;
+
+			const crtMsg = document.getElementById("createMsg");
+            if (regPass.length < 12) {
+                crtMsg.innerHTML = '<h3>Password must be at least 12 characters long.</h3>'
+            }
+            else if (regPass!=regConf) {
+                crtMsg.innerHTML = '<h3>Password and Confirm Password must match.</h3>'
+            }
+            else if (regEmail.indexOf('@') < 1) {
+                crtMsg.innerHTML = '<h3>Please supply a valid email, it is required for account validation.</h3>'
+            }
+            else {
+                
+                crtMsg.innerHTML = 'Attempting to create user...'
+
+                const regData = { 
+                    'username': regUser, 
+                    'email': regEmail,
+                    'password': regPass,
+                };
+                const options = { 
+                    method: 'POST', 
+					headers: {
+				  		'Accept': 'application/json',
+				  		'Content-Type': 'application/json',
+					},
+                    body: JSON.stringify( regData ) 
+                };
+                fetch('/users/create', options)
+                .then(response => response.text())
+                .then(data => { 
+                    console.log(data);
+                    const jsonData = JSON.parse(data);
+                    if (jsonData.hasOwnProperty('detail')) {
+                        // problem!
+                        console.log(jsonData.detail) 
+					    alert( jsonData.detail )
+						crtMsg.innerHTML = 'Problem: ' + jsonData.detail;
+                    }
+                    else {
+                        crtMsg.innerHTML = 'Success! New user account named ' + regUser + ' created.';
+                    }
+                })
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+					crtMsg.innerHTML = 'Problem: ' + err;
+				}) 
+            }
+        }
+
 		let gUsers = {}
+		let gSelectedUserId = -1;
+		let gSelectedUserIndex = -1;
 		//
 		// get list of users and populate user selection list:
 		const get_user_list = () => {
@@ -161,12 +283,14 @@
 					}
 					//
 					gUsers = success; // remember
+					gSelectedUserId = -1;
+					gSelectedUserIndex = -1;
 					//
 					limit = success.length;
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
-						optn.text = success[i].username;
-						optn.value = success[i].userid; 
+						optn.text = gUsers[i].username;
+						optn.value = gUsers[i].userid; 
 						userSelectBox.options.add(optn);
 					}
 				}
@@ -180,28 +304,97 @@
 		// called when the user selection changes:
 		function onUserSelectChangeFunc() {
 			let userSelectBox = document.getElementById("userSelectBox")
-			let selected = userSelectBox.value;
+			gSelectedUserId = userSelectBox.value;
 			for (i = 0; i < gUsers.length; i++) {
-				if (gUsers[i].userid == selected) {
+				if (gUsers[i].userid == gSelectedUserId) {
+
+					gSelectedUserIndex = i;
 
 					document.getElementById("userInfoDiv").innerHTML = 
-					'<h4>Username: ' + gUsers[i].username + '</br>' +
+						'<h4>Selected User: </br></br>' +
+						'Username: ' + gUsers[i].username + '</br>' +
 					    'UserId: '   + gUsers[i].userid + '</br>' +
 						'Roles: ' + gUsers[i].roles + '</br>' +
-						'Email: ' + gUsers[i].email + '</h4>';
-					
-					get_user_actions( selected );
+						'Email: ' + gUsers[i].email + '</br></br>' +
+						'User Actions: (loading...)</h4>';
+
+					get_user_action_count( gSelectedUserId, gSelectedUserIndex ); // not cached, so is "live"
 					break;
 				}
 			}
 		}
 
 		// get list of user actions and populate selection list:
-		function get_user_actions( userId ) {
+		function get_user_action_count( userIdParam, userIndexParam ) {
 
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/user_action/user/' + userId;
+			let furl = prebsjnk + '/user_action/count/' + userIdParam;
+
+			fetch(furl, { // GET endpoint
+				  method: 'GET',
+				  headers: {}
+			}).then(
+				  response => response.json() // if the response is a JSON object
+			 ).then(
+				  success => {
+					console.log( success ) // Handle the success response object
+					
+					get_user_actions( userIdParam ); 
+
+					document.getElementById("userInfoDiv").innerHTML = 
+						'<h4>Selected User: </br></br>' +
+						'Username: ' + gUsers[userIndexParam].username + '</br>' +
+					    'UserId: '   + gUsers[userIndexParam].userid + '</br>' +
+						'Roles: ' + gUsers[userIndexParam].roles + '</br>' +
+						'Email: ' + gUsers[userIndexParam].email + '</br></br>' +
+						'User Actions: ' + success['count'] + '</h4>';
+				}
+			 ).catch(
+				  error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		};
+
+		function UserActionsReturnAction(event) {
+			// If the user presses the "Enter" key on the keyboard
+			if (event.key === "Enter") {
+				// Cancel the default action, if needed
+				event.preventDefault();
+				// Trigger what we want to happen:
+				if (gSelectedUserId > 0) {
+					get_user_actions( gSelectedUserId )
+				}
+			}
+		}
+
+		function AddUserActionsReturnListener( elem ) {
+			// Get the DOM element we want sensitive to return presses:
+			let returnSensitiveArea = document.getElementById(elem);
+			if (returnSensitiveArea) {
+				// Execute a function when the user presses a key on the keyboard
+				returnSensitiveArea.addEventListener("keypress", UserActionsReturnAction ); 
+			}
+			
+		}
+
+		// get list of user actions and populate selection list:
+		function get_user_actions( userId ) {
+
+			let actionOffset = document.getElementById("userActionOffset").value;
+			let actionLimit = document.getElementById("userActionLimit").value;
+
+			if (actionOffset < 0) {
+				actionOffset = 0;
+			}
+			if (actionLimit < 0) {
+				actionLimit = 50;
+			}
+
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/user_action/user/' + userId + '/' + actionLimit + '/' + actionOffset;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
@@ -222,6 +415,12 @@
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
 						let msg = success[i].created_date + ': ' + success[i].action;
+			/*			msg += ',';
+						let actionLen = success[i].action.length;
+						while (actionLen > 0) {
+							msg += &nbsp;
+							actionLen--;
+						} */
 						if (success[i].description.length > 0) {
 							msg += ', ' + success[i].description;
 						} 
@@ -286,7 +485,6 @@
 			}
 		}
 
-		
 		function download_backup_work() {
 			let backupSelectBox = document.getElementById("refSelectBox")
 			let selected = backupSelectBox.value;

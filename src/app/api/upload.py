@@ -8,7 +8,8 @@ from typing import List
 
 from app import config
 from app.api import crud
-from app.api.users import get_current_active_user, user_has_role, UserAction
+from app.api.users import get_current_active_user, user_has_role
+from app.api.user_action import UserAction, UserActionLevel
 from app.api.models import UserInDB
 
 from app.config import log
@@ -28,7 +29,10 @@ async def upload(file: UploadFile = File(...),
                  current_user: UserInDB = Depends(get_current_active_user)):
     
     if not user_has_role(current_user,"admin") and not user_has_role(current_user,"staff"):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), "Not Authorized" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized to upload files")
     
     upload_path = '' # so is available later
@@ -44,12 +48,18 @@ async def upload(file: UploadFile = File(...),
                 await f.write(contents)
                 
     except Exception:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), f"Error uploading {file.filename}" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"Error uploading {file.filename}" )
         return {"message": "There was an error uploading the file"}
     finally:
         await file.close()
 
-    await crud.rememberUserAction( current_user.userid, UserAction.index('FILE_UPLOADED'), f"Uploaded {upload_path}" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('FILE_UPLOADED'), 
+                                   f"Uploaded {upload_path}" )
     
     return {"message": f"Successfully uploaded {file.filename}"}
 
@@ -113,16 +123,25 @@ async def project_upload(projectid: int,
         
     proj = await crud.get_project( projectid )
     if proj is None:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), f"Project {projectid} Not found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"Project {projectid} Not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     
     if proj.status == 'archived':
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), f"Project {projectid} Archived" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"Project {projectid} Archived" )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Archived projects cannot receive uploads")
         
     tag = await crud.get_tag( proj.tagid )
     if not tag:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), f"Project Tag {proj.tagid} Not Found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"Project Tag {proj.tagid} Not Found" )
         raise HTTPException(status_code=500, detail="Project Tag not found")
     
     isAdmin = user_has_role(current_user,"admin")
@@ -131,16 +150,25 @@ async def project_upload(projectid: int,
     log.info( f"project_upload: isAdmin is {isAdmin}, isProjMember is {isProjMember}")
     
     if not isAdmin and not isProjMember:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), "Not Authorized" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not Authorized to upload {tag.text} files") 
     
     # only allow admins and project owner if project is unpublished:
     if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), "Not Authorized (Project unpublished)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       "Not Authorized (Project unpublished)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     if proj.status == 'published' and (not isAdmin and not isProjMember):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), "Not Authorized (not Project member)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       "Not Authorized (not Project member)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     log.info(f"project_upload: about to try...")
@@ -159,12 +187,18 @@ async def project_upload(projectid: int,
                 await f.write(contents)
                 
     except Exception:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_FILE_UPLOAD'), f"Error uploading {file.filename}" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"Error uploading {file.filename}" )
         return {"message": "There was an error uploading the file"}
     finally:
         await file.close()
 
-    await crud.rememberUserAction( current_user.userid, UserAction.index('FILE_UPLOADED'), f"Uploaded {upload_path}" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('FILE_UPLOADED'), 
+                                   f"Uploaded {upload_path}" )
     
     return {"message": f"Successfully uploaded {tag.text} {file.filename}"}
 
@@ -175,33 +209,51 @@ async def read_all_project_uploads(projectid: int,
     
     proj = await crud.get_project( projectid )
     if proj is None:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), f"Project {projectid} Not found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), 
+                                       f"Project {projectid} Not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     
     tag = await crud.get_tag( proj.tagid )
     if not tag:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), f"Project Tag {proj.tagid} Not found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), 
+                                       f"Project Tag {proj.tagid} Not found" )
         raise HTTPException(status_code=500, detail="Project Tag not found")
     
     isAdmin = user_has_role(current_user,"admin")
     isProjMember = user_has_role(current_user, tag.text)
     
     if not isAdmin and not isProjMember:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), "Not Authorized" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), 
+                                       "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     if proj.status == 'archived' and not isAdmin:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), "Not Authorized (Project archived)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), 
+                                       "Not Authorized (Project archived)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # only allow admins and project owner if project is unpublished:
     if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), "Not Authorized (Project unpublished)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), 
+                                       "Not Authorized (Project unpublished)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # if project is published, user must be admin or project member
     if proj.status == 'published' and (not isAdmin and not isProjMember):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), "Not Authorized (not Project member)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE_LIST'), 
+                                       "Not Authorized (not Project member)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # finally...
@@ -235,7 +287,10 @@ async def read_all_project_uploads(projectid: int,
         
             ret.append( fdesc )
         
-    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_PROJECT_FILE_LIST'), f"Project '{proj.name}'" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('GET_PROJECT_FILE_LIST'), 
+                                   f"Project '{proj.name}'" )
         
     return ret
 
@@ -248,37 +303,58 @@ async def get_project_file(projectid: int,
     
     proj = await crud.get_project( projectid )
     if proj is None:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE'), f"Project {projectid} Not found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                       f"Project {projectid} Not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     
     tag = await crud.get_tag( proj.tagid )
     if tag is None:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE'), f"Project Tag {proj.tagid} Not found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                       f"Project Tag {proj.tagid} Not found" )
         raise HTTPException(status_code=500, detail="Project Tag not found")
     
     isAdmin = user_has_role(current_user,"admin")
     isProjMember = user_has_role(current_user, tag.text)
     
     if not isAdmin and not isProjMember:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                       "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     if proj.status == 'archived' and not isAdmin:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE'), "Not Authorized (Project Archived)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                       "Not Authorized (Project Archived)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # only allow admins and project owner if project is unpublished:
     if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE'), "Not Authorized (Project unpublished)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                       "Not Authorized (Project unpublished)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # if project is published, user must be admin or project member
     if proj.status == 'published' and (not isAdmin and not isProjMember):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_GET_PROJECT_FILE'), "Not Authorized (not Project member)" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                       "Not Authorized (not Project member)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # finally...
     upload_path = config.get_base_path() / 'uploads' / tag.text / filename 
     
-    await crud.rememberUserAction( current_user.userid, UserAction.index('GET_PROJECT_FILE'), f"Project '{proj.name}', file {upload_path}" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('GET_PROJECT_FILE'), 
+                                   f"Project '{proj.name}', file {upload_path}" )
     
     return upload_path

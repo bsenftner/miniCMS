@@ -9,13 +9,13 @@ from datetime import datetime
 
 # here is a "note": something with a title, a description, and data 
 class NoteSchema(BaseModel):
-    title: str = Field(..., min_length=3, max_length=50)
-    description: str = Field(..., min_length=3, max_length=50)
+    title: str
+    description: str
     data: str
 
 # A "Note" in the database is simply an id plus our NoteSchema: 
 class NoteDB(NoteSchema):
-    id: int
+    id: int = Field(index=True)
     owner: int
 
 
@@ -94,7 +94,6 @@ class ProjectDB(ProjectSchema):
     projectid: int = Field(index=True)
     created_date: datetime
     
-    
 
 # an access token used by authentication
 class Token(BaseModel):
@@ -140,18 +139,21 @@ class basicTextPayload(BaseModel):
     text: str
     
 
-class UserActionRec(BaseModel):
-    actionCode: int = Field(index=True) # what happended, one of the UserAction enum values
-    description: str                    # additional info about what happened
+
+class UserActionCreate(BaseModel):
+    actionLevel: int = Field(index=True)    # categorization of the action, severity level
+    actionCode: int = Field(index=True)     # what happended, one of the UserAction enum values
+    description: str                        # additional info about what happened
     
 
-class UserActionDB(UserActionRec):
+class UserActionDB(UserActionCreate):
     actionid: int = Field(index=True)
     userid: int = Field(index=True)     # who performed the action
     created_date: datetime
     
 class UserActionResponse(BaseModel):
-    action: str 
+    action: str
+    level: str
     username: str
     description: str
     created_date: str

@@ -1,13 +1,16 @@
 
 from fastapi import APIRouter, HTTPException, Depends, status, Request, Response
-from app.api.models import Token, UserInDB, UserPublic, UserReg, basicTextPayload
-from app.api.users import UserAction, get_current_active_user, user_has_role, validate_new_user_info
+from app.api.models import Token, UserInDB, UserPublic, UserReg, basicTextPayload, NoteDB
+from app.api.users import get_current_active_user, user_has_role, validate_new_user_info
+from app.api.user_action import UserAction, UserActionLevel
 from app.api import encrypt 
 
 from fastapi.security import OAuth2PasswordRequestForm
 
 import secrets
 import string
+
+import json
 
 from pydantic import EmailStr
 
@@ -29,8 +32,9 @@ async def login_for_access_token(response: Response,
     user = await users.authenticate_user_password(form_data.username, form_data.password)
     if not user:
         await crud.rememberUserAction( 0, # userid == 0 because we don't know who is doing this
-                                  UserAction.index('BAD_USERNAME_OR_PASSWORD'), 
-                                  f"attempted with {form_data.username} and {form_data.password}" )
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('BAD_USERNAME_OR_PASSWORD'), 
+                                       f"attempted with {form_data.username} and {form_data.password}" )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Bad username or password",
@@ -38,8 +42,10 @@ async def login_for_access_token(response: Response,
         )
     #
     if users.user_has_role( user, 'disabled'):
-        await crud.rememberUserAction( user.userid, UserAction.index('DISABLED_USER_LOGIN_ATTEMPT'),
-                                  f"attempted with {form_data.username}" )
+        await crud.rememberUserAction( user.userid, 
+                                       UserActionLevel.index('BANNED_ACTION'),
+                                       UserAction.index('DISABLED_USER_LOGIN_ATTEMPT'),
+                                       f"attempted with {form_data.username}" )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Disabled user",
@@ -68,7 +74,9 @@ async def login_for_access_token(response: Response,
                         settings.REFRESH_TOKEN_EXPIRES_MINUTES * 60, 
                         '/', None, False, True, 'lax')
 
-    await crud.rememberUserAction( user.userid, UserAction.index('CREATE_ACCESS_TOKEN'), "" )
+    await crud.rememberUserAction( user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('CREATE_ACCESS_TOKEN'), "" )
     
     return {
         "access_token": access_token,
@@ -100,7 +108,9 @@ async def refresh_token(response: Response, request: Request):
                         settings.ACCESS_TOKEN_EXPIRES_MINUTES * 60, 
                         '/', None, False, True, 'lax')
         
-        await crud.rememberUserAction( refreshUser.userid, UserAction.index('REFRESHED_ACCESS_TOKEN'), "" )
+        await crud.rememberUserAction( refreshUser.userid, 
+                                       UserActionLevel.index('NORMAL'),  
+                                       UserAction.index('REFRESHED_ACCESS_TOKEN'), "" )
     
     except Exception as e:
         error = e.__class__.__name__
@@ -135,6 +145,10 @@ async def read_users(request: Request,
                     current_user: UserInDB = Depends(users.get_current_active_user)) -> List[UserPublic]:
     
     if not users.user_has_role( current_user, 'admin' ):
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('NONADMIN_REQUESTED_USER_LIST'), 
+                                       "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access User list")
     
     userList = await crud.get_all_users()
@@ -152,6 +166,10 @@ async def read_users(request: Request,
                      current_user: UserInDB = Depends(users.get_current_active_user)) -> List[UserPublic]:
     
     if not users.user_has_role( current_user, 'admin' ) and not users.user_has_role( current_user, projectTag ):
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('NONMEMBER_ATTEMPTED_GET_PROJECT_MEMBERS'), 
+                                       "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access Project User list")
     
     userList = await crud.get_all_users_by_role(projectTag)
@@ -168,14 +186,40 @@ async def sign_up(user: UserReg):
     
     log.info(f'sign_up: got {user}')
     
+    site_config: NoteDB = await crud.get_note(1) # site_config has id 1
+    if site_config:
+        site_config.data = json.loads(site_config.data)
+        # config.log.info(f"register: site_config.data is {site_config.data}")
+        if site_config.data['public_registration'] == False:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                                detail="Public registration is unauthorized")
+    
+    """ site_config: NoteDB = await crud.get_note(1)
+    assert site_config != None
+    log.info(f"sign_up: site_config.title is {site_config.title}")
+    log.info(f"sign_up: site_config.description is {site_config.description}")
+    log.info(f"sign_up: site_config.data is {site_config.data}")
+    log.info(f"sign_up: site_config.id is {site_config.id}")
+    log.info(f"sign_up: site_config.owner is {site_config.owner}") """
+    
     ret = await validate_new_user_info(user)
-    if not ret['success']:
-        raise HTTPException( status_code=ret['status_code'], 
-                             detail=ret.msg, 
+    # log.info(f"sign_up: ret is {ret}")
+    #
+    success = ret["success"]
+    status_code = ret["status_code"]
+    msg = ret["msg"]
+    #
+    """ log.info(f"sign_up: ret.success is {success}")
+    log.info(f"sign_up: ret.status_code is {status_code}")
+    log.info(f"sign_up: ret.msg is {msg}") """
+    
+    if not success:
+        raise HTTPException( status_code=status_code, 
+                             detail=msg, 
                              headers={"WWW-Authenticate": "Bearer"}, )
     
     # when successful, validate_new_user_info() returns the Unicode normalized email in the msg return field:
-    emailAddr = EmailStr(ret['msg'])
+    emailAddr = EmailStr(msg)
     
     settings = get_settings() # application config settings
     
@@ -196,7 +240,10 @@ async def sign_up(user: UserReg):
     # validation of user info complete, create the user in the db:
     last_record_id = await crud.post_user( user, hashed_password, verify_code, roles )
     
-    await crud.rememberUserAction( last_record_id, UserAction.index('CREATED_NEW_USER'), f"name {user.username}" )
+    await crud.rememberUserAction( last_record_id, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('CREATED_NEW_USER'), 
+                                   f"name {user.username}" )
     
     await users.send_email_validation_email( user.username, user.email, verify_code )
     
@@ -204,14 +251,84 @@ async def sign_up(user: UserReg):
 
 
 # --------------------------------------------------------------------------------------------------------------
+@router.post("/users/create",  
+             status_code=status.HTTP_201_CREATED, 
+             summary="Admin create new user", 
+             response_model=UserPublic)
+async def sign_up(payload: UserReg, 
+                  current_user: UserInDB = Depends(users.get_current_active_user)):
+    
+    log.info(f'sign_up: got {payload}')
+    
+    if not user_has_role(current_user, "admin"):
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('BANNED_ACTION'),
+                                       UserAction.index('NONADMIN_REQUESTED_CREATE_NEW_USER'), 
+                                       "Not Authorized" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to create new user account")
+    
+    ret = await validate_new_user_info(payload)
+    log.info(f"sign_up: ret is {ret}")
+    #
+    success = ret["success"]
+    status_code = ret["status_code"]
+    msg = ret["msg"]
+    #
+    """ log.info(f"sign_up: ret.success is {success}")
+    log.info(f"sign_up: ret.status_code is {status_code}")
+    log.info(f"sign_up: ret.msg is {msg}") """
+    
+    if not success:        
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('CONFUSED'),
+                                       UserAction.index('BAD_CREATE_NEW_USER_DATA'), 
+                                       f"msg: {msg}" )
+        raise HTTPException( status_code=status_code, 
+                             detail=msg, 
+                             headers={"WWW-Authenticate": "Bearer"}, )
+    
+    # when successful, validate_new_user_info() returns the Unicode normalized email in the msg return field:
+    emailAddr = EmailStr(msg)
+    
+    settings = get_settings() # application config settings
+    
+    isAdmin = False
+    roles = users.user_initial_roles( isAdmin ) # returns the initial roles granted to a new user
+        
+    # we store the hashed password in the db:
+    hashed_password = encrypt.get_password_hash(payload.password)
+    
+    # generate an email verification code:
+    verify_code = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase) for i in range(16))
+    log.info(f'email verification code is {verify_code}')
+        
+    # validation of user info complete, create the user in the db:
+    last_record_id = await crud.post_user( payload, hashed_password, verify_code, roles )
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('CREATED_NEW_USER'), 
+                                   f"admin {current_user.username} created new user named {payload.username}" )
+    
+    await users.send_email_validation_email( payload.username, payload.email, verify_code )
+    
+    return {"username": payload.username, "userid": last_record_id, "email": emailAddr, "roles": roles}
+
+# --------------------------------------------------------------------------------------------------------------
 @router.post("/users/logout",  
              status_code=status.HTTP_200_OK, 
              summary="Logout current user", 
              response_model=UserPublic)
 async def logout(response: Response, current_user: UserInDB = Depends(users.get_current_active_user)):
+    
     response.set_cookie(key="access_token",value=f"Bearer 0", httponly=True)
     response.set_cookie(key="refresh_token",value=f"0", httponly=True)
-    await crud.rememberUserAction( current_user.userid, UserAction.index('USER_LOGOUT'), "" )
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('USER_LOGOUT'), "" )
+    
     return {"username": current_user.username, 
             "userid": current_user.userid, 
             "email": current_user.email, 
@@ -229,7 +346,9 @@ async def verify_user_email(payload: basicTextPayload, current_user: UserInDB = 
     if users.user_has_role( current_user, 'unverified'):
         log.info(f"current_user vcode {current_user.verify_code} and payload vcode {payload.text}")
         if current_user.verify_code != payload.text:
-            await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_EMAIL_VERIFY'), "" )
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserActionLevel.index('CONFUSED'),
+                                           UserAction.index('FAILED_EMAIL_VERIFY'), "" )
             raise HTTPException(
             status_code=status.HTTP_406_NOT_ACCEPTABLE,
             detail="The verification code does not match.",
@@ -255,7 +374,9 @@ async def verify_user_email(payload: basicTextPayload, current_user: UserInDB = 
                     detail="Database error.",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-            await crud.rememberUserAction( current_user.userid, UserAction.index('VERIFIED_EMAIL'), "" )
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserActionLevel.index('NORMAL'),
+                                           UserAction.index('VERIFIED_EMAIL'), "" )
             statusStr = "Ok"
             
     return { 'status': statusStr }
@@ -275,7 +396,10 @@ async def reset_user_password(payload: basicTextPayload):
     if not existingUser:
         existingUser: UserInDB = await users.get_user_by_email(payload.text)
         if not existingUser:
-            await crud.rememberUserAction( 0, UserAction.index('UNKNOWN_USER_RESET_PASSWORD_ATTEMPT'), f"tried with {payload.text}" )
+            await crud.rememberUserAction( 0, 
+                                           UserActionLevel.index('WARNING'),
+                                           UserAction.index('UNKNOWN_USER_RESET_PASSWORD_ATTEMPT'), 
+                                           f"tried with {payload.text}" )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No user with that username or email found.",
@@ -287,7 +411,10 @@ async def reset_user_password(payload: basicTextPayload):
         log.info('existing user was username')
     
     if users.user_has_role( existingUser, 'unverified'):
-        await crud.rememberUserAction( existingUser.userid, UserAction.index('UNVERIFIED_USER_PASSWORD_RESET_ATTEMPT'), f"name {existingUser.username}" )
+        await crud.rememberUserAction( existingUser.userid, 
+                                       UserActionLevel.index('CONFUSED'),
+                                       UserAction.index('UNVERIFIED_USER_PASSWORD_RESET_ATTEMPT'), 
+                                       f"name {existingUser.username}" )
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
             detail="The requested account must have a verified email to receive reset passwords.",
@@ -308,7 +435,10 @@ async def reset_user_password(payload: basicTextPayload):
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    await crud.rememberUserAction( existingUser.userid, UserAction.index('USER_RESET_PASSWORD'), f"name {existingUser.username}" )
+    await crud.rememberUserAction( existingUser.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('USER_RESET_PASSWORD'), 
+                                   f"name {existingUser.username}" )
     
     await users.send_password_changed_email(existingUser.username, existingUser.email, reset_password)
     
@@ -327,7 +457,9 @@ async def set_user_roles(userid: int,
     log.info(f"set_user_roles: working with userid {userid} and payload >{payload.text}<")
     
     if not user_has_role(current_user, "admin"):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('BANNED_ACTION'),
+                                       UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
                                        f"tried to give userid {userid} roles: {payload.text}" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to modify users")
     
@@ -349,7 +481,9 @@ async def set_user_roles(userid: int,
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    await crud.rememberUserAction( existingUser.userid, UserAction.index('USER_ROLES_ASSIGNMENT'), 
+    await crud.rememberUserAction( existingUser.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('USER_ROLES_ASSIGNMENT'), 
                                    f"old roles: {old_roles}, new roles {existingUser.roles}" )
     
     return { 'status': 'ok' }
@@ -362,7 +496,9 @@ async def set_user_password( payload: basicTextPayload,
                              current_user: UserInDB = Depends(users.get_current_active_user)):
     
     if users.user_has_role( current_user, 'unverified'):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('UNVERIFIED_USER_SET_PASSWORD_ATTEMPT'), "" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('CONFUSED'),
+                                       UserAction.index('UNVERIFIED_USER_SET_PASSWORD_ATTEMPT'), "" )
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
             detail="Account must have a verified email to accept account changes.",
@@ -382,7 +518,9 @@ async def set_user_password( payload: basicTextPayload,
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    await crud.rememberUserAction( current_user.userid, UserAction.index('USER_SET_PASSWORD'), "" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('USER_SET_PASSWORD'), "" )
      
     await users.send_password_changed_email(current_user.username, current_user.email, payload.text)
     
@@ -395,7 +533,9 @@ async def set_user_password( payload: basicTextPayload,
 async def set_user_email(payload: basicTextPayload, current_user: UserInDB = Depends(users.get_current_active_user)):
     
     if users.user_has_role( current_user, 'unverified'):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('UNVERIFIED_USER_SET_EMAIL_ATTEMPT'), "" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('CONFUSED'),
+                                       UserAction.index('UNVERIFIED_USER_SET_EMAIL_ATTEMPT'), "" )
         raise HTTPException(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
             detail="Account must have a verified email to accept account changes.",
@@ -412,7 +552,10 @@ async def set_user_email(payload: basicTextPayload, current_user: UserInDB = Dep
         current_user.email = EmailStr(ret['msg'])
     else:
         # when unsuccessful, validate_email_address() returns an error description in a msg field:
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_USER_SET_EMAIL'), ret['msg'] )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_USER_SET_EMAIL'), 
+                                       ret['msg'] )
         raise HTTPException( status_code=status.HTTP_406_NOT_ACCEPTABLE, 
                               detail=ret['msg'], 
                               headers={"WWW-Authenticate": "Bearer"}, 
@@ -433,7 +576,10 @@ async def set_user_email(payload: basicTextPayload, current_user: UserInDB = Dep
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    await crud.rememberUserAction( current_user.userid, UserAction.index('USER_SET_EMAIL'), f"new email {current_user.email}" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('USER_SET_EMAIL'), 
+                                   f"new email {current_user.email}" )
     
     await users.send_email_validation_email( current_user.username, current_user.email, current_user.verify_code )
 
@@ -448,19 +594,26 @@ async def set_user_email(payload: basicTextPayload, current_user: UserInDB = Dep
                response_model=UserPublic, 
                summary="Disable the current user account.")
 async def delete_user(current_user: UserInDB = Depends(users.get_current_active_user)):
+    
     log.info( "delete_user: here!")
+    
     # current_user is validated to be active, not disabled to get here, 
     # so its safe to directly disable:
     current_user.roles = current_user.roles + " disabled"
     id = await crud.put_user( current_user.userid, current_user )
     if id!=current_user.userid:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_DISABLE_USER'), 
+                                       f"user {current_user.userid}, {current_user.username}" )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+            headers={"WWW-Authenticate": "Bearer"})
     
-    await crud.rememberUserAction( current_user.userid, UserAction.index('DISABLE_USER'), "" )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('DISABLE_USER'), "" )
     
     return  {"username": current_user.username, 
              "userid": current_user.userid, 

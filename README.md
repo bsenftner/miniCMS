@@ -1,8 +1,10 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Holding on version 0.98
+## Version 0.98, just some cleanup before release of 1.0
 
-### All required functionality is in place for secure project document & associated info management with remote located project members. However, this implementation is not as efficient as it could be, which at scale raises use expense. I planned on fixing that with SQLModel, but I am abondoning that plan. Looking deeper at direct use of SQLalchemy
+### All required functionality is in place for secure project document & associated info management with remote located project members. ~~However, this implementation is not as efficient as it could be, which at scale raises use expense. I planned on fixing that with SQLModel, but I am abandoning that plan. Looking deeper at direct use of SQLalchemy~~ 
+
+### UPDATE: leaving libs as they are for the moment, with more direct use of SQLAlchemy. Efficiency concerns are being addressed in the final cleanup before release
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 

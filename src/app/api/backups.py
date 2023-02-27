@@ -7,7 +7,8 @@ from pathlib import Path
 
 from app import config
 from app.api import crud
-from app.api.users import get_current_active_user, user_has_role, UserAction
+from app.api.users import get_current_active_user, user_has_role
+from app.api.user_action import UserAction, UserActionLevel
 from app.api.models import UserInDB
 
 from app.config import log
@@ -20,7 +21,9 @@ router = APIRouter()
 async def read_all_backups(current_user: UserInDB = Depends(get_current_active_user)) -> List[str]:
     
     if not user_has_role(current_user,"admin"):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('NONADMIN_REQUESTED_BACKUPS_LIST'), "" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('NONADMIN_REQUESTED_BACKUPS_LIST'), "" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,  detail="Not Authorized")
     
     backups_path = config.get_base_path() / 'backups/*.gz' 
@@ -34,6 +37,11 @@ async def read_all_backups(current_user: UserInDB = Depends(get_current_active_u
         count = len(parts)
         ret.append( parts[count-1] )
     
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('ADMIN_GET_BACKUPS_LIST'), "" )
+    
     return ret
 
 # ----------------------------------------------------------------------------------------------
@@ -42,16 +50,22 @@ async def read_all_backups(current_user: UserInDB = Depends(get_current_active_u
 async def read_backup(expected_filename: str, current_user: UserInDB = Depends(get_current_active_user)):
     
     if not user_has_role(current_user,"admin"):
-        await crud.rememberUserAction( current_user.userid, UserAction.index('NONADMIN_REQUESTED_BACKUP'), "" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('BANNED_ACTION'),
+                                       UserAction.index('NONADMIN_REQUESTED_BACKUP'), "" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized")
     
     backup_path = config.get_base_path() / 'backups' /  expected_filename
     
     backup_info = Path(backup_path)
     if not backup_info.is_file():
-        await crud.rememberUserAction( current_user.userid, UserAction.index('FAILED_ADMIN_REQUESTED_BACKUP'), "File Not Found" )
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_ADMIN_REQUESTED_BACKUP'), "File Not Found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File Not Found")
         
-    await crud.rememberUserAction( current_user.userid, UserAction.index('ADMIN_GET_BACKUP'), expected_filename )
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('ADMIN_GET_BACKUP'), expected_filename )
     
     return FileResponse(backup_path)

@@ -65,10 +65,10 @@
 			if (webusername) {
 				console.log('new user refresh')
 				document.getElementById("mainContent").innerHTML = 
-								'<h4>Thank you for registering with the site, ' + webusername + '.</h4>' +
-                                '<h5>Now that you are registered, expect to receive an email with a verification code.' +
+								'<h2>Thank you for registering with the site, ' + webusername + '.</h2>' +
+                                '<h3>Now that you are registered, expect to receive an email with a verification code.' +
 								'<br/><br/>' +
-								'After logging into the site, the verification code is needed before you can do anything.</h5>' +
+								'After logging into the site, the verification code is needed before you can do anything.</h3>' +
 							    '<a href="#" class="button" onclick="Login()">Login</a>';
 			}
             // check if the user is already logged in: 
@@ -132,12 +132,22 @@
                 .then(data => { 
                     console.log(data);
                     const jsonData = JSON.parse(data);
-                    localStorage.setItem('webusername', jsonData.username);
-                    window.location.reload();
-                });
+                    if (jsonData.hasOwnProperty('detail')) {
+                        // problem!
+                        console.log(jsonData.detail) 
+					    alert( jsonData.detail )
+                    }
+                    else {
+                        localStorage.setItem('webusername', jsonData.username);
+                        window.location.reload();
+                    }
+                })
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+				}) 
             }
-            
-            
         }
 
 		function Login() { window.location.href = "/login"; }

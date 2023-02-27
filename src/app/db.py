@@ -116,7 +116,8 @@ class DatabaseMgr:
             "action",
             self.metadata,
             Column("actionid", Integer, primary_key=True),
-            Column("userid", Integer, index=True),              # logged in user who performed the action
+            Column("userid", Integer, ForeignKey("users.userid")),  # user who performed the action
+            Column("actionLevel", Integer, index=True),         # UserActionLevel values, nature of what they did
             Column("actionCode", Integer, index=True),          # UserAction values, what they did
             Column("description", String),                      # additional info here
             Column("created_date", DateTime, default=func.now(), nullable=False),
@@ -130,6 +131,9 @@ class DatabaseMgr:
         
     def get_db(self):
         return self.database
+    
+    def get_metadata(self):
+        return self.metadata
         
     def get_users_table(self):
         return self.users_tb

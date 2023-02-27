@@ -367,13 +367,13 @@
 
 		function ProjectSubmitWork() {
 			// get the project name:
-			var NewProjectName = document.getElementById("NewProjectName").value;
+			let NewProjectName = document.getElementById("NewProjectName").value;
 			// Get HTML content
-			var newProjectDesc = tinymce.get("editor").getContent();
+			let newProjectDesc = tinymce.get("editor").getContent();
 			// get the project status:
-			var newPostStatus = document.getElementById("statusSelectBox").value;
+			let newPostStatus = document.getElementById("statusSelectBox").value;
 			// get the project tag:
-			var newProjectTag = document.getElementById("ProjectTag").value;
+			let newProjectTag = document.getElementById("ProjectTag").value;
 
 			// post as new project submission:
 			const params = {
