@@ -137,7 +137,7 @@ async def read_all_projects(current_user: UserInDB = Depends(get_current_active_
     
     await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
-                                   UserAction.index('GET_ALL_USERS_PROJECTS'), "" )
+                                   UserAction.index('GET_ALL_OWN_PROJECTS'), "" )
     
     return projList
 

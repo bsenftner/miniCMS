@@ -47,11 +47,19 @@ def favicon():
 @router.get("/", status_code=200, response_class=HTMLResponse)
 async def root( request: Request ):
 
+    site_config: NoteDB = await crud.get_note(1) # site_config has id 1
+    if site_config:
+        site_config.data = json.loads(site_config.data)
+        
     memoList = await crud.get_all_public_memos()
     
     return TEMPLATES.TemplateResponse(
         "home.html",
-        {"request": request, "frags": FRAGS, "access": "public", "memos": memoList}, 
+        {"request": request, 
+         "frags": FRAGS, 
+         "regers": site_config.data['public_registration'],
+         "access": "public", 
+         "memos": memoList}, 
         # 'access' key is for template left sidebar construction
     )
     

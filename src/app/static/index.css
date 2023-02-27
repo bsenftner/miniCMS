@@ -415,13 +415,13 @@ div#uploadInsertBttnDiv {
 
 div.twoColumns {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 0.5fr 1.25fr;
   grid-template-rows: 1fr;
   grid-column-gap: 0px;
   grid-row-gap: 0px; 
 }
 div.twoColumns h2 {
-  margin: 10px 10px 10px;
+  margin: 10px 0px;
 }
 
 div.twoColumnsMargined {
@@ -434,7 +434,7 @@ div.twoColumnsMargined {
   margin-bottom: 5px;
 }
 div.twoColumnsMargined h2 {
-  margin: 20px 10px 10px;
+  margin: 20px 0px 10px;
 }
 div.twoCols0 {
   grid-area: 1 / 1 / 2 / 2;
@@ -494,33 +494,33 @@ input#NewEmailSubject {
 label {
   /* width: 12%; */
   display: inline-block;
-  font-size: 2.35em;
+  font-size: 1.75em;
   font-weight: 700;
   padding-right: 10px;
 }
 input#username {
   width: 50%;
-  font-size: 2.35em;;
+  font-size: 1.75em;;
   font-weight: bold;
 }
 input#password, input#password2 {
   width: 50%;
-  font-size: 2.35em;;
+  font-size: 1.75em;;
   font-weight: bold;
 }
 input#email, input#email2 {
   width: 50%;
-  font-size: 2.35em;;
+  font-size: 1.75em;;
   font-weight: bold;
 }
 input#confirmPass {
   width: 50%;
-  font-size: 2.35em;;
+  font-size: 1.75em;;
   font-weight: bold;
 }
 input#vcode {
   width: 50%;
-  font-size: 2.35em;;
+  font-size: 1.75em;;
   font-weight: bold;
 }
 

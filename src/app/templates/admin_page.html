@@ -64,6 +64,41 @@
 				</div>
 
 				<div class="twoColumns">
+					<h2 class="twoCols0">Create New Account:</h2>
+					<a href="#" class="button twoCols1" onclick="ToggleCreateAccountSet()">Show/Hide Create New Account</a>
+				</div>
+				<div id="CreateAccountSet">
+					<div id="userRegistration">
+						<br/>
+						<label for="username">Username:</label>
+							<input type="text" id="username" name="label" value="">
+						<br/>
+						<label for="email">Email Addr:</label>
+							<input type="text" id="email" name="label" value="">
+						<br/>
+						<label for="password">Password:</label>
+							<input type="password" id="password" name="label" value="">
+						<br/>
+						<label for="confirmPass">Confirm Password:</label>
+							<input type="password" id="confirmPass" name="label" value="">
+						<br/>
+					</div>
+					<h4>Use these controls to create new user accounts. 
+						If the Admin Setting for 'expose site registration to the public' 
+						is unchecked, the above controls are the only way to create new user accounts. 
+						Remember new user passwords must be a minimum of 12 characters long. After
+						creating a new user account, an email is sent to the registered new user's email 
+						containing an email verification code. Until that code is entered, the user may 
+						login but nothing works until email their is verified. 
+					</h4>
+					<div id="divRegisterButtons">
+						<a href="#" class="button" onclick="CreateUserAccount()">Create New User Account</a>
+					</div>
+					<div id="createMsg"></div>
+					<br/>
+				</div>
+
+				<div class="twoColumns">
 					<h2 class="twoCols0">Your Account:</h2>
 					<a href="#" class="button twoCols1" onclick="ToggleYourAccountSet()">Show/Hide Your Account</a>
 				</div>
@@ -102,9 +137,12 @@
 			get_available_backups();
 			get_user_list();
 
+			// if the user enters return inside either of these input ctrls,
+			// the selected user's appropriate activity is loaded
 			AddUserActionsReturnListener( "userActionOffset" )
 			AddUserActionsReturnListener( "userActionLimit" )
 
+			ToggleCreateAccountSet();
 			ToggleYourAccountSet();
 		}
 		//
@@ -153,7 +191,75 @@
 			ifAccessDo(SaveAdminSettingsWork);
 		}
 
+		// called when user clicks the "Show / Hide Your Account" button
+		function ToggleCreateAccountSet() {
+			let yourAcctSet = document.getElementById("CreateAccountSet")
+			if (yourAcctSet.style.display === "none") {
+				yourAcctSet.style.display = "block";
+			  } else {
+				yourAcctSet.style.display = "none";
+			  }
+		}
 		
+		function CreateUserAccount() { 
+            
+            // get the user's info:
+			const regUser = document.getElementById("username").value;
+			const regEmail = document.getElementById("email").value;
+			const regPass = document.getElementById("password").value;
+			const regConf = document.getElementById("confirmPass").value;
+
+			const crtMsg = document.getElementById("createMsg");
+            if (regPass.length < 12) {
+                crtMsg.innerHTML = '<h3>Password must be at least 12 characters long.</h3>'
+            }
+            else if (regPass!=regConf) {
+                crtMsg.innerHTML = '<h3>Password and Confirm Password must match.</h3>'
+            }
+            else if (regEmail.indexOf('@') < 1) {
+                crtMsg.innerHTML = '<h3>Please supply a valid email, it is required for account validation.</h3>'
+            }
+            else {
+                
+                crtMsg.innerHTML = 'Attempting to create user...'
+
+                const regData = { 
+                    'username': regUser, 
+                    'email': regEmail,
+                    'password': regPass,
+                };
+                const options = { 
+                    method: 'POST', 
+					headers: {
+				  		'Accept': 'application/json',
+				  		'Content-Type': 'application/json',
+					},
+                    body: JSON.stringify( regData ) 
+                };
+                fetch('/users/create', options)
+                .then(response => response.text())
+                .then(data => { 
+                    console.log(data);
+                    const jsonData = JSON.parse(data);
+                    if (jsonData.hasOwnProperty('detail')) {
+                        // problem!
+                        console.log(jsonData.detail) 
+					    alert( jsonData.detail )
+						crtMsg.innerHTML = 'Problem: ' + jsonData.detail;
+                    }
+                    else {
+                        crtMsg.innerHTML = 'Success! New user account named ' + regUser + ' created.';
+                    }
+                })
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+					crtMsg.innerHTML = 'Problem: ' + err;
+				}) 
+            }
+        }
+
 		let gUsers = {}
 		let gSelectedUserId = -1;
 		let gSelectedUserIndex = -1;
@@ -262,6 +368,7 @@
 				}
 			}
 		}
+
 		function AddUserActionsReturnListener( elem ) {
 			// Get the DOM element we want sensitive to return presses:
 			let returnSensitiveArea = document.getElementById(elem);
@@ -378,7 +485,6 @@
 			}
 		}
 
-		
 		function download_backup_work() {
 			let backupSelectBox = document.getElementById("refSelectBox")
 			let selected = backupSelectBox.value;

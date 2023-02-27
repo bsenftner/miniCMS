@@ -251,6 +251,71 @@ async def sign_up(user: UserReg):
 
 
 # --------------------------------------------------------------------------------------------------------------
+@router.post("/users/create",  
+             status_code=status.HTTP_201_CREATED, 
+             summary="Admin create new user", 
+             response_model=UserPublic)
+async def sign_up(payload: UserReg, 
+                  current_user: UserInDB = Depends(users.get_current_active_user)):
+    
+    log.info(f'sign_up: got {payload}')
+    
+    if not user_has_role(current_user, "admin"):
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('BANNED_ACTION'),
+                                       UserAction.index('NONADMIN_REQUESTED_CREATE_NEW_USER'), 
+                                       "Not Authorized" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
+                            detail="Not Authorized to create new user account")
+    
+    ret = await validate_new_user_info(payload)
+    log.info(f"sign_up: ret is {ret}")
+    #
+    success = ret["success"]
+    status_code = ret["status_code"]
+    msg = ret["msg"]
+    #
+    """ log.info(f"sign_up: ret.success is {success}")
+    log.info(f"sign_up: ret.status_code is {status_code}")
+    log.info(f"sign_up: ret.msg is {msg}") """
+    
+    if not success:        
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('CONFUSED'),
+                                       UserAction.index('BAD_CREATE_NEW_USER_DATA'), 
+                                       f"msg: {msg}" )
+        raise HTTPException( status_code=status_code, 
+                             detail=msg, 
+                             headers={"WWW-Authenticate": "Bearer"}, )
+    
+    # when successful, validate_new_user_info() returns the Unicode normalized email in the msg return field:
+    emailAddr = EmailStr(msg)
+    
+    settings = get_settings() # application config settings
+    
+    isAdmin = False
+    roles = users.user_initial_roles( isAdmin ) # returns the initial roles granted to a new user
+        
+    # we store the hashed password in the db:
+    hashed_password = encrypt.get_password_hash(payload.password)
+    
+    # generate an email verification code:
+    verify_code = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase) for i in range(16))
+    log.info(f'email verification code is {verify_code}')
+        
+    # validation of user info complete, create the user in the db:
+    last_record_id = await crud.post_user( payload, hashed_password, verify_code, roles )
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('CREATED_NEW_USER'), 
+                                   f"admin {current_user.username} created new user named {payload.username}" )
+    
+    await users.send_email_validation_email( payload.username, payload.email, verify_code )
+    
+    return {"username": payload.username, "userid": last_record_id, "email": emailAddr, "roles": roles}
+
+# --------------------------------------------------------------------------------------------------------------
 @router.post("/users/logout",  
              status_code=status.HTTP_200_OK, 
              summary="Logout current user", 
