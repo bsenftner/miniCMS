@@ -42,7 +42,21 @@ class MemoResponse(BaseModel):
     memoid: int
     
 
- 
+# a file uploaded for a project 
+# who uploads this is inferred by the current_user when uploading
+class ProjectFileCreate(BaseModel):
+    filename: str = Field(index=True)  # uploaded filename+extension only, not full path, that's calc'ed from project
+    projectid: int = Field(index=True) # project this file is associated
+    
+class ProjectFileDB(ProjectFileCreate):
+    fileid: int = Field(index=True)
+    userid: int                        # user who uploaded file
+    version: int                       # highest value is the most current file version
+    checked_userid: Union[int,None]    # if not None, file is checked out by Project Member
+    checked_date: Union[datetime,None] # if not None, when file was checked out by checked_userid
+    created_date: datetime
+    
+    
     
 class CommentSchema(BaseModel):
     text: str
@@ -80,8 +94,7 @@ class ProjectUpdate(BaseModel):
     name: str                                                   # project name
     text: str                                                   # project description
     status: str                                                 # unpublished/published/archived
-    
-    
+       
 class ProjectSchema(BaseModel):
     name: str = Field(index=True)                               # project name
     text: str                                                   # project description
@@ -107,9 +120,6 @@ class User(BaseModel):
     username: str
     email: EmailStr
     roles: str
-    # disabled: Union[bool, None] = None
-    # email: Union[EmailStr, None] = None
-    # roles: Union[str, None] = None
 
 # a user in the dabase
 class UserInDB(User):
@@ -122,7 +132,6 @@ class UserReg(BaseModel):
     username: str
     password: constr(min_length=12)
     email: EmailStr
-    # email: Union[EmailStr, None] = None
     
 # info returned from a user query
 class UserPublic(BaseModel):
@@ -130,8 +139,6 @@ class UserPublic(BaseModel):
     userid: int
     roles: str
     email: EmailStr
-    # roles: Union[str, None] = None
-    # email: Union[EmailStr, None] = None
     
  
 # a user sending just a string:

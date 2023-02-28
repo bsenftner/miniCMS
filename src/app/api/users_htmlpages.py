@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, HTTPException, Depends, status, Request, Response
+from fastapi import APIRouter, HTTPException, Depends, status, Request, Response, BackgroundTasks
 from app.api.models import Token, UserInDB, UserPublic, UserReg, basicTextPayload, NoteDB
 from app.api.users import get_current_active_user, user_has_role, validate_new_user_info
 from app.api.user_action import UserAction, UserActionLevel
@@ -182,7 +182,7 @@ async def read_users(request: Request,
              status_code=status.HTTP_201_CREATED, 
              summary="Register new user", 
              response_model=UserPublic)
-async def sign_up(user: UserReg):
+async def sign_up(user: UserReg, background_tasks: BackgroundTasks):
     
     log.info(f'sign_up: got {user}')
     
@@ -245,7 +245,7 @@ async def sign_up(user: UserReg):
                                    UserAction.index('CREATED_NEW_USER'), 
                                    f"name {user.username}" )
     
-    await users.send_email_validation_email( user.username, user.email, verify_code )
+    await users.send_email_validation_email( user.username, user.email, verify_code, background_tasks )
     
     return {"username": user.username, "userid": last_record_id, "email": emailAddr, "roles": roles}
 
@@ -256,6 +256,7 @@ async def sign_up(user: UserReg):
              summary="Admin create new user", 
              response_model=UserPublic)
 async def sign_up(payload: UserReg, 
+                  background_tasks: BackgroundTasks,
                   current_user: UserInDB = Depends(users.get_current_active_user)):
     
     log.info(f'sign_up: got {payload}')
@@ -311,7 +312,7 @@ async def sign_up(payload: UserReg,
                                    UserAction.index('CREATED_NEW_USER'), 
                                    f"admin {current_user.username} created new user named {payload.username}" )
     
-    await users.send_email_validation_email( payload.username, payload.email, verify_code )
+    await users.send_email_validation_email( payload.username, payload.email, verify_code, background_tasks )
     
     return {"username": payload.username, "userid": last_record_id, "email": emailAddr, "roles": roles}
 

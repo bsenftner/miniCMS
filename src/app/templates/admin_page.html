@@ -59,6 +59,7 @@
   						<input type="text" id="userActionOffset" name="label" value="0">
 						<label for="userActionLimit">Showing:</label>
 						<input type="text" id="userActionLimit" name="label" value="50">
+						<!-- -->
 						<select id="userActionBox" class="resizeable" size="7" onchange="onUserActionChangeFunc();"></select>
 					</div>
 				</div>
@@ -250,6 +251,10 @@
                     else {
 						get_user_list();
                         crtMsg.innerHTML = 'Success! New user account named ' + regUser + ' created.';
+						document.getElementById("username").value = "";
+						document.getElementById("email").value = "";
+						document.getElementById("password").value = "";
+						document.getElementById("confirmPass").value = "";
                     }
                 })
 				.catch(err => {
@@ -264,6 +269,21 @@
 		let gUsers = {}
 		let gSelectedUserId = -1;
 		let gSelectedUserIndex = -1;
+		//
+		function SetUserInfoMarkup( userIndex, actionCount ) {
+			let markup = '<h4>Selected User: </br></br>' +
+						 'Username: ' + gUsers[userIndex].username + '</br>' +
+					     'UserId: '   + gUsers[userIndex].userid + '</br>' +
+						 'Roles: ' + gUsers[userIndex].roles + '</br>' +
+						 'Email: ' + gUsers[userIndex].email + '</br></br>';
+			if (actionCount >= 0) {
+				markup += 'User Actions: ' + actionCount + '</h4>';
+			}
+			else {
+				markup += 'User Actions: (loading...)</h4>';
+			}
+			document.getElementById("userInfoDiv").innerHTML = markup;
+		}
 		//
 		// get list of users and populate user selection list:
 		const get_user_list = () => {
@@ -310,21 +330,13 @@
 				if (gUsers[i].userid == gSelectedUserId) {
 
 					gSelectedUserIndex = i;
-
-					document.getElementById("userInfoDiv").innerHTML = 
-						'<h4>Selected User: </br></br>' +
-						'Username: ' + gUsers[i].username + '</br>' +
-					    'UserId: '   + gUsers[i].userid + '</br>' +
-						'Roles: ' + gUsers[i].roles + '</br>' +
-						'Email: ' + gUsers[i].email + '</br></br>' +
-						'User Actions: (loading...)</h4>';
-
+					SetUserInfoMarkup( i, -1 );
 					get_user_action_count( gSelectedUserId, gSelectedUserIndex ); // not cached, so is "live"
 					break;
 				}
 			}
 		}
-
+		//
 		// get list of user actions and populate selection list:
 		function get_user_action_count( userIdParam, userIndexParam ) {
 
@@ -342,14 +354,7 @@
 					console.log( success ) // Handle the success response object
 					
 					get_user_actions( userIdParam ); 
-
-					document.getElementById("userInfoDiv").innerHTML = 
-						'<h4>Selected User: </br></br>' +
-						'Username: ' + gUsers[userIndexParam].username + '</br>' +
-					    'UserId: '   + gUsers[userIndexParam].userid + '</br>' +
-						'Roles: ' + gUsers[userIndexParam].roles + '</br>' +
-						'Email: ' + gUsers[userIndexParam].email + '</br></br>' +
-						'User Actions: ' + success['count'] + '</h4>';
+					SetUserInfoMarkup( userIndexParam, success['count'] );
 				}
 			 ).catch(
 				  error => {
@@ -405,6 +410,7 @@
 			 ).then(
 				  success => {
 					console.log( success ) // Handle the success response object
+					
 					actionSelectBox = document.getElementById("userActionBox")
 					//
 					let i;
@@ -415,20 +421,23 @@
 					var limit = success.length;
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
-						let msg = success[i].created_date + ': ' + success[i].action;
-			/*			msg += ',';
-						let actionLen = success[i].action.length;
-						while (actionLen > 0) {
-							msg += &nbsp;
-							actionLen--;
-						} */
+						let msg = "";
+						switch (success[i].level) {
+							case 'SITEBUG': msg += 'BUG: '; break;
+							case 'NORMAL':  msg += 'OK: '; break;
+							case 'CONFUSED': msg += '??: '; break;
+							case 'WARNING': msg += 'WARN!: '; break;
+							case 'BANNED_ACTION': msg += 'BAN!: '; break;
+						}
+						msg += success[i].created_date + ': ' + success[i].action;
+
 						if (success[i].description.length > 0) {
 							msg += ', ' + success[i].description;
 						} 
 						optn.text = msg;
 						optn.value = i;
 						actionSelectBox.options.add(optn);
-					}
+					} 
 				}
 			 ).catch(
 				  error => {

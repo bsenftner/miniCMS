@@ -280,7 +280,12 @@ async def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
         if weAreAllowed:
             # user has project access, is the memo published?
             if memo.status == 'published':
-                weAreAllowed = True
+                # if user is admin they are already in, if memo is public they are already in...
+                if memo.access == 'staff':
+                    weAreAllowed = True
+                else:
+                    weAreAllowed = False
+                # else memo.access must be 'admin', and we know user is not admin here
             elif memo.userid == user.userid:
                 # memo is unpublished, but user is author, so access is granted (so they can finish the memo!)
                 weAreAllowed = True
@@ -337,6 +342,9 @@ async def get_all_memos(user: UserInDB) -> List[MemoDB]:
         if user_access:
             if m.status == 'unpublished':
                 m.title += ' (unpublished)'
+            if m.access == 'admin':
+                m.title += ' (admin)'
+            m.title += ' - by ' + m.username
             finalMemoList.append(m)
             
     return finalMemoList
@@ -374,6 +382,9 @@ async def get_all_project_memos(user: UserInDB, projectid: int) -> List[MemoDB]:
         if user_access:
             if m.status == 'unpublished':
                 m.title += ' (unpublished)'
+            if m.access == 'admin':
+                m.title += ' (admin)'
+            m.title += ' - by ' + m.username
             finalMemoList.append(m)
             
     return finalMemoList

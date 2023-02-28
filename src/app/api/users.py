@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Depends, status, Request
+from fastapi import HTTPException, Depends, status, Request, BackgroundTasks
 
 from app.config import get_settings, log
 from app.api.models import UserInDB, UserReg
@@ -265,7 +265,10 @@ async def validate_new_user_info(user: UserReg):
     
     
 # -------------------------------------------------------------------------------------
-async def send_email_validation_email(username: str, email: str, verify_code: str):
+async def send_email_validation_email(username: str, 
+                                      email: str, 
+                                      verify_code: str, 
+                                      background_tasks: BackgroundTasks):
     
     body = r'''<p>Hello {name}</p>
 <p>Here is your email verification code:<\p>
@@ -280,7 +283,7 @@ Email verification enables posting and account changes.</p>
              }
     # print(json.dumps(params, indent = 4))
     
-    await send_email_async(email, params, 'verify_email.html')
+    await send_email_async(email, params, 'verify_email.html', background_tasks)
     
        
 # -------------------------------------------------------------------------------------

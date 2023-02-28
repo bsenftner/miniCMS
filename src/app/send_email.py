@@ -38,7 +38,8 @@ def get_emailConnectionConfig() -> ConnectionConfig:
 # ----------------------------------------------------------------------------------------------
 async def send_email_async(email_to: str, 
                            params: dict, 
-                           templateName: str
+                           templateName: str, 
+                           background_tasks: BackgroundTasks
                           ) -> JSONResponse:
     
     # print(json.dumps(params, indent = 4))
@@ -74,12 +75,13 @@ async def send_email_async(email_to: str,
     fm = FastMail(conf)
     #
     # send the email:
-    await fm.send_message(message)
+    # await fm.send_message(message)
+    background_tasks.add_task(fm.send_message,message)
     
     return JSONResponse(status_code=200, content={"message": "email has been sent"})
     
 
-# ----------------------------------------------------------------------------------------------
+""" # ----------------------------------------------------------------------------------------------
 def send_email_background( background_tasks: BackgroundTasks, 
                            subject: str, 
                            email_to: str, 
@@ -101,4 +103,4 @@ def send_email_background( background_tasks: BackgroundTasks,
     # send the email:
     background_tasks.add_task( fm.send_message, message, template_name='basic_email.html' )
     
-    return JSONResponse(status_code=200, content={"message": "email has been queued to be sent."})
+    return JSONResponse(status_code=200, content={"message": "email has been queued to be sent."}) """

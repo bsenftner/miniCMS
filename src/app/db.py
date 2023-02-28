@@ -47,6 +47,28 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
         
+        # Upon upload, if an existing file the new projectfile_tb is treated as a new revision,
+        # the current status="latest" (which there is only ever one for each filename) becomes 
+        # status=archived and the new uploaded file gets status=latest and a version equal to   
+        # 1+ the largest version for that filename. 
+        # Upon upload, if a new file version is set to 1, status="latest"
+        # Upon upload, if the current version is status="checkedout" then only the checked_userid 
+        # is allowed to upload the new version (because they checked it out); Note that an admin 
+        # can cancel a checked out file.  
+        self.projectfile_tb = Table(
+            "projectfile",   
+            self.metadata, 
+            Column("pfid", Integer, primary_key=True, index=True),  # project file id
+            Column("filename", String),
+            Column("projectid", Integer, ForeignKey("project.projectid")),
+            Column("userid", Integer, ForeignKey("users.userid")),
+            Column("checked_userid", Integer, ForeignKey("users.userid")),  # if checked out, by who 
+            Column("checked_date", DateTime, default=None, nullable=True),  # if checked out, when
+            Column("version", Integer),                 # increments with each file revision
+            Column("status", String, default="latest"), # latest, checkedout, archived
+            Column("created_date", DateTime, default=func.now(), nullable=False),
+        )
+        
         self.memo_tb = Table(
             "memo",
             self.metadata,
