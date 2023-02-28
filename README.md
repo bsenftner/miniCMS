@@ -1,10 +1,8 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Version 0.98, just some cleanup before release of 1.0
+## Version 1.0, in beta, looking for issues. 
 
-### All required functionality is in place for secure project document & associated info management with remote located project members. ~~However, this implementation is not as efficient as it could be, which at scale raises use expense. I planned on fixing that with SQLModel, but I am abandoning that plan. Looking deeper at direct use of SQLalchemy~~ 
-
-### UPDATE: leaving libs as they are for the moment, with more direct use of SQLAlchemy. Efficiency concerns are being addressed in the final cleanup before release
+### All required functionality is in place for secure project document & associated info management with remote located project members
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
@@ -13,13 +11,17 @@ Features:
 - Duel local and prod docker compose setups
   - FastAPI, Postgresql, SQLAlchemy, Pydantic, Databases
 - User accounts
-  - roles (admin, staff, per-Project)
-  - email verification
+  - Roles (admin, staff, per-Project)
+    - Basically operate as permissions; having a project role indicates project membership and access
+  - Email verification
+    - Until email verification, user account cannot do much, locked out of projects, which is almost everything
   - Settings page for account mgmnt
-    - password and email change
-    - admins get a few more settings:
+    - Password and email change
+    - Admins get a few more settings:
+      - Enable/disable public registration to website
       - Generate and download a site database backup
-      - Review site users, their account settings, projects and roles
+      - Review site users, their account settings, account roles, project memberships, and site use history
+      - Create new user controls
   - End-user profile pages for end-webmaster to put a GUI for whatever is the purpose behind their using MiniCMS
 - 'Project' content type
   - A collection of files, memo and comments only accessible by Project members
@@ -36,7 +38,7 @@ Features:
   - title, content text, file uploads, upload embedding, status, access, and tags
     - files may be uploaded
       - which become available as embed links and download buttons
-        - image embeds are working, video and pdf embeds need some touchup with the new Uploaded File security model
+        - image, video and pdf embeds are working
       - All uploads go into an isolated Project directory requiring Project Membership to access
     - status can be unpublished, published or archived
       - once published, a memo can no longer be edited by non-admin project members
@@ -49,13 +51,13 @@ Features:
         - public access is visible to the public, and staff, but only admins can create public memos
           - I am considering removing public access memos
             - The new Uploaded File security model makes any File embeds problematic
-      - staff can only create staff visible memos, so the access controls disappear when a user with only the staff role is editing
+      - staff can only create staff visible memos, so the access controls disappear when a user with only the staff role is editing a memo
 - 'Comment' content type
-  - for commenting on memos
-    - access to a Comment is controlled by the memo it is associated
-  - uses a reduced functionality embed of TinyMCE editor, but still allows image, video and pdf embeds
-  - comments, once posted, cannot be edited
-  - support for nested comments is in place, just not completed yet
+  - Control for commenting on memos
+    - access to a Comment is controlled by the Memo and Project it is associated
+  - Comments use a reduced functionality embed of TinyMCE editor, but still allows image, video and pdf embeds
+  - Comments, once posted, cannot be edited
+  - Support for nested comments is in place, just not completed yet, not sure if necessary
 - 'Tag' content type
   - for unique term management, employed for multiple uses
     - "system tags" are used for
