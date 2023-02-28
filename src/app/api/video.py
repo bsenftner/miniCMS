@@ -1,4 +1,8 @@
-from fastapi import APIRouter, Header, Response, Depends, HTTPException, status
+from fastapi import APIRouter, Header, Request, Response, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+
+import os
+from typing import BinaryIO
 
 from app import config
 from app.api import crud
@@ -43,10 +47,82 @@ async def video_endpoint(video_file: str, range: str = Header(None)):
         return Response(data, status_code=206, headers=headers, media_type="video/mp4")
 
 
+
+
+
+def send_bytes_range_requests(
+    file_obj: BinaryIO, start: int, end: int, chunk_size: int = 10_000
+):
+    """Send a file in chunks using Range Requests specification RFC7233
+
+    `start` and `end` parameters are inclusive due to specification
+    """
+    with file_obj as f:
+        f.seek(start)
+        while (pos := f.tell()) <= end:
+            read_size = min(chunk_size, end + 1 - pos)
+            yield f.read(read_size)
+
+
+def _get_range_header(range_header: str, file_size: int) -> tuple[int, int]:
+    def _invalid_range():
+        return HTTPException(
+            status.HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+            detail=f"Invalid request range (Range:{range_header!r})",
+        )
+
+    try:
+        h = range_header.replace("bytes=", "").split("-")
+        start = int(h[0]) if h[0] != "" else 0
+        end = int(h[1]) if h[1] != "" else file_size - 1
+    except ValueError:
+        raise _invalid_range()
+
+    if start > end or start < 0 or end > file_size - 1:
+        raise _invalid_range()
+    return start, end
+
+
+def range_requests_response(
+    request: Request, file_path: str, content_type: str
+):
+    """Returns StreamingResponse using Range Requests of a given file"""
+
+    file_size = os.stat(file_path).st_size
+    range_header = request.headers.get("range")
+
+    headers = {
+        "content-type": content_type,
+        "accept-ranges": "bytes",
+        "content-encoding": "identity",
+        "content-length": str(file_size),
+        "access-control-expose-headers": (
+            "content-type, accept-ranges, content-length, "
+            "content-range, content-encoding"
+        ),
+    }
+    start = 0
+    end = file_size - 1
+    status_code = status.HTTP_200_OK
+
+    if range_header is not None:
+        start, end = _get_range_header(range_header, file_size)
+        size = end - start + 1
+        headers["content-length"] = str(size)
+        headers["content-range"] = f"bytes {start}-{end}/{file_size}"
+        status_code = status.HTTP_206_PARTIAL_CONTENT
+
+    return StreamingResponse(
+        send_bytes_range_requests(open(file_path, mode="rb"), start, end),
+        headers=headers,
+        status_code=status_code,
+    )
+    
 # ------------------------------------------------------------------------------------------------------------------
 # endpoint to play video files located inside a project's files directory
-@router.get("/project/{projectid}/{video_file}", status_code=200) 
-async def project_video_endpoint(projectid: int, 
+@router.get("/project/{projectid}/{video_file}", status_code=206) 
+async def project_video_endpoint(request: Request,
+                                 projectid: int, 
                                  video_file: str, 
                                  range: str = Header(None),
                                  current_user: UserInDB = Depends(get_current_active_user)):
@@ -84,7 +160,12 @@ async def project_video_endpoint(projectid: int,
                                    UserAction.index('PLAY_PROJECT_VIDEO'), 
                                    f"project {projectid}, video '{video_file}'" )
     
-    start, end = 0, 0
+    
+    video_path = config.get_base_path() / 'uploads' / tag.text / video_file
+    
+    return range_requests_response( request, file_path=video_path, content_type="video/mp4" )
+    
+    """ start, end = 0, 0
     if range:
         start, end = range.replace("bytes=", "").split("-")
     
@@ -106,4 +187,4 @@ async def project_video_endpoint(projectid: int,
             'Content-Range': f'bytes {str(start)}-{str(end)}/{filesize}',
             'Accept-Ranges': 'bytes'
         }
-        return Response(data, status_code=206, headers=headers, media_type="video/mp4")
+        return Response(data, status_code=206, headers=headers, media_type="video/mp4") """
