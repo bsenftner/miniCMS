@@ -265,6 +265,8 @@ async def read_all_project_uploads(projectid: int,
     ret = []
     for longPath in result:
         if os.path.isfile(longPath):
+            fileSize = os.path.getsize(longPath)
+            
             parts = longPath.split('/')
             count = len(parts)
             filename = parts[count-1]
@@ -282,7 +284,8 @@ async def read_all_project_uploads(projectid: int,
                 "filename": filename,
                 "projectid": proj.projectid,
                 "type": mo.file_type,
-                "link": link
+                "link": link,
+                "size": fileSize,
             }
         
             ret.append( fdesc )

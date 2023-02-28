@@ -24,7 +24,7 @@
                 filename.ext
             </div>
             <div id="divUploadLinksGrid1">
-                mimetype
+                file info
             </div>
             <div id="divUploadLinksGrid2">
                 copy document link to clipboard
@@ -159,6 +159,18 @@
 						let ext = fnParts[ fnParts.length - 1 ].toLowerCase();
 						let fileType = fileLinks[i].type;
 						let fileLink = fileLinks[i].link;
+
+						let fileSize = Number(fileLinks[i].size);
+						let fileSizeStr = fileSize;
+						if (fileSize > 1024*1024) {
+							fileSizeStr = String(Number(fileSize / (1024*1024)).toFixed(2)) + ' M'
+						}
+						else if (fileSize > 1024) {
+							fileSizeStr = String(Number(fileSize / 1024).toFixed(2)) + ' K'
+						}
+						else {
+							fileSizeStr = String(Number(fileSize)) + ' b'
+						}
 						
 						// set this first:
 						let dwnloadBttn = `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download this file</a>`;
@@ -188,7 +200,7 @@
 								<b>${filename}</b>
 							</div>
 							<div id="divUploadLinksGrid1">
-								${fileType}
+								${fileType}, ${fileSizeStr}
 							</div>
 							<div id="divUploadLinksGrid2">
 								${docLinkBttn}
