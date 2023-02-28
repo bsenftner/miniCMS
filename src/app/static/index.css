@@ -430,7 +430,7 @@ div.twoColumnsMargined {
   grid-template-rows: 1fr;
   grid-column-gap: 0px;
   grid-row-gap: 0px; 
-  margin-top: -25px;
+  /*margin-top: -25px;*/
   margin-bottom: 5px;
 }
 div.twoColumnsMargined h2 {
@@ -445,7 +445,7 @@ div.twoCols1 {
 a.twoCols1  { 
   grid-area: 1 / 2 / 2 / 3;
   font-size: 16px;
-  width: 16em;
+  width: 20em;
   height: 2.4em;
   margin: 1.5em 0 0 0;
 }

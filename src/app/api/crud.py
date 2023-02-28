@@ -134,30 +134,38 @@ async def delete_tag(id: int):
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a project
 def user_has_project_access( user: UserInDB, proj: ProjectDB, projTag: TagDB ) -> bool:
-    # first admins automatically get access:
-    weAreAllowed = user_has_role(user, 'admin')
-    if not weAreAllowed:
-        # for everyone else must be project member and project is published:
-        if user_has_role(user, projTag.text) and proj.status == 'published':
-            weAreAllowed = True
+    # first unverified automatically get denied access:
+    weAreAllowed = not user_has_role(user, 'unverified')
+    if weAreAllowed:
+        # next admins automatically get access:
+        weAreAllowed = user_has_role(user, 'admin')
+        if not weAreAllowed:
+            # for everyone else must be project member and project is published:
+            if user_has_role(user, projTag.text) and proj.status == 'published':
+                weAreAllowed = True
+                
     return weAreAllowed
 
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a project
 async def user_has_project_access_by_id( user: UserInDB, projectid: int ) -> bool:
-    # first admins automatically get access:
-    weAreAllowed = user_has_role(user, 'admin')
-    if not weAreAllowed:
-        # for everyone else:
-        proj: ProjectDB = await get_project(projectid)
-        if not proj:
-            weAreAllowed = False
-        else:
-            tag: TagDB = await get_tag(proj.tagid)
-            if not tag:
+    # first unverified automatically get denied access:
+    weAreAllowed = not user_has_role(user, 'unverified')
+    if weAreAllowed:
+        # next admins automatically get access:
+        weAreAllowed = user_has_role(user, 'admin')
+        if not weAreAllowed:
+            # for everyone else:
+            proj, tag = await get_project_and_tag(projectid)
+            # proj: ProjectDB = await get_project(projectid)
+            if not proj:
                 weAreAllowed = False
             else:
-                weAreAllowed = user_has_project_access(user, proj, tag)
+                # tag: TagDB = await get_tag(proj.tagid)
+                if not tag:
+                    weAreAllowed = False
+                else:
+                    weAreAllowed = user_has_project_access(user, proj, tag)
     return weAreAllowed
 
 # -----------------------------------------------------------------------------------------

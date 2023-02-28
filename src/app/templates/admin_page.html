@@ -248,6 +248,7 @@
 						crtMsg.innerHTML = 'Problem: ' + jsonData.detail;
                     }
                     else {
+						get_user_list();
                         crtMsg.innerHTML = 'Success! New user account named ' + regUser + ' created.';
                     }
                 })
