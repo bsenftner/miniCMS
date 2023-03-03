@@ -145,6 +145,7 @@ async def update_memo(payload: MemoSchema,
                                        "Not Authorized to change other's Memos" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to change other's Memos")
     
+    # making sure the project tag is one of the memo tags:
     if not tag.text in payload.tags:
         payload.tags += ' '
         payload.tags += tag.text
@@ -185,11 +186,13 @@ async def delete_memo(id: int = Path(..., gt=0), current_user: UserInDB = Depend
                                        "Not Authorized to delete other's Memos" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to delete other's Memos")
         
+    # delete all this memo's comments before the memo itself:
     memoComments = await crud.get_all_memo_comments(id)
     for mc in memoComments:
         log.info(f"delete_memo: also deleting comment {mc.commid}")
         await crud.delete_comment(mc.commid)
     
+    # only now delete the memo from the database:
     await crud.delete_memo(id)
 
     await crud.rememberUserAction( current_user.userid, 

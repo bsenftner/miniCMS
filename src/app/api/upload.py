@@ -10,10 +10,11 @@ from app import config
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
 from app.api.user_action import UserAction, UserActionLevel
-from app.api.models import UserInDB
+from app.api.models import UserInDB, ProjectFileDB, ProjectFileCreate, TagDB, ProjectDB, ProjectSchema, basicTextPayload
 
 from app.config import log
 
+from app.api.utils import convertDateToLocal
 
 import os
 import mimelib  # problem is with VSCode local resolution, in the Docker container we're fine. 
@@ -116,12 +117,18 @@ async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_u
 
 # ------------------------------------------------------------------------------------------------------------------
 # endpoint for project uploads, restricted to users with that project's access
+# calling this endpoint creates a new projectfile resource, where the filename must be unique to that project and 
+# any future operations with that file occur through the projectfile resource. The projectfile resource maintains 
+# a "library checkout interface" for file modifications, where a project member "checks out" a projectfile, causing 
+# it to be downloaded to that user, and marked as "checked out by username" for other project members. Only that 
+# project member (or an admin overriding) can cancel the check out, or upload a new version
 @router.post("/{projectid}", status_code=200)
 async def project_upload(projectid: int, 
                          file: UploadFile = File(...), 
                          current_user: UserInDB = Depends(get_current_active_user)):
-        
-    proj = await crud.get_project( projectid )
+    
+    proj, tag = await crud.get_project_and_tag(projectid)
+    # proj = await crud.get_project( projectid )
     if proj is None:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -136,7 +143,7 @@ async def project_upload(projectid: int,
                                        f"Project {projectid} Archived" )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Archived projects cannot receive uploads")
         
-    tag = await crud.get_tag( proj.tagid )
+    # tag = await crud.get_tag( proj.tagid )
     if not tag:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -171,12 +178,20 @@ async def project_upload(projectid: int,
                                        "Not Authorized (not Project member)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
+    # do not allow duplicates of filename:
+    projFile: ProjectFileDB = await crud.get_projectfile_by_filename( file.filename, proj.projectid )
+    if projFile:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('CONFUSED'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"filename '{file.filename}' already exists" )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
     log.info(f"project_upload: about to try...")
     
-    upload_path = '' # so is available later
+    # upload_path = config.get_base_path() / 'static/uploads' / tag.text / file.filename
+    upload_path = config.get_base_path() / 'uploads' / tag.text / file.filename
     try:
-        # upload_path = config.get_base_path() / 'static/uploads' / tag.text / file.filename
-        upload_path = config.get_base_path() / 'uploads' / tag.text / file.filename
         #
         log.info(f"upload: attempting {upload_path}")
         #
@@ -195,6 +210,18 @@ async def project_upload(projectid: int,
     finally:
         await file.close()
 
+    pfc = ProjectFileCreate( filename=file.filename, projectid=projectid )
+    pfid = await crud.post_projectfile( pfc, current_user.userid )
+    if not pfid:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_FILE_UPLOAD'), 
+                                       f"Error writing to db for {file.filename}" )
+        # soas to not leave turds around, delete the just uploaded file:
+        os.remove(upload_path)
+        return {"message": "There was an error uploading the file"}
+    
+    # everything worked, remember this moment!
     await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('FILE_UPLOADED'), 
@@ -203,11 +230,122 @@ async def project_upload(projectid: int,
     return {"message": f"Successfully uploaded {tag.text} {file.filename}"}
 
 # ----------------------------------------------------------------------------------------------
+async def check_project_uploads_for_orphans(current_user: UserInDB):
+    
+    # look inside projectfile uploads directory for project directories unaccounted for... 
+    upload_path = config.get_base_path() / 'uploads' / '*' 
+    #
+    result = []
+    result.extend(glob.glob(str(upload_path)))
+    #
+    for longPath in result:
+        
+        parts = longPath.split('/')
+        count = len(parts)
+        filename = parts[count-1]
+        
+        if os.path.isfile(longPath):
+            
+            # located a lone file inside what should be a directory only containing other directories: 
+            log.info(f"check_project_uploads_for_orphans: found orphan file in project upload dir '{filename}'" )
+            
+        elif os.path.isdir(longPath):
+            dirname = filename
+            # we have a directory, could it be a project file directory named with a project tag's text? 
+            tag: TagDB = await crud.get_tag_by_name( dirname )
+            if tag:
+                # we have a tag matching this directory name, do we have a matching project using this tag? 
+                proj: ProjectDB = await crud.get_project_by_tagid(tag.tagid)
+                if not proj:
+                    # there is no project for this directory with a name matching that of a tag, make a project: 
+                    newProjName = f"recovered orphaned Project '{dirname}'"
+                    projPayload = ProjectSchema(name=newProjName,
+                                                text=f"Project recovered from orphaned upload directory '{dirname}' (found tag)",
+                                                userid=current_user.userid,
+                                                username=current_user.username,
+                                                status="unpublished",
+                                                tagid=tag.tagid)
+                    projectid = await crud.post_project(projPayload)
+                    if not projectid:
+                        log.info(f"check_project_uploads_for_orphans: failed to create project for orphaned upload dir '{dirname}'!!" )
+                    else:
+                        log.info(f"check_project_uploads_for_orphans: created project for orphaned upload dir '{dirname}', looking inside..." )
+                        proj: ProjectDB = await crud.get_project( projectid )
+                        if not proj:
+                            log.info(f"check_project_uploads_for_orphans: failed to get just created project {newProjName}")
+                        else:
+                            # let's look inside:
+                            await check_upload_directory_for_orphans(dirname, proj, current_user)
+                else:
+                    # we have a project and a tag for it, let's look inside that directory:
+                    await check_upload_directory_for_orphans(dirname, proj, current_user)
+            else:
+                # we have a directory but no tag
+                #
+                # create a tag using that directory as the tag text:
+                tagPayload = basicTextPayload( text=dirname )
+                tagid = await crud.post_tag( tagPayload )
+                if tagid is None:
+                    log.info(f"check_project_uploads_for_orphans: failed to create tag for orphan directory in project upload dir '{dirname}'" )
+                else:
+                    # we made the tag, let's make a project:
+                    newProjName = f"recovered orphaned Project '{dirname}'"
+                    projPayload = ProjectSchema(name=newProjName,
+                                                text=f"Project recovered from orphaned upload directory '{dirname}' (made tag)",
+                                                userid=current_user.userid,
+                                                username=current_user.username,
+                                                status="unpublished",
+                                                tagid=tagid)
+                    projectid = await crud.post_project(projPayload)
+                    if not projectid:    
+                        log.info(f"check_project_uploads_for_orphans: failed creating project for orphan directory in project upload dir '{dirname}'" )
+                    else:
+                        proj: ProjectDB = await crud.get_project( projectid )
+                        if not proj:
+                            log.info(f"check_project_uploads_for_orphans: failed to get just created project {newProjName}")
+                        else:
+                            # let's look inside:
+                            await check_upload_directory_for_orphans(dirname, proj, current_user)
+                                
+# slave to the above routine:
+async def check_upload_directory_for_orphans(dirname: str, proj: ProjectDB, current_user: UserInDB):
+    
+    # we have a project and a tag for it, let's look inside that directory:
+    project_upload_path = config.get_base_path() / 'uploads' / dirname / '*' 
+    #
+    project_upload_result = []
+    project_upload_result.extend(glob.glob(str(project_upload_path)))
+    #
+    for proj_upload_file_path in project_upload_result:
+        #
+        puparts = proj_upload_file_path.split('/')
+        pucount = len(puparts)
+        pufname = puparts[pucount-1]
+        #
+        if os.path.isfile(proj_upload_file_path):
+            pfid = await crud.get_projectfile_by_filename( pufname, proj.projectid )
+            if not pfid:
+                # located an untracked file inside that recovered project upload directory, let's recover the file too:
+                pfc = ProjectFileCreate( filename=pufname, projectid=proj.projectid )
+                pfid = await crud.post_projectfile( pfc, current_user.userid )
+                if not pfid:
+                    log.info(f"check_upload_directory_for_orphans: failed recovering orphaned file '{pufname}' for project '{proj.name}'")
+                else:
+                    log.info(f"check_upload_directory_for_orphans: recovered orphaned file '{pufname}' for project '{proj.name}'")
+            else:
+                log.info(f"check_upload_directory_for_orphans: noticed and validated file '{pufname}' for project '{proj.name}'")
+                
+        elif os.path.isdir(proj_upload_file_path):
+            # we've got a directory within a project upload directory that is untracked:
+            log.info(f"check_upload_directory_for_orphans: orphaned directory inside project upload dir at '{proj_upload_file_path}'")
+    
+# ----------------------------------------------------------------------------------------------
 @router.get("/{projectid}", response_model=List)
 async def read_all_project_uploads(projectid: int, 
                                    current_user: UserInDB = Depends(get_current_active_user)) -> List:
     
-    proj = await crud.get_project( projectid )
+    proj, tag = await crud.get_project_and_tag(projectid)
+    # proj = await crud.get_project( projectid )
     if proj is None:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -215,7 +353,7 @@ async def read_all_project_uploads(projectid: int,
                                        f"Project {projectid} Not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     
-    tag = await crud.get_tag( proj.tagid )
+    # tag = await crud.get_tag( proj.tagid )
     if not tag:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -256,9 +394,8 @@ async def read_all_project_uploads(projectid: int,
                                        "Not Authorized (not Project member)" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
-    # finally...
+    # generate a list of the (long path) files in the given directory:
     upload_path = config.get_base_path() / 'uploads' / tag.text / '*' 
-    
     result = []
     result.extend(glob.glob(str(upload_path)))
     
@@ -270,10 +407,22 @@ async def read_all_project_uploads(projectid: int,
             parts = longPath.split('/')
             count = len(parts)
             filename = parts[count-1]
-        
-            parts = filename.split('.')
-            count = len(parts)
     
+            version = 0
+            checked_userid = None
+            checked_date = None
+            #
+            projFileDB: ProjectFileDB = await crud.get_projectfile_by_filename(filename, proj.projectid)
+            if projFileDB:
+                version = projFileDB.version
+                checked_userid = projFileDB.checked_userid
+                checked_date   = projFileDB.checked_date
+                if checked_date:
+                    # fix date to be local time:
+                    checked_date = convertDateToLocal( checked_date )
+            else:
+                log.info(f"read_all_project_uploads: untracked file '{filename}' for project '{proj.name}'")
+                    
             # returns mimeObject:
             mo = mimelib.url(longPath)
         
@@ -286,6 +435,9 @@ async def read_all_project_uploads(projectid: int,
                 "type": mo.file_type,
                 "link": link,
                 "size": fileSize,
+                "version": version,
+                "checked_userid": checked_userid,
+                "checked_date": checked_date
             }
         
             ret.append( fdesc )
@@ -304,7 +456,8 @@ async def get_project_file(projectid: int,
                            filename: str,
                            current_user: UserInDB = Depends(get_current_active_user)):
     
-    proj = await crud.get_project( projectid )
+    proj, tag = await crud.get_project_and_tag(projectid)
+    # proj = await crud.get_project( projectid )
     if proj is None:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -312,7 +465,7 @@ async def get_project_file(projectid: int,
                                        f"Project {projectid} Not found" )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     
-    tag = await crud.get_tag( proj.tagid )
+    # tag = await crud.get_tag( proj.tagid )
     if tag is None:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -330,12 +483,13 @@ async def get_project_file(projectid: int,
                                        "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
-    if proj.status == 'archived' and not isAdmin:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserAction.index('FAILED_GET_PROJECT_FILE'), 
-                                       "Not Authorized (Project Archived)" )
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
-    
+    if proj.status == 'archived':
+        if not isAdmin:
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserAction.index('FAILED_GET_PROJECT_FILE'), 
+                                           "Not Authorized (Project Archived)" )
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+
     # only allow admins and project owner if project is unpublished:
     if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
         await crud.rememberUserAction( current_user.userid, 
@@ -355,9 +509,19 @@ async def get_project_file(projectid: int,
     # finally...
     upload_path = config.get_base_path() / 'uploads' / tag.text / filename 
     
-    await crud.rememberUserAction( current_user.userid, 
-                                   UserActionLevel.index('NORMAL'),
-                                   UserAction.index('GET_PROJECT_FILE'), 
-                                   f"Project '{proj.name}', file {upload_path}" )
-    
-    return upload_path
+    if os.path.isfile(upload_path):
+        # the file exists, so we deliver it after recording we did so:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('NORMAL'),
+                                       UserAction.index('GET_PROJECT_FILE'), 
+                                       f"Project '{proj.name}', file {upload_path}" )
+        return upload_path
+    else:
+        # the file is missing! oh nos!
+        upload_path = config.get_base_path() / 'static' / 'missingOrArchivedFile.jpg'
+        # the file does not exist, so we deliver the missing file image after recording we did so:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('GET_PROJECT_FILE'), 
+                                       f"Project '{proj.name}', file {upload_path} was missing, gave missing file image" )
+        return upload_path

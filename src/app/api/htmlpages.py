@@ -138,7 +138,7 @@ async def projectPage( request: Request, projectid: int,
                        current_user: User = Depends(get_current_active_user) ):
      
     proj, tag = await crud.get_project_and_tag(projectid)
-    # proj: ProjectDB = await crud.get_project(projectid)
+    # proj: ProjectDB = await crud.get_project(projectid) 
     if not proj:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -162,6 +162,10 @@ async def projectPage( request: Request, projectid: int,
                                        f"ProjectPage {projectid}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
+    if (proj.status == 'archived'):
+        proj.name += ' (archived)'
+        proj.text = '<h3>(Embedded files do not display in archived projects)</h3>' + proj.text 
+        
     # returns list of all project users:
     userList = await crud.get_all_users_by_role( proj.name )
     
@@ -250,8 +254,8 @@ async def projectEditor( request: Request,
 # ------------------------------------------------------------------------------------------------------------------
 # serve project on an editor thru a template:
 @router.get("/newProject", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def projectEditor( request: Request, 
-                         current_user: User = Depends(get_current_active_user) ):
+async def newProjectEditor( request: Request, 
+                            current_user: User = Depends(get_current_active_user) ):
     
     if not user_has_role(current_user,"admin"):
         await crud.rememberUserAction( current_user.userid, 
@@ -512,7 +516,7 @@ async def newMemoEditor( request: Request,
     
     
 # ------------------------------------------------------------------------------------------------------------------
-# serve a user profile page thru a template:
+# serve a user account settings page thru a template:
 @router.get("/settings", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def user_settings_page( request: Request, 
                               current_user: User = Depends(get_current_active_user) ):

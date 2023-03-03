@@ -22,7 +22,10 @@
                     newHtml += proj.name;
                     if (proj.status == 'unpublished') {
                         newHtml += ' (unpublished)';
-                    }
+                    } 
+                    else if (proj.status == 'archived') {
+                        newHtml += ' (archived)';
+                    } 
                     newHtml += '</a></li>';
                 }
                 newHtml += '</ul></div>';

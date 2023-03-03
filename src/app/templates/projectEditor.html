@@ -177,7 +177,28 @@
 							`;
 
 			// make sure project status is reflected in the selection widget:
-			document.getElementById("statusSelectBox").value = "{{contentPost.status}}"
+			let statusSelectBox = document.getElementById("statusSelectBox")
+			if ("{{contentPost.status}}" == 'archived') {
+				// project is archived, so modify the status selection to only have an 'archived' option:
+				for (let i = statusSelectBox.options.length; i >= 0; i--) {
+					statusSelectBox.remove(i);
+				}
+				var optn = document.createElement("OPTION");
+				optn.text = 'Archived';
+				optn.value = 'archived';
+				statusSelectBox.options.add(optn);
+				//
+				// more items that ought to be disabled because we're archived:
+				statusSelectBox.disabled = true;
+				document.getElementById("NewProjectName").disabled = true;
+				document.getElementById("NewUploadInput").disabled = true;
+				document.getElementById("ProjectTag").disabled = true;
+				document.getElementById("divBeneathTheEditor").innerHTML = 
+							`<a href="#" class="button" onclick="ProjectEditCancel()">Cancel</a>
+							`;			
+				document.getElementById("NewUploadInput").disabled = true;
+			}
+			statusSelectBox.value = "{{contentPost.status}}"
 
 			if (Number("{{contentPost.projectid}}") == 0) {
 
@@ -221,6 +242,14 @@
 				}
 				else { // user should not be here:
 					window.location.href = '/';
+				}
+
+				// site config can't be deleted anyway:
+				if (Number("{{contentPost.projectid}}")==1) {
+					document.getElementById("divBeneathTheEditor").innerHTML = 
+							`<a href="#" class="button" onclick="ProjectEditCancel()">Cancel</a>
+							 <a href="#" class="button" onclick="ProjectUpdate()">Update</a>
+							`;	
 				}
 
 				document.getElementById("ProjectTag").disabled = true; // project tag not editible   
@@ -297,6 +326,10 @@
 		  };
 
           function UpdateUserRoles( userid, params ) {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
             const options = {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', },
@@ -321,6 +354,10 @@
                 }) 
           }
           function AddUserProject( userid ) {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
             let user = null;
             for (let i = 0; i < gUsers.length; i++) {
                 if (gUsers[i].userid == userid) {
@@ -339,6 +376,10 @@
           };
           //
           function RemoveUserProject( userid ) {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
             let user = null;
             for (let i = 0; i < gUsers.length; i++) {
                 if (gUsers[i].userid == userid) {
@@ -417,10 +458,12 @@
 		}
 
 		function ProjectUpdateWork() {
+			let updatedStatus = document.getElementById("statusSelectBox").value;
+
 			const someData = {
 				"name": document.getElementById("NewProjectName").value, 
 				"text": tinymce.get("editor").getContent(),
-				"status": document.getElementById("statusSelectBox").value, 
+				"status": updatedStatus, 
 				"userid": gUser.userid,
 				"username": gUser.username,
 				"tagid": "{{ contentPost.tagid }}", 

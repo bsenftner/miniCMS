@@ -155,7 +155,7 @@ main {
 .resizeable {
   resize: vertical;
   overflow: auto;
-  border: 2px solid #4095c6;
+  border: 2px solid #bababa;
 }
 
 div#main-content {
@@ -235,7 +235,7 @@ div#divUploadLinksWrapper, div#projectMembers {
   margin: 0;
   padding: 0;
   overflow: auto;
-  height: 6em;
+  height: 12em;
   background: #eee; 
   border: #bababa;
   border-width: thin;
@@ -243,16 +243,19 @@ div#divUploadLinksWrapper, div#projectMembers {
   padding-left: 10px;
   padding-right: 10px;
 }
-div#divUploadLinksHeader {
-  font-size: 18px;
+div#divUploadLinksHeader, div#divUploadLinksWrapper {
+  font-size: 14px;
   font-weight: bold;
 }
 div#divUploadLinksGridParent {
   display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr); 
+  grid-template-columns: 2fr repeat(5, 1fr); 
   grid-template-rows: 1fr;
-  grid-column-gap: 0px;
+  grid-column-gap: 10px;
   grid-row-gap: 0px; 
+}
+div#divUploadLinksWrapper hr {
+  color: #8a8a8a;
 }
 div#divUploadLinksGrid0 {
   grid-area: 1 / 1 / 2 / 2;
@@ -265,6 +268,12 @@ div#divUploadLinksGrid2 {
 }
 div#divUploadLinksGrid3 {
   grid-area: 1 / 4 / 2 / 5;
+}
+div#divUploadLinksGrid4 {
+  grid-area: 1 / 5 / 2 / 6;
+}
+div#divUploadLinksGrid5 {
+  grid-area: 1 / 6 / 2 / 7;
 }
 div.divProjMembershipGridParent {
   display: grid;
@@ -279,7 +288,7 @@ div.ProjMembershipGrid2 { grid-area: 1 / 3 / 2 / 4; }
 
 div#projectMembersHeader {
   font-weight: bold;
-  margin-left: 10px;
+  margin-left: 18px;
 }
 
 div.postMetadata {

@@ -22,7 +22,7 @@
 			<div id="mainContent">
 				{# title and post contents, with an optional edit button #}
 				<H1> Project: {{contentPost.name}} </H1>
-                <div class="ql-editor">
+                <div class="ql-editor resizeable">
 					{{contentPost.text | safe}}
 				</div>
                 <div class="postMetadata">
@@ -127,6 +127,9 @@
 						`;
 
 						let status = "{{contentPost.status}}";
+						if (status == 'archived') {
+							document.getElementById("NewUploadInput").disabled = true;
+						}
 						if (gUser.userid == '{{ contentPost.userid }}') {
 							// user is author
 							if (status.includes('unpublished')) {
@@ -211,7 +214,13 @@
 
 		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
 
-		function NewProjectMemo() { window.location.href = "/newProjectMemo/{{ contentPost.projectid }}"; }
+		function NewProjectMemo() { 
+			if ("{{contentPost.status}}" == 'archived') {
+				alert( 'Archived Projects cannot have new memos.' )
+				return;
+			}
+			window.location.href = "/newProjectMemo/{{ contentPost.projectid }}"; 
+		}
 
 		function UserSettings() { window.location.href = "/settings"; }
 

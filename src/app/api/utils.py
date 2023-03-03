@@ -10,6 +10,8 @@ from typing import Dict
 from datetime import datetime
 from dateutil import tz
 
+from zipfile import ZipFile
+
 # ---------------------------------------------------------------------------------------
 class OAuth2PasswordBearerWithCookie(OAuth2):
     def __init__(
@@ -55,3 +57,12 @@ def convertDateToLocal( date: datetime ) -> datetime:
     return local_dt
 
 
+
+# ---------------------------------------------------------------------------------------
+def zipFileList( longPathFileList, destinationZipPath ):
+    # writing files to a zipfile
+    with ZipFile(destinationZipPath,'w') as zip:
+        # writing each file one by one
+        for file in longPathFileList:
+            zip.write(file)
+ 

@@ -59,7 +59,7 @@ class DatabaseMgr:
             "projectfile",   
             self.metadata, 
             Column("pfid", Integer, primary_key=True, index=True),  # project file id
-            Column("filename", String),
+            Column("filename", String, index=True),
             Column("projectid", Integer, ForeignKey("project.projectid")),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("checked_userid", Integer, ForeignKey("users.userid")),  # if checked out, by who 
@@ -171,6 +171,9 @@ class DatabaseMgr:
         
     def get_project_table(self):
         return self.project_tb
+        
+    def get_projectfile_table(self):
+        return self.projectfile_tb
         
     def get_notes_table(self):
         return self.notes_tb

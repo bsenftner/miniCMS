@@ -35,9 +35,12 @@
         </div>
     </div>
     <div id="divUploadLinksMsg">
-        Previously uploaded files. 
-        Use <b>Copy link to clipboard</b> to generate the 'embed text' to use an 
-        uploaded file in the editor's text
+        Above are reviously uploaded files. 
+        Use <b>Copy link</b> to place a link to the corresponding <b>image</b> or <b>video</b> on the clipboard. 
+	    Then use the <b>image</b> or <b>video</b> embed icons on the <b>text editor toolbar</b> 
+		to embed the <b>image</b> or <b>video</b> into the <b>Project</b> description.
+		<b>PDF</b> files can be embedded into the <b>Project</b> description directly by clicking the
+		<b>embed at cursor</b> button they present. 
     </div>
 </div>
 
@@ -67,7 +70,14 @@
 			document.getElementById("divUploadMsg").innerHTML = 'Now use the <b>Upload "' + selected + '"</b> button to upload the file'
 		}
 		
+		// works for uploads of ordinary files or project files
 		function UploadFile() {
+			
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
+
 			// Select your input type file and store it in a variable
 			const input = document.getElementById('NewUploadInput');
 
@@ -159,6 +169,9 @@
 						let ext = fnParts[ fnParts.length - 1 ].toLowerCase();
 						let fileType = fileLinks[i].type;
 						let fileLink = fileLinks[i].link;
+						let version = fileLinks[i].version;
+						let checked_userid = fileLinks[i].checked_userid;
+						let checked_date = fileLinks[i].checked_date;
 
 						let fileSize = Number(fileLinks[i].size);
 						let fileSizeStr = fileSize;
@@ -173,39 +186,49 @@
 						}
 						
 						// set this first:
-						let dwnloadBttn = `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download this file</a>`;
+						let chkoutloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${fileLink}','${filename}')">Checkout file</a>`;
+
+
+						let dwnloadBttn = `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
 						
-						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link to clipboard</a>`;
+						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link</a>`;
 
                         if (fileType == 'media') {
 							if (projectid != null) {
-								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${pid}/${filename}')">Copy link to clipboard</a>`;
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${pid}/${filename}')">Copy link</a>`;
 							}
 							else {
-								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link to clipboard</a>`;
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link</a>`;
 							}
 						}
                         else if (fileType == 'binary') {
                             if (ext == 'pdf') {
-                                docLinkBttn = `<a href="#" class="button" onclick="EmbedPdf('${fileLink}')">Embed at cursor location</a>`;
+                                docLinkBttn = `<a href="#" class="button" onclick="EmbedPdf('${fileLink}')">Embed at cursor</a>`;
                             }
                             else {
-                                docLinkBttn = 'cannot embed in memo/comment';
+                                docLinkBttn = 'cannot embed';
                             }
                         } 
 
 						let markup = `
+						<hr>
 						<div id="divUploadLinksGridParent">
 							<div id="divUploadLinksGrid0">
 								<b>${filename}</b>
 							</div>
 							<div id="divUploadLinksGrid1">
-								${fileType}, ${fileSizeStr}
+								version: ${version}
 							</div>
 							<div id="divUploadLinksGrid2">
-								${docLinkBttn}
+								${fileType}, ${fileSizeStr}
 							</div>
 							<div id="divUploadLinksGrid3">
+								${docLinkBttn}
+							</div>
+							<div id="divUploadLinksGrid4">
+								${chkoutloadBttn}
+							</div>
+							<div id="divUploadLinksGrid5">
 								${dwnloadBttn}
 							</div>
 						</div>`;

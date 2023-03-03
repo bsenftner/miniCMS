@@ -4,7 +4,7 @@ from sqlalchemy import asc
 
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
 from app.api.models import MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
-from app.api.models import ProjectSchema, ProjectDB, UserActionCreate, UserActionDB
+from app.api.models import ProjectSchema, ProjectDB, UserActionCreate, UserActionDB, ProjectFileCreate, ProjectFileDB
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -207,7 +207,7 @@ async def get_project_and_tag(projectid: int) -> Tuple:
 
 # -----------------------------------------------------------------------------------------
 # for getting projects by their name:
-async def get_project_by_name(name: int) -> ProjectDB:
+async def get_project_by_name(name: str) -> ProjectDB:
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_project_table().select().where(name == db_mgr.get_project_table().c.name)
     return await db_mgr.get_db().fetch_one(query=query)
@@ -266,8 +266,56 @@ async def delete_project(id: int):
     return await db_mgr.get_db().execute(query=query)
 
 
+# -----------------------------------------------------------------------------------------
+# for creating new projectfiles 
+async def post_projectfile(payload: ProjectFileCreate, userid: int ):
 
+    log.info(f"post_projectfile: payload {payload}")
+    
+    # do not allow duplicates!
+    projFile: ProjectFileDB = await get_projectfile_by_filename(payload.filename, payload.projectid)
+    if projFile:
+        return None
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_projectfile_table().insert().values(filename=payload.filename, 
+                                                           projectid=payload.projectid,
+                                                           userid=userid,
+                                                           version=1,
+                                                           status="latest",
+                                                           checked_userid=None,
+                                                           checked_date=None)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
 
+# -----------------------------------------------------------------------------------------
+# for getting projectfiles:
+async def get_projectfile(id: int) -> ProjectFileDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_projectfile_table().select().where(id == db_mgr.get_projectfile_table().c.fileid)
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting projectfiles by their name and project id:
+async def get_projectfile_by_filename(filename: str, projectid: int) -> ProjectFileDB:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_projectfile_table().select()\
+        .where(projectid == db_mgr.get_projectfile_table().c.projectid)\
+        .where(filename == db_mgr.get_projectfile_table().c.filename)
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# returns all projects user has access
+async def get_all_project_projectfiles(projectid: int) -> List[ProjectDB]:
+    
+    log.info(f"get_all_project_projectfiles: projectid {projectid}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_projectfile_table().select().where(projectid == db_mgr.get_projectfile_table().c.projectid)
+    projectFileList = await db_mgr.get_db().fetch_all(query=query)   
+            
+    return projectFileList
 
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a memo
@@ -297,10 +345,7 @@ async def user_has_memo_access( user: UserInDB, memo: MemoDB ) -> bool:
 
 # -----------------------------------------------------------------------------------------
 # for creating new memos
-async def post_memo(payload: MemoSchema, user_id: int):
-    log.info(f"post_memo: here!")
-    log.info(f"payload is {payload}")
-    
+async def post_memo(payload: MemoSchema, user_id: int):    
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
     query = db_mgr.get_memo_table().insert().values(title=payload.title, 
@@ -342,6 +387,8 @@ async def get_all_memos(user: UserInDB) -> List[MemoDB]:
         if user_access:
             if m.status == 'unpublished':
                 m.title += ' (unpublished)'
+            elif m.status == 'archived':
+                m.title += ' (archived)'
             if m.access == 'admin':
                 m.title += ' (admin)'
             m.title += ' - by ' + m.username
@@ -369,9 +416,8 @@ async def get_all_public_memos() -> List[MemoDB]:
 # returns all project memo posts:
 async def get_all_project_memos(user: UserInDB, projectid: int) -> List[MemoDB]:
     db_mgr: DatabaseMgr = get_database_mgr()
-    # query = db_mgr.get_memo_table().select().order_by(asc(db_mgr.get_memo_table().c.memoid))
-    
-    query = db_mgr.get_memo_table().select().where(projectid == db_mgr.get_memo_table().c.projectid).order_by(asc(db_mgr.get_memo_table().c.memoid))
+    query = db_mgr.get_memo_table().select().where(projectid == db_mgr.get_memo_table().c.projectid)\
+                                            .order_by(asc(db_mgr.get_memo_table().c.memoid))
     
     memoList = await db_mgr.get_db().fetch_all(query=query)
             
@@ -382,6 +428,8 @@ async def get_all_project_memos(user: UserInDB, projectid: int) -> List[MemoDB]:
         if user_access:
             if m.status == 'unpublished':
                 m.title += ' (unpublished)'
+            elif m.status == 'archived':
+                m.title += ' (archived)'
             if m.access == 'admin':
                 m.title += ' (admin)'
             m.title += ' - by ' + m.username
@@ -613,6 +661,27 @@ async def get_all_users_by_role(role: str) -> List[UserPublic]:
             if r == role:
                 up = UserPublic(username = u.username, userid = u.userid, roles = u.roles, email = u.email) 
                 finalUserList.append(up)
+    
+    return finalUserList
+
+# -----------------------------------------------------------------------------------------
+# returns all UserDBs by role:
+async def get_all_UserDBs_by_role(role: str) -> List[UserInDB]:
+    # first get all the users:
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_users_table().select().order_by(asc(db_mgr.get_users_table().c.userid))
+    userList = await db_mgr.get_db().fetch_all(query=query)
+            
+    # now filter them:
+    finalUserList = []
+    for u in userList:
+        log.info( f"get_all_UserDBs_by_role: user {u.userid} has roles {u.roles}")
+        # break the user's role string into tokens, one for each role:
+        roleList = u.roles.split()
+        # loop over the roleList retaining those matching the input:
+        for r in roleList:
+            if r == role: 
+                finalUserList.append(u)
     
     return finalUserList
 

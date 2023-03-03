@@ -1,6 +1,7 @@
 import json   
 from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB, ProjectRequest
 from app.api import crud, users, encrypt, project
+from app.api.upload import check_project_uploads_for_orphans
 
 from app.config import get_settings, log
 
@@ -141,6 +142,9 @@ async def initialize_database_data( ) -> None:
         
     else:
         log.info(f"first memo title is '{memo.title}'")
+    
+    # look for orphaned files and directories in the project upload area:
+    await check_project_uploads_for_orphans( adminUser )
         
 
 
