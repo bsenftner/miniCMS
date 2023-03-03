@@ -29,16 +29,15 @@ Features:
   - A Project overview page for description, members, and project files
   - Project Files are isolated, requiring Project membership and Project published status to access Project Files
   - Project editor uses an embedded rich text editor (TinyMCE)
-    - Due to the new Project File security model, Project Video Files are not currently embedding for playback correctly
   - Intended to serve as the secure collection point for project information between members potentially in different locations
   - Deleting a Project only deletes empty projects with no Memos or uploaded files
     - Attempts to delete a Project with uploaded files that are checked out for modification error
       - The checked out files must be checked in, or an Admin must cancel their checkout
     - Attempts to delete a Project with content is an archiving operation:
-      - The Project cannot have , or an error is issued
       - The Project itself and its Memos are marked as archived
       - Any files in the Project's upload directory are zip compressed
-      - Project members are removed, but Admins continue to see the Project as archived
+      - Project members are removed
+      - Admins continue to see the Project, but as archived
 - 'Memo' content type
   - Memos are containers for each project's text, image, video, PDF and related info and files
   - Any project information needed by different members should be in a project memo
@@ -50,10 +49,11 @@ Features:
         - image, video and pdf embeds are working
       - Uploaded files have 'version control'
         - A Project Member is able to check out an uploaded file for modification
-        - While 'checked out' other Project Memebers can download the uploaded last version of that file
-          - It is clearly identified as 'locked for modification by Member username'
-        - After the 'checked out member' finished modification, they can upload the new version
-          - Upon the upload, the file's version number increments
+        - While 'checked out' other Project Memebers can download the uploaded last version of that file, but they cannot upload a modified version
+          - It is clearly identified as 'locked for modification by username'
+        - After the 'checked out member' finishes their changes, they can upload the new version
+          - This will unlock the file for other Project Members to modify
+          - Upon the modified file's upload, the file's version number increments and the older version is archived
       - All uploads go into an isolated Project directory requiring Project Membership to access
     - status can be unpublished, published or archived
       - once published, a memo can no longer be edited by non-admin project members
