@@ -24,12 +24,21 @@ Features:
       - Create new user controls
   - End-user profile pages for end-webmaster to put a GUI for whatever is the purpose behind their using MiniCMS
 - 'Project' content type
-  - A collection of files, memo and comments only accessible by Project members
+  - A collection of uploaded files, memo and comments only accessible by Project members
+    - See the uploaded files description in the Memo section
   - A Project overview page for description, members, and project files
   - Project Files are isolated, requiring Project membership and Project published status to access Project Files
   - Project editor uses an embedded rich text editor (TinyMCE)
     - Due to the new Project File security model, Project Video Files are not currently embedding for playback correctly
   - Intended to serve as the secure collection point for project information between members potentially in different locations
+  - Deleting a Project only deletes empty projects with no Memos or uploaded files
+    - Attempts to delete a Project with uploaded files that are checked out for modification error
+      - The checked out files must be checked in, or an Admin must cancel their checkout
+    - Attempts to delete a Project with content is an archiving operation:
+      - The Project cannot have , or an error is issued
+      - The Project itself and its Memos are marked as archived
+      - Any files in the Project's upload directory are zip compressed
+      - Project members are removed, but Admins continue to see the Project as archived
 - 'Memo' content type
   - Memos are containers for each project's text, image, video, PDF and related info and files
   - Any project information needed by different members should be in a project memo
@@ -37,8 +46,14 @@ Features:
   - Both Memo and Comment editor use an embedded rich text editor (TinyMCE)
   - title, content text, file uploads, upload embedding, status, access, and tags
     - files may be uploaded
-      - which become available as embed links and download buttons
+      - which become available as embed links, 'checkout for modification' and download buttons
         - image, video and pdf embeds are working
+      - Uploaded files have 'version control'
+        - A Project Member is able to check out an uploaded file for modification
+        - While 'checked out' other Project Memebers can download the uploaded last version of that file
+          - It is clearly identified as 'locked for modification by Member username'
+        - After the 'checked out member' finished modification, they can upload the new version
+          - Upon the upload, the file's version number increments
       - All uploads go into an isolated Project directory requiring Project Membership to access
     - status can be unpublished, published or archived
       - once published, a memo can no longer be edited by non-admin project members
