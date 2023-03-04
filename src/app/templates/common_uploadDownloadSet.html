@@ -101,7 +101,7 @@
 	  				response => response.json() // if the response is a JSON object
 				 ).then(
 	  				success => {
-						console.log( success.message) // Handle the success response object
+						console.log( success.message ) // Handle the success response object
 						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
 						//
 						// populate listbox for upload selection:
@@ -138,6 +138,92 @@
             tinymce.activeEditor.execCommand('mceInsertContent', false, markup );
         }
 
+		// called when "Checkout file" buttons are clicked
+		function CheckoutFile( pfid, filename ) {
+
+			const options = {
+				credentials: 'include',
+				method: 'PUT', // Method itself
+				headers: {
+				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify({}) // We send data in JSON format
+			}
+
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/upload/checkout/' + pfid;
+			
+			fetch(furl, options)
+			.then(resp => resp.blob())
+			.then(blob => {
+				const url = window.URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.style.display = 'none';
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				window.URL.revokeObjectURL(url);
+				alert('"' + filename + '" has downloaded.'); 
+
+				// re-populate listbox for upload selection displaying new status:
+				if (gUpDownProjId != null) {
+					get_uploads(gUpDownProjId);
+				}
+				else {
+					get_uploads();
+				}
+			})
+			.catch(() => alert('oh no!'));
+		}
+
+		// called when "Checkin file" buttons are clicked
+		function CheckinFile( pfid, filename ) {
+
+			fileInputCtrl = document.getElementById("CheckInInput")
+
+			let selected = fileInputCtrl.value; 	// has fake path components before filename
+			const pathArray = selected.split("\\");	// prepare...
+   			const lastIndex = pathArray.length - 1; // ...to remove...
+			selected = pathArray[lastIndex];		// ...path components.
+
+			var data = new FormData()
+			data.append('file', fileInputCtrl.files[0])
+
+			// This will upload the file after having read it
+			const checkin = (file) => {
+
+				let domain = (new URL(window.location));
+				const prebsjnk = domain.origin;
+				let furl = prebsjnk + '/upload/checkin/' + pfid;
+
+				fetch( furl, { // POST endpoint
+					  method: 'PUT', 
+					  headers: {},
+					  body: data // This is your file object
+				}).then(
+					  response => response.json() // if the response is a JSON object
+				 ).then(
+					  success => {
+						console.log( success.message ) // Handle the success response object
+						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
+						//
+						// populate listbox for upload selection:
+						window.location.reload();
+					}
+				 ).catch(
+					  error => {
+						console.log( error ) // Handle the error response object
+						document.getElementById("divUploadMsg").innerHTML = '<p>Error msg: ' + error + '</p>';
+					}
+				);
+			  };
+  
+			checkin(fileInputCtrl.files[0]);
+		}
+
 		// get list of uploaded files and populate upload selection list:
 		// 'projectid' can be null/undefined and uploads go to general upload directory
 		function get_uploads( projectid ) {
@@ -164,7 +250,8 @@
 					let fileLinks = success;
 					for (let i = 0; i < fileLinks.length; i++) {
 						let filename = fileLinks[i].filename;
-						let pid = fileLinks[i].projectid;
+						let pfid = fileLinks[i].pfid;
+						let projectid = fileLinks[i].projectid;
 						let fnParts = filename.split('.');
 						let ext = fnParts[ fnParts.length - 1 ].toLowerCase();
 						let fileType = fileLinks[i].type;
@@ -186,15 +273,23 @@
 						}
 						
 						// set this first:
-						let chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${fileLink}','${filename}')">Checkout file</a>`;
+						let chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${pfid}', '${filename}')">Check out file</a></br>(to modify & check back in)`;
 						if (checked_userid > 0) {
-							chkoutDloadBttn = 'Checked out by UserId ' + checked_userid;
+							if ("{{userid}}" == checked_userid) {
+								chkoutDloadBttn = 
+								    `<a href="#" class="button" onclick="document.getElementById('CheckInInput').click();">Check file back in</a></br>You checked this file out
+									<input type="file" style="display:none;" id="CheckInInput" name="checkInInput" onchange="CheckinFile('${pfid}', '${filename}')" >`;
+							}
+							else { // current user is not the checker
+								chkoutDloadBttn = 'Checked out by UserId ' + checked_userid + '</br>' + 
+								`<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download Last Version</a>`;
+							}
 						}
 
 
-						let dwnloadBttn = `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
+						let dwnloadBttn = "" // `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
 						
-						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link</a>`;
+						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link</a></br>(for embedding)`;
 
                         if (fileType == 'media') {
 							if (projectid != null) {
@@ -233,7 +328,7 @@
 							</div>
 							<div id="divUploadLinksGrid5">
 								${dwnloadBttn}
-							</div>
+							</div> 
 						</div>`;
 
 						uploadLinksWrapper.innerHTML += markup;

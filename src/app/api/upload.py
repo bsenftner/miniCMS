@@ -299,7 +299,7 @@ async def check_project_uploads_for_orphans(current_user: UserInDB):
                     #
                     new_status = 'unpublished'
                     if len(project_upload_fileList)==1:
-                        zip_archive_path = config.get_base_path() / 'uploads' / dirname / 'project_' + dirname + 'archive.zip'
+                        zip_archive_path = config.get_base_path() / 'uploads' / dirname / 'project_' + str(dirname) + 'archive.zip'
                         if project_upload_fileList[0] == zip_archive_path:
                             new_status = 'archived'
                     #
@@ -596,12 +596,56 @@ async def checkout_projectfile(pfid: int,
         # the file is missing! oh nos!
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project File not found")
 
+
+# ----------------------------------------------------------------------------------------------
+# Note: projectid's type is validated as greater than 0  
+@router.put("/checkcancel/{pfid}", status_code=200)
+async def checkcancel_projectfile(pfid: int, 
+                               current_user: UserInDB = Depends(get_current_active_user)):
+    
+    projFile: ProjectFileDB = await crud.get_projectfile(pfid)
+    if projFile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project file not found")
+    
+    proj, tag = await crud.get_project_and_tag(projFile.projectid)
+    if proj is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+        
+    if tag is None:
+        raise HTTPException(status_code=500, detail="Project Tag not found")
+    
+    isAdmin = user_has_role(current_user,"admin")
+    # isProjMember = user_has_role(current_user, tag.text)
+    isChecker    = projFile.checked_userid == current_user.userid
+    
+    if not isAdmin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    if proj.status == 'archived':
+        if not isAdmin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+
+    # only allow admins and project owner if project is unpublished:
+    if proj.status == 'unpublished' and (not isAdmin and not current_user.userid == proj.userid):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    # if project is published, user must be admin or project member that checked out file
+    if proj.status == 'published' and (not isAdmin and not isChecker):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
+    # update the projectfile to reflect it is no longer checked out:
+    projFile.checked_userid = current_user.userid
+    projFile.checked_date = datetime.now() 
+    return await crud.put_projectfile( projFile )
+    
 # ----------------------------------------------------------------------------------------------
 # Note: id's type is validated as greater than 0  
-@router.put("/checkin/{pfid}", response_model=int)
+@router.put("/checkin/{pfid}", status_code=200)
 async def checkin_projectfile(pfid: int, 
                               file: UploadFile = File(...), 
                               current_user: UserInDB = Depends(get_current_active_user)):
+    
+    log.info(f"checkin_projectfile: got pfid {pfid}")
     
     projFile: ProjectFileDB = await crud.get_projectfile(pfid)
     if projFile is None:
@@ -621,7 +665,7 @@ async def checkin_projectfile(pfid: int,
     isProjMember = user_has_role(current_user, tag.text)
     isChecker    = projFile.checked_userid == current_user.userid
     
-    log.info( f"checkin_projectfile: isAdmin is {isAdmin}, isProjMember is {isProjMember}, is checker {isChecker}")
+    log.info( f"checkin_projectfile: isAdmin is {isAdmin}, isProjMember is {isProjMember}, is checker {isChecker}, checked_userid is {projFile.checked_userid}")
     
     # Note: if a person is removed from a project and they have checked out files, they cannot check them in!
     # only admins and project members continue from here:
@@ -680,7 +724,7 @@ async def checkin_projectfile(pfid: int,
     projFile.checked_date = None 
     ret = await crud.put_projectfile( projFile )
     if ret != projFile.pfid:
-        return {"message": f"Near sucess checked in {tag.text} {file.filename}, final put failed!"}
+        return {"message": f"Near success checked in {tag.text} {file.filename}, final put failed!"}
 
     
     return {"message": f"Successfully checked in {tag.text} {file.filename}"}

@@ -329,7 +329,7 @@ async def put_projectfile(projFile: ProjectFileDB):
                 version=projFile.version, 
                 checked_userid=projFile.checked_userid,
                 checked_date=projFile.checked_date)
-        .returning(db_mgr.get_memo_table().c.memoid)
+        .returning(db_mgr.get_projectfile_table().c.pfid)
     )
     return await db_mgr.get_db().execute(query=query)
 

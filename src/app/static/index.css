@@ -262,18 +262,23 @@ div#divUploadLinksGrid0 {
 }
 div#divUploadLinksGrid1 {
   grid-area: 1 / 2 / 2 / 3;
+  text-align: center;
 }
 div#divUploadLinksGrid2 {
   grid-area: 1 / 3 / 2 / 4;
+  text-align: center;
 }
 div#divUploadLinksGrid3 {
   grid-area: 1 / 4 / 2 / 5;
+  text-align: center;
 }
 div#divUploadLinksGrid4 {
   grid-area: 1 / 5 / 2 / 6;
+  text-align: center;
 }
 div#divUploadLinksGrid5 {
   grid-area: 1 / 6 / 2 / 7;
+  text-align: center;
 }
 div.divProjMembershipGridParent {
   display: grid;

@@ -247,6 +247,7 @@ async def projectEditor( request: Request,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
+         "userid": current_user.userid
         }, 
         # 'access' key is for template left sidebar construction
     )
