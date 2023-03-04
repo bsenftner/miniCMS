@@ -186,7 +186,10 @@
 						}
 						
 						// set this first:
-						let chkoutloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${fileLink}','${filename}')">Checkout file</a>`;
+						let chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${fileLink}','${filename}')">Checkout file</a>`;
+						if (checked_userid > 0) {
+							chkoutDloadBttn = 'Checked out by UserId ' + checked_userid;
+						}
 
 
 						let dwnloadBttn = `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
@@ -226,7 +229,7 @@
 								${docLinkBttn}
 							</div>
 							<div id="divUploadLinksGrid4">
-								${chkoutloadBttn}
+								${chkoutDloadBttn}
 							</div>
 							<div id="divUploadLinksGrid5">
 								${dwnloadBttn}

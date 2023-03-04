@@ -293,7 +293,7 @@ async def post_projectfile(payload: ProjectFileCreate, userid: int ):
 # for getting projectfiles:
 async def get_projectfile(id: int) -> ProjectFileDB:
     db_mgr: DatabaseMgr = get_database_mgr()
-    query = db_mgr.get_projectfile_table().select().where(id == db_mgr.get_projectfile_table().c.fileid)
+    query = db_mgr.get_projectfile_table().select().where(id == db_mgr.get_projectfile_table().c.pfid)
     return await db_mgr.get_db().fetch_one(query=query)
 
 # -----------------------------------------------------------------------------------------
@@ -307,15 +307,34 @@ async def get_projectfile_by_filename(filename: str, projectid: int) -> ProjectF
 
 # -----------------------------------------------------------------------------------------
 # returns all projects user has access
-async def get_all_project_projectfiles(projectid: int) -> List[ProjectDB]:
+async def get_project_projectfiles(projectid: int) -> List[ProjectDB]:
     
-    log.info(f"get_all_project_projectfiles: projectid {projectid}")
+    log.info(f"get_project_projectfiles: projectid {projectid}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_projectfile_table().select().where(projectid == db_mgr.get_projectfile_table().c.projectid)
     projectFileList = await db_mgr.get_db().fetch_all(query=query)   
             
     return projectFileList
+
+# -----------------------------------------------------------------------------------------
+# update a projectfile, only the shown fields can change: 
+async def put_projectfile(projFile: ProjectFileDB):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = (
+        db_mgr.get_projectfile_table()
+        .update()
+        .where(projFile.pfid == db_mgr.get_projectfile_table().c.pfid)
+        .values(filename=projFile.filename, 
+                version=projFile.version, 
+                checked_userid=projFile.checked_userid,
+                checked_date=projFile.checked_date)
+        .returning(db_mgr.get_memo_table().c.memoid)
+    )
+    return await db_mgr.get_db().execute(query=query)
+
+
+
 
 # ----------------------------------------------------------------------------------------------
 # a utility for getting the permission to access a memo
@@ -366,7 +385,6 @@ async def get_memo(id: int) -> MemoDB:
     query = db_mgr.get_memo_table().select().where(id == db_mgr.get_memo_table().c.memoid)
     return await db_mgr.get_db().fetch_one(query=query)
     
-
 # -----------------------------------------------------------------------------------------
 # returns all memo posts:
 async def get_all_memos(user: UserInDB) -> List[MemoDB]:

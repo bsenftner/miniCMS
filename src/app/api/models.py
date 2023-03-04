@@ -49,14 +49,14 @@ class ProjectFileCreate(BaseModel):
     projectid: int = Field(index=True) # project this file is associated
     
 class ProjectFileDB(ProjectFileCreate):
-    fileid: int = Field(index=True)
+    pfid: int = Field(index=True)
     userid: int                        # user who uploaded file
     version: int                       # highest value is the most current file version
     checked_userid: Union[int,None]    # if not None, file is checked out by Project Member
     checked_date: Union[datetime,None] # if not None, when file was checked out by checked_userid
     created_date: datetime
-    
-    
+
+
     
 class CommentSchema(BaseModel):
     text: str

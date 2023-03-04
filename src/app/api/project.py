@@ -12,7 +12,7 @@ from app.api.utils import zipFileList
 from app.api.users import get_current_active_user, user_has_role
 from app.api.user_action import UserAction, UserActionLevel
 from app.api.memo import delete_memo
-from app.api.upload import read_all_project_uploads
+from app.api.upload import get_project_projectfiles
 from app.api.models import UserInDB, basicTextPayload, ProjectRequest, ProjectUpdate, ProjectSchema, ProjectDB, TagDB, MemoSchema
 
 from typing import List
@@ -208,7 +208,7 @@ async def update_project(payload: ProjectUpdate,
     return projectid
 
 # ----------------------------------------------------------------------------------------------
-async def remove_project_tag( tag: TagDB ):
+async def remove_tag_from_users( tag: TagDB ):
     errorCount = 0
     # get list of all project users and remove their project role   
     userList = await crud.get_all_UserDBs_by_role( tag.text )
@@ -271,16 +271,16 @@ async def delete_project(id: int = Path(..., gt=0),
     uploaded_files.extend(glob.glob(str(upload_path)))
     
     # the uploaded_files list and this list should describe the same files:
-    projFileList = await crud.get_all_project_projectfiles( project.projectid )
+    projFileList = await crud.get_project_projectfiles( project.projectid )
     
     # generate a list of the memos in this project:
     projMemoList = await crud.get_all_project_memos( current_user, project.projectid )
     
     if len(uploaded_files) == 0 and len(projFileList) == 0 and len(projMemoList) == 0:
         # if any users are members, remove them from the project:
-        errorCount = await remove_project_tag( tag )
+        errorCount = await remove_tag_from_users( tag )
         if errorCount > 0:
-            log.info( f"delete_project: remove_project_tag reports {errorCount} errors" )
+            log.info( f"delete_project: remove_tag_from_users reports {errorCount} errors" )
         # this is a project with no memos and no uploaded files, just delete it:
         await crud.delete_project(id)
         # its upload directory is empty, so delete that too:
@@ -318,14 +318,14 @@ async def delete_project(id: int = Path(..., gt=0),
     # this project has at least one memo or uploaded file, so archive it:
     
     # if any users are members, remove them from the project:
-    errorCount = await remove_project_tag( tag )
+    errorCount = await remove_tag_from_users( tag )
     if errorCount > 0:
-        log.info( f"delete_project: remove_project_tag reports {errorCount} errors" )
+        log.info( f"delete_project: remove_tag_from_users reports {errorCount} errors" )
             
     # archive any files:
     if len(uploaded_files) > 0:
         # path to zip file that will hold the archive:
-        zip_archive_path = config.get_base_path() / 'uploads' / tag.text / 'archive.zip'
+        zip_archive_path = config.get_base_path() / 'uploads' / tag.text / 'project_' + tag.text + 'archive.zip'
         # create archive
         zipFileList( uploaded_files, zip_archive_path )
         # delete the files: 
