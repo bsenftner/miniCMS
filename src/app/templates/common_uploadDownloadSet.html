@@ -336,7 +336,7 @@
 
                         if (fileType == 'media') {
 							if (projectid != null) {
-								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${pid}/${filename}')">Copy link</a></br>(for embedding)`;
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${projectid}/${filename}')">Copy link</a></br>(for embedding)`;
 							}
 							else {
 								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link</a></br>(for embedding)`;
