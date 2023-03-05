@@ -224,6 +224,41 @@
 			checkin(fileInputCtrl.files[0]);
 		}
 
+		// called when "Checkout file" buttons are clicked
+		function CheckoutCancel( pfid, filename ) {
+
+			const options = {
+				credentials: 'include',
+				method: 'PUT', // Method itself
+				headers: {
+				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify({}) // We send data in JSON format
+			}
+
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/upload/checkcancel/' + pfid;
+			
+			fetch(furl, options)
+			.then(
+				response => {
+					if (response.hasOwnProperty('detail')) {
+                        alert( 'Please fix the following and try again: ' + response.detail )
+                    }
+                    else {
+                        window.location.reload();
+                    }
+				}
+			).catch(
+				error => {
+					console.log( error ) // Handle the error response object
+					document.getElementById("divUploadMsg").innerHTML = '<p>Error msg: ' + error + '</p>';
+				}
+			);
+		}
+
 		// get list of uploaded files and populate upload selection list:
 		// 'projectid' can be null/undefined and uploads go to general upload directory
 		function get_uploads( projectid ) {
@@ -272,31 +307,39 @@
 							fileSizeStr = String(Number(fileSize)) + ' b'
 						}
 						
+						let lastBttn = "";
+
 						// set this first:
-						let chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${pfid}', '${filename}')">Check out file</a></br>(to modify & check back in)`;
+						let chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${pfid}', '${filename}')">Check out file</a></br>(to modify)`;
 						if (checked_userid > 0) {
 							if ("{{userid}}" == checked_userid) {
 								chkoutDloadBttn = 
-								    `<a href="#" class="button" onclick="document.getElementById('CheckInInput').click();">Check file back in</a></br>You checked this file out
+								    `<a href="#" class="button" onclick="document.getElementById('CheckInInput').click();">Check file in</a></br>You're modifying this file
 									<input type="file" style="display:none;" id="CheckInInput" name="checkInInput" onchange="CheckinFile('${pfid}', '${filename}')" >`;
+
+								lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Cancel Check out</a>`;
 							}
 							else { // current user is not the checker
 								chkoutDloadBttn = 'Checked out by UserId ' + checked_userid + '</br>' + 
 								`<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download Last Version</a>`;
+
+								if ("{{isAdmin}}") {
+									lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Admin Cancel Check out</a>`;
+								}
 							}
 						}
 
 
-						let dwnloadBttn = "" // `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
+						// lastBttn = "" // `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
 						
 						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link</a></br>(for embedding)`;
 
                         if (fileType == 'media') {
 							if (projectid != null) {
-								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${pid}/${filename}')">Copy link</a>`;
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/project/${pid}/${filename}')">Copy link</a></br>(for embedding)`;
 							}
 							else {
-								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link</a>`;
+								docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('/video/${filename}')">Copy link</a></br>(for embedding)`;
 							}
 						}
                         else if (fileType == 'binary') {
@@ -327,7 +370,7 @@
 								${chkoutDloadBttn}
 							</div>
 							<div id="divUploadLinksGrid5">
-								${dwnloadBttn}
+								${lastBttn}
 							</div> 
 						</div>`;
 

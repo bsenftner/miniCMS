@@ -137,8 +137,7 @@ async def profilePage( request: Request,
 async def projectPage( request: Request, projectid: int, 
                        current_user: User = Depends(get_current_active_user) ):
      
-    proj, tag = await crud.get_project_and_tag(projectid)
-    # proj: ProjectDB = await crud.get_project(projectid) 
+    proj, tag = await crud.get_project_and_tag(projectid) 
     if not proj:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),
@@ -146,7 +145,6 @@ async def projectPage( request: Request, projectid: int,
                                        f"ProjectPage {projectid}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # tag = await crud.get_tag( proj.tagid )
     if not tag:
         await crud.rememberUserAction( current_user.userid,  
                                        UserActionLevel.index('SITEBUG'),
@@ -166,6 +164,8 @@ async def projectPage( request: Request, projectid: int,
         proj.name += ' (archived)'
         proj.text = '<h3>(Embedded files do not display in archived projects)</h3>' + proj.text 
         
+    isAdmin = user_has_role(current_user,"admin")
+     
     # returns list of all project users:
     userList = await crud.get_all_users_by_role( proj.name )
     
@@ -191,6 +191,8 @@ async def projectPage( request: Request, projectid: int,
           "access": 'private',
           "users": userList,
           "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -211,8 +213,10 @@ async def projectEditor( request: Request,
                                        f"projectEditor {id}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
 
+    isAdmin = user_has_role(current_user,"admin")
+    
     # edit access is for project owner and admins only:
-    if proj.userid != current_user.userid and not user_has_role(current_user,"admin"):
+    if proj.userid != current_user.userid and not isAdmin:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('FAILED_EDIT_PROJECT'), 
@@ -247,7 +251,8 @@ async def projectEditor( request: Request,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
-         "userid": current_user.userid
+         "userid": current_user.userid,
+         "isAdmin": isAdmin
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -258,7 +263,9 @@ async def projectEditor( request: Request,
 async def newProjectEditor( request: Request, 
                             current_user: User = Depends(get_current_active_user) ):
     
-    if not user_has_role(current_user,"admin"):
+    isAdmin = user_has_role(current_user,"admin")
+    
+    if not isAdmin:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('NONADMIN_ATTEMPTED_EDIT_NEW_PROJECT'), "" )
@@ -292,6 +299,8 @@ async def newProjectEditor( request: Request,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
+         "userid": current_user.userid,
+         "isAdmin": isAdmin
         }, 
         # 'access' key is for template left sidebar construction
     )

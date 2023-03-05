@@ -634,8 +634,8 @@ async def checkcancel_projectfile(pfid: int,
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     # update the projectfile to reflect it is no longer checked out:
-    projFile.checked_userid = current_user.userid
-    projFile.checked_date = datetime.now() 
+    projFile.checked_userid = None
+    projFile.checked_date = None 
     return await crud.put_projectfile( projFile )
     
 # ----------------------------------------------------------------------------------------------
