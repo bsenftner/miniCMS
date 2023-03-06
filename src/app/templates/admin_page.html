@@ -57,10 +57,18 @@
 						<h4>Selected User Actions (website activity):</h4>
 						<label for="userActionOffset">Offset:</label>
   						<input type="text" id="userActionOffset" name="label" value="0">
-						<label for="userActionLimit">Showing:</label>
+						<label for="userActionLimit">Request:</label>
 						<input type="text" id="userActionLimit" name="label" value="50">
-						<!-- -->
-						<select id="userActionBox" class="resizeable" size="7" onchange="onUserActionChangeFunc();"></select>
+						<span id="userActionsMsg"></span>
+						<select id="userActionsFilter" onchange="onUserActionFilterChangeFunc();">
+							<option value="ALL">Display all</option>
+							<option value="SITEBUG">Site bugs</option>
+							<option value="NORMAL">Normal behaviors</option>
+							<option value="CONFUSED">Confused user</option>
+							<option value="WARNING">Bad user behavior</option>
+							<option value="BANNED_ACTION">Banned behavior</option>
+						</select>
+						<select id="userActionBox" class="resizeable" size="7"></select>
 					</div>
 				</div>
 
@@ -143,6 +151,7 @@
 			AddUserActionsReturnListener( "userActionOffset" )
 			AddUserActionsReturnListener( "userActionLimit" )
 
+			document.getElementById("userActionsFilter").value = "ALL"
 			ToggleCreateAccountSet();
 			ToggleYourAccountSet();
 		}
@@ -294,12 +303,12 @@
 				  response => response.json() // if the response is a JSON object
 			 ).then(
 				  success => {
-					console.log( success ) // Handle the success response object
+					console.log( success ) // Handle the success response object  
 					let userSelectBox = document.getElementById("userSelectBox")
 					//
-					let i;
+					let i = userSelectBox.options.length;
 					//
-					for (i = userSelectBox.options.length; i >= 0; i--) {
+					for ( ; i >= 0; i--) {
 						userSelectBox.remove(i);
 					}
 					//
@@ -411,24 +420,35 @@
 				  success => {
 					console.log( success ) // Handle the success response object
 					
+					filter = document.getElementById("userActionsFilter").value;
+
 					actionSelectBox = document.getElementById("userActionBox")
 					//
-					let i;
-					for (i = actionSelectBox.options.length; i >= 0; i--) {
+					let i = actionSelectBox.options.length;
+					for ( ; i >= 0; i--) {
 						actionSelectBox.remove(i);
 					}
 					//
 					var limit = success.length;
+					//
+					document.getElementById("userActionsMsg").innerHTML = 'Loaded: ' + limit;
+					//
 					for (i = 0; i < limit; i++) {
 						let optn = document.createElement("OPTION");
 						let msg = "";
-						switch (success[i].level) {
-							case 'SITEBUG': msg += 'BUG: '; break;
-							case 'NORMAL':  msg += 'OK: '; break;
-							case 'CONFUSED': msg += '??: '; break;
-							case 'WARNING': msg += 'WARN!: '; break;
-							case 'BANNED_ACTION': msg += 'BAN!: '; break;
+						if ((filter == "ALL") || (filter == success[i].level)) {
+							switch (success[i].level) {
+								case 'SITEBUG': msg += 'BUG: '; break;
+								case 'NORMAL':  msg += 'OK: '; break;
+								case 'CONFUSED': msg += '??: '; break;
+								case 'WARNING': msg += 'WARN!: '; break;
+								case 'BANNED_ACTION': msg += 'BAN!: '; break;
+							}
 						}
+						else  {
+							continue;
+						}
+
 						msg += success[i].created_date + ': ' + success[i].action;
 
 						if (success[i].description.length > 0) {
@@ -445,6 +465,12 @@
 				}
 			);
 		};
+
+		function onUserActionFilterChangeFunc() {
+			if (gSelectedUserId > 0) {
+				get_user_actions( gSelectedUserId )
+			}
+		}
 
 		// get list of backup files and populate download selection list:
 		const get_available_backups = () => {

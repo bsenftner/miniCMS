@@ -538,6 +538,14 @@ input#vcode {
   font-weight: bold;
 }
 
+span#userActionsMsg {
+  font-size: 1.0em;
+  font-weight: 700;
+}
+select#userActionsFilter {
+  margin-left: 20px;
+}
+
 div#userList {
   display: grid;
   grid-template-columns: 0.5fr 0.5fr 1fr; 
