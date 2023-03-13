@@ -1,48 +1,49 @@
-# pull official base image
-# FROM python:3.9.4-alpine
-FROM python:3.9.6-alpine
+# using ubuntu LTS version
+FROM ubuntu:20.04 AS builder-image
 
-# create directory for the app user
-RUN mkdir -p /home/app
+# avoid stuck build due to user prompt
+ARG DEBIAN_FRONTEND=noninteractive
 
-# create the app user
-RUN addgroup -S app && adduser -S app -G app
+RUN apt-get update && apt-get install --no-install-recommends -y python3.9 python3.9-dev python3.9-venv python3-pip python3-wheel build-essential && \
+	apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# create the appropriate directories
-ENV HOME=/home/app
-ENV APP_HOME=/home/app/web
-RUN mkdir $APP_HOME
-WORKDIR $APP_HOME
-
-
-# set environment variables to prevent python from writing 
-# pyc files to disc and from buffering stdout and stderr:
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# create and activate virtual environment
+# using final folder name to avoid path issues with packages
+RUN python3.9 -m venv /home/app/venv
+ENV PATH="/home/app/venv/bin:$PATH"
 ENV ENVIRONMENT dev
 ENV TESTING 0
 
-# copy requirements file
-COPY ./requirements.txt $APP_HOME/requirements.txt
+# install requirements
+COPY requirements.txt .
+RUN pip3 install --no-cache-dir wheel
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# install dependencies
-RUN set -eux \
-    && apk add --no-cache --virtual .build-deps build-base \
-        libressl-dev libffi-dev gcc musl-dev python3-dev \
-        postgresql-dev bash \
-    && pip install --upgrade pip setuptools wheel \
-    && pip install -r $APP_HOME/requirements.txt \
-    && rm -rf /root/.cache/pip
+FROM ubuntu:20.04 AS runner-image
+RUN apt-get update && apt-get install --no-install-recommends -y python3.9 python3-venv && \
+	apt-get clean && rm -rf /var/lib/apt/lists/*
 
+RUN useradd --create-home app
+COPY --from=builder-image /home/app/venv /home/app/venv
 
-# copy project
+USER app
+RUN mkdir /home/app/code
+WORKDIR /home/app/code
 COPY . .
 
-# chown all the files to the app user
-RUN chown app:app $APP_HOME
+EXPOSE 5000
 
-# change to the app user
-USER app
+# make sure all messages always reach console
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV ENVIRONMENT dev
+ENV TESTING 0
 
-# run gunicorn
-CMD gunicorn --reload --bind 0.0.0.0:$PORT app.main:app -k uvicorn.workers.UvicornWorker
+# activate virtual environment
+ENV VIRTUAL_ENV=/home/app/venv
+ENV PATH="/home/app/venv/bin:$PATH"
+
+# /dev/shm is mapped to shared memory and should be used for gunicorn heartbeat
+# this will improve performance and avoid random freezes
+CMD ["gunicorn", "--reload", "-b", "0.0.0.0:5000",  "-w", "4", "-k", "gevent", "--worker-tmp-dir", "/dev/shm", "app:app"]
+
