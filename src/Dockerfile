@@ -27,8 +27,8 @@ RUN useradd --create-home app
 COPY --from=builder-image /home/app/venv /home/app/venv
 
 USER app
-RUN mkdir /home/app/code
-WORKDIR /home/app/code
+RUN mkdir /home/app/web 
+WORKDIR /home/app/web
 COPY . .
 
 EXPOSE 5000
