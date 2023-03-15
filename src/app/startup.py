@@ -13,9 +13,7 @@ def docsHtml() -> str:
     ret = '''<h2>Welcome to MiniCMS Documentation</h2>
 <h3>The Basics</h3>
 <p><strong>MiniCMS</strong> is a project organized document and related memo managment system for secure in-office and remote work use.</p>
-<p>As a <strong>Staff</strong> user you can see a listing of any <strong>Projects</strong> you are a member by clicking on the 
-<strong>Profile Button</strong> located on the upper right of most <strong>MiniCMS</strong> pages. <br>Once on your <strong>Profile</strong> 
-page you will see a listing of the <strong>Projects</strong> you are a member, just click their titles to enter the <strong>Project.</strong></p>
+<p>As a <strong>Staff</strong> user you can see a listing of any <strong>Projects</strong> you are a member by clicking on the <strong>Profile Button</strong> located on the upper right of most <strong>MiniCMS</strong> pages. <br>Once on your <strong>Profile</strong> page you will see a listing of the <strong>Projects</strong> you are a member, just click their titles to enter the <strong>Project.</strong></p>
 <p>A <strong>Project</strong> is a few things:</p>
 <ul>
 <li>A <strong>Project</strong> is a collection of people, the <strong>Project Members</strong>, collected for a purpose outside of <strong>MiniCMS</strong></li>
@@ -26,15 +24,13 @@ page you will see a listing of the <strong>Projects</strong> you are a member, j
 </li>
 <li>A <strong>Project</strong> has <strong>Uploaded Files</strong> related and for the purpose of the <strong>Project</strong> that are shared between <strong>Project Members</strong>
 <ul>
-<li>For example, one may have a <strong>Project </strong>that collects <strong>files </strong>related to a client matter. 
-By placing the <strong>files </strong>into the <strong>Project </strong>they become available anywhere you can access <strong>MiniCMS</strong>.</li>
+<li>For example, one may have a <strong>Project </strong>that collects <strong>files </strong>related to a client matter. By placing the <strong>files </strong>into the <strong>Project </strong>they become available anywhere you can access <strong>MiniCMS</strong>.</li>
 </ul>
 </li>
 <li>A <strong>Project</strong> has <strong>Memos</strong> that are notes written between <strong>Project Members</strong> related to the <strong>Project</strong> which need to be retained</li>
 </ul>
-<p><strong>Project</strong> is something people are trying to accomplish as a team. <strong>MiniCMS</strong> provides a way of organizing and sharing the files and information of the 
-<strong>Project</strong> between in-office and remote workers without triggering expensive cloud file sharing fees imposed on businesses.</p>
-    '''
+<p><strong>Project</strong> is something people are trying to accomplish as a team. <strong>MiniCMS</strong> provides a way of organizing and sharing the files and information of the <strong>Project</strong> between in-office and remote workers without triggering expensive cloud file sharing fees imposed on businesses.</p>
+<p>See the <strong><a href="/memoPage/1">About Project Memos</a> Memo</strong> for more site documentation.</p>'''
     return ret
 
 def memoHtml() -> str:
