@@ -325,7 +325,7 @@ async def delete_project(id: int = Path(..., gt=0),
     # archive any files:
     if len(uploaded_files) > 0:
         # path to zip file that will hold the archive:
-        zip_archive_path = config.get_base_path() / 'uploads' / tag.text / 'project_' + tag.text + 'archive.zip'
+        zip_archive_path = str(config.get_base_path()) + '/uploads/' + tag.text + '/project_' + tag.text + 'archive.zip'
         # create archive
         zipFileList( uploaded_files, zip_archive_path )
         # delete the files: 
