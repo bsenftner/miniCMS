@@ -119,7 +119,7 @@ async def profilePage( request: Request,
     
     memoList = await crud.get_all_memos(current_user)
     
-    config.log.info(f"profilePage: current_user: {current_user}")
+    # config.log.info(f"profilePage: current_user: {current_user}")
     
     return TEMPLATES.TemplateResponse(
         "profile.html",

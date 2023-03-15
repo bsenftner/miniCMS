@@ -39,24 +39,27 @@ By placing the <strong>files </strong>into the <strong>Project </strong>they bec
 
 def memoHtml() -> str:
     ret = '''<p>A <strong>Memo</strong> is some information related to a <strong>Project</strong> that ought to be maintained and kept with the <strong>Project</strong>.</p>
+<p style="text-align: center;"><img src="/upload/projectFile/1/MiniCMS-memoEditor.jpg" alt="" width="800" height="116"><br><span style="font-size: 12pt;"><span style="font-size: 10pt;">
+The <strong>Memo Editor</strong></span><span style="font-size: 10pt;"> is a <em>rich text editor</em></span><span style="font-size: 10pt;"> with many of the same controls as MS Word</span></span></p>
 <p>If a <strong>Project</strong> is used to organize some client issue, a <strong>Memo</strong> is a good place to jot down client phone conversations. 
-Likewise, with multiple member <strong>Projects</strong>, a <strong>Memo</strong> is a good method of communicating info and new developments of the <strong>Project.</strong></p>
-<p>Note that a <strong>Memo</strong> may include <em>embeds</em> of <strong>Project Uploaded Files</strong>. 
-This enables <strong>Project Members</strong> to use <strong>Memos</strong> for <em>rich media</em> communications about a <strong>Project</strong>. 
-When a <strong>Project Uploaded File<em> </em></strong>is a common image or video format the <strong>Uploaded File</strong> is presented in the 
-<strong>Project Files</strong> section of the <strong>Memo Editor Page</strong> with a <strong>Copy Link (for embedding)</strong> button. 
-Clicking the <strong>Copy Link (for embedding)</strong> button places the embed code for that <strong>Uploaded File</strong> onto your computer's <strong>clipboard</strong>. 
-Then:</p><ul>
-<li>If the <strong>Uploaded File</strong> is an <strong>image:</strong> clicking the <strong>Insert/edit image</strong> icon on the <strong>text editor toolbar</strong> pops a dialog the 
-<strong>clipboard's embed code</strong> can be pasted to <strong>embed</strong> the <strong>image</strong> at the text editor's cursor location</li>
-<li>If the <strong>Upload File</strong> is a <strong>video</strong>: clicking the <strong>Insert/edit media</strong> icon on the <strong>text editor toolbar</strong>pops a dialog the 
-<strong>clipboard's embed code</strong> can be pasted to <strong>embed</strong> the <strong>video </strong>at the text editor's cursor location</li>
-<li>If the <strong>Upload File</strong> is a <strong>PDF</strong>: clicking the <strong>Embed at cursor</strong> button <strong>embeds</strong> the <strong>PDF </strong>at the text editor's cursor location</li>
+Likewise, with multiple member <strong>Projects</strong>, a <strong>Memo</strong> is a good method of communicating info and new developments of the <strong>Project</strong> 
+between members with a date record of the communication.</p>
+<p>Note that a <strong>Memo</strong> may include <em>embeds</em> of <strong>Project Uploaded Files</strong>. This enables <strong>Project Members</strong> to use 
+<strong>Memos</strong> for <em>rich media</em> communications about a <strong>Project</strong>. When a <strong>Project Uploaded File<em> </em></strong>is a common 
+image or video format the <strong>Uploaded File</strong> is presented in the <strong>Project Files</strong> section of the <strong>Memo Editor Page</strong> with a 
+<strong>Copy Link (for embedding)</strong> button. Clicking the <strong>Copy Link (for embedding)</strong> button places the embed code for that 
+<strong>Uploaded File</strong> onto your computer's <strong>clipboard</strong>. Then:</p>
+<ul>
+<li>If the <strong>Uploaded File</strong> is an <strong>image:</strong> clicking the <strong>Insert/edit image</strong> icon on the <strong>text editor toolbar</strong> 
+pops a dialog the <strong>clipboard's embed code</strong> can be pasted to <strong>embed</strong> the <strong>image</strong> at the text editor's cursor location</li>
+<li>If the <strong>Upload File</strong> is a <strong>video</strong>: clicking the <strong>Insert/edit media</strong> icon on the <strong>text editor toolbar</strong> 
+pops a dialog the <strong>clipboard's embed code</strong> can be pasted to <strong>embed</strong> the <strong>video </strong>at the text editor's cursor location</li>
+<li>If the <strong>Upload File</strong> is a <strong>PDF</strong>: clicking the <strong>Embed at cursor</strong> button <strong>embeds</strong> the <strong>PDF</strong> 
+at the text editor's cursor location</li>
 </ul>
 <p>Once embedded into the <strong>Memo</strong> an <strong>image</strong> will display, a <strong>video</strong> appears with playback controls, and a <strong>PDF</strong> 
-appears with the suite of expected <strong>PDF controls</strong>. 
-Of course, these embedded files may be surrounded by explainer text as necessary to progress towards the goals of the <strong>Project</strong>. </p>
-    '''
+appears with the suite of expected <strong>PDF controls</strong>. Of course, these embedded files may be surrounded by explainer text as necessary to progress towards 
+the goals of the <strong>Project</strong>.</p>'''
     return ret
 
 # ---------------------------------------------------------------------------------------
@@ -179,7 +182,7 @@ async def initialize_database_data( ) -> None:
     memo = await crud.get_memo(1)
     if not memo:
         log.info("creating first memo...")
-        first_memo_payload = MemoSchema(title="About", 
+        first_memo_payload = MemoSchema(title="About Project Memos", 
                                         text=memoHtml(), 
                                         status="published", 
                                         access="staff", 

@@ -26,10 +26,20 @@ RUN apt-get update && apt-get install --no-install-recommends -y python3.9 pytho
 RUN useradd --create-home app
 COPY --from=builder-image /home/app/venv /home/app/venv
 
-USER app
-RUN mkdir /home/app/web 
+# USER app
+# RUN mkdir /home/app/web 
+# WORKDIR /home/app/web
+# COPY . .
+#
+RUN mkdir /home/app/web
 WORKDIR /home/app/web
+# copy project
 COPY . .
+# chown all the files to the app user
+RUN chown app:app /home/app/web
+# change to the app user
+USER app
+
 
 EXPOSE 5000
 
