@@ -131,7 +131,7 @@ a.button:hover {
   display: grid;
   min-height: 100vh;
   grid-gap: 0.5em;
-  grid-template-columns: 170px 1fr 150px;
+  grid-template-columns: 170px 1fr 170px;
   grid-template-rows: min-content 1fr 3em;
 }
 

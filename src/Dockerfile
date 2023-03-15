@@ -34,9 +34,10 @@ COPY --from=builder-image /home/app/venv /home/app/venv
 RUN mkdir /home/app/web
 WORKDIR /home/app/web
 # copy project
-COPY . .
+# COPY . .
 # chown all the files to the app user
-RUN chown app:app /home/app/web
+# RUN chown app:app /home/app/web
+COPY --chown=app:app . /home/app/web
 # change to the app user
 USER app
 
