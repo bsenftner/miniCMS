@@ -1,12 +1,26 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Version 1.0, in beta, looking for issues. 
+## Version 1.1, in beta, looking for issues
 
 ### All required functionality is in place for secure project document & associated info management with remote located project members
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
-Features:
+## Now ChatGPT Enabled: what the hell, I couldn't help myself... 
+
+New page endpoints, not yet wired into the rest of the GUI:
+
+  - /newAiExchange/[projectId]
+
+and
+
+  - /aiExchange/[aichatid]
+
+converse with an "AI Attorney" I'm experimenting with; Looking into embedding CA legal case law knowledge
+
+At the moment, the "AI Attorney" is good about being factual, not hallucinating facts or law, restricted to CA law
+
+MiniCMS Features:
 
 - Duel local and prod docker compose setups
   - FastAPI, Postgresql, SQLAlchemy, Pydantic, Databases
@@ -24,7 +38,7 @@ Features:
       - Create new user controls
   - End-user profile pages for end-webmaster to put a GUI for whatever is the purpose behind their using MiniCMS
 - 'Project' content type
-  - A collection of uploaded files, memo and comments only accessible by Project members
+  - A collection of uploaded files, memos, comments and AI chats only accessible by Project members
     - See the uploaded files description in the Memo section
   - A Project overview page for description, members, and project files
   - Project Files are isolated, requiring Project membership and Project published status to access Project Files
@@ -73,6 +87,11 @@ Features:
   - Comments use a reduced functionality embed of TinyMCE editor, but still allows image, video and pdf embeds
   - Comments, once posted, cannot be edited
   - Support for nested comments is in place, just not completed yet, not sure if necessary
+- 'AI Chat' content type
+  - A chat interface to an AI knowledgable of CA Law and prompted to behave as an attorney
+  - Current work has been functionality, and truthfullness, behaving as an attorney
+  - Starting on carried conversational contexts
+  - After that, embedding specific case law knowledge
 - 'Tag' content type
   - for unique term management, employed for multiple uses
     - "system tags" are used for

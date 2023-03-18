@@ -299,7 +299,7 @@ async def check_project_uploads_for_orphans(current_user: UserInDB):
                     #
                     new_status = 'unpublished'
                     if len(project_upload_fileList)==1:
-                        zip_archive_path = config.get_base_path() / 'uploads' / dirname / 'project_' + str(dirname) + 'archive.zip'
+                        zip_archive_path = str(config.get_base_path()) + '/uploads/' + dirname + '/project_' + str(dirname) + 'archive.zip'
                         if project_upload_fileList[0] == zip_archive_path:
                             new_status = 'archived'
                     #

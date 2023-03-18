@@ -39,6 +39,9 @@ email-validator
 mimelib==0.1.1
 python-dateutil==2.8.2
 
+openai==0.27.2
+
+
 # dev
 # basic test framework
 pytest==6.2.3

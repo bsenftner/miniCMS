@@ -33,9 +33,10 @@
 				    <h5 class="g5">Created: {{projectCreated}}</h5>
                 </div>
 			</div>
-            <div id="membersTop">
-                <h2>Project members:</h2>
-            </div>
+			<div class="twoColumns"  id="membersTop">
+				<h2 class="twoCols0">Project members:</h2>
+				<a href="#" class="button twoCols1" onclick="ToggleProjectMemberSet()">Show / Hide Project Members</a>
+			</div>
             <div id="projectMembersHeader">
                 <div class="divProjMembershipGridParent">
                     <div class="ProjMembershipGrid0">
@@ -68,9 +69,11 @@
 				<h2 class="twoCols0">Project Memos:</h2>
 				<a href="#" class="button twoCols1" id="newMemoBttn" onclick="NewProjectMemo()">New Project Memo</a>
 			</div>
-            {% for m in memos %} 
-                <h3><a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a></h3>
-            {% endfor %}
+			<div id="projectMemoList">
+				{% for m in memos %} 
+					<h3><a href="/memoPage/{{ m.memoid }}">{{ m.title }}</a></h3>
+				{% endfor %}
+			</div>
 		</main>
 
 		{# the right sidebar, gets filled by page_init() #}
@@ -103,7 +106,8 @@
 		//
 		function page_init() {
 
-			ToggleUploadDownloadSet()
+			ToggleProjectMemberSet();
+			ToggleUploadDownloadSet();
 
 			const access_token = localStorage.getItem('token');
 			if (typeof access_token !== 'undefined') {
@@ -169,6 +173,23 @@
 			}
 		}
                 
+		// called when user clicks the "Show / Hide Project Members" button
+		function ToggleProjectMemberSet() {
+			const toggle = (e) => {
+				if (e.style.display === "none") {
+					e.style.display = "block";
+				  } else {
+					e.style.display = "none";
+				  }
+			};
+
+			let elem = document.getElementById("projectMembersHeader");
+			toggle(elem);
+			
+			elem = document.getElementById("projectMembers")
+			toggle(elem);
+		}
+
         // get list of users and populate project membership controls:
 		const get_users = () => {
 			fetch('/users/{{projectTag}}', { // GET endpoint

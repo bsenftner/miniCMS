@@ -212,6 +212,9 @@
 			if (Number("{{ contentPost.memoid }}") > 0) {
 				window.location.href = "/memoPage/{{ contentPost.memoid }}"; 
 			}
+			else if (Number("{{ contentPost.projectid }}") > 0) {
+				window.location.href = "/projectPage/{{ contentPost.projectid }}"; 
+			}
 			else {
 				window.location.href = "/profile"; 
 			}

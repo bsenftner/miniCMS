@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.db import DatabaseMgr, get_database_mgr
-from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video, htmlpages, upload, backups, user_action
+from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video, htmlpages, upload, backups, user_action, aichat
 
 # import sentry_sdk
 
@@ -65,6 +65,9 @@ def create_application() -> FastAPI:
     
     # install the comment router into our app with a prefix & tag too:
     application.include_router(comment.router, prefix="/comment", tags=["comment"])
+    
+    # install the aichat router into our app with a prefix & tag too:
+    application.include_router(aichat.router, prefix="/aichat", tags=["aichat"])
 
     # install the video router into our app with a prefix & tag too:
     application.include_router(user_action.router, prefix="/user_action", tags=["user_action"])

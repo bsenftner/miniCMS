@@ -42,6 +42,7 @@
                 
                 <div id="membersTop">
                     <h2>Project members:</h2>
+                    <a href="#" class="button g5" onclick="ToggleProjectMemberSet()">Show / Hide Project Members</a>
                 </div>
                 <div id="projectMembersHeader">
                     <div class="divProjMembershipGridParent">
@@ -162,6 +163,9 @@
         let gUsers = {};    // all users
 
 		function page_init_work(userdata) {
+
+			ToggleProjectMemberSet();
+			ToggleUploadDownloadSet();
 
 			gUser = userdata;
 
@@ -396,6 +400,23 @@
                 UpdateUserRoles( userid, params );
             }
           };
+
+		  // called when user clicks the "Show / Hide Project Members" button
+		function ToggleProjectMemberSet() {
+			const toggle = (e) => {
+				if (e.style.display === "none") {
+					e.style.display = "block";
+				  } else {
+					e.style.display = "none";
+				  }
+			};
+
+			let elem = document.getElementById("projectMembersHeader");
+			toggle(elem);
+			
+			elem = document.getElementById("projectMembers")
+			toggle(elem);
+		}
 
 		function ProjectEditCancel() { 
 			if (Number("{{ contentPost.projectid }}") > 0) {

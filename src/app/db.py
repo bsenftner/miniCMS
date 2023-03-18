@@ -98,6 +98,23 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
         
+        
+        
+        self.aichat_tb = Table(
+            "aichat",
+            self.metadata,
+            Column("aichatid", Integer, primary_key=True, index=True),
+            Column("prompt", String),
+            Column("rawReply", String),
+            Column("reply", String),
+            Column("projectid", Integer, ForeignKey("project.projectid")),
+            Column("userid", Integer, ForeignKey("users.userid")),
+            Column("username", String, ForeignKey("users.username")),
+            Column("parent", Integer, default=0, nullable=True),
+            Column("created_date", DateTime, default=func.now(), nullable=False),
+        )
+        
+        
         # tags are used for multiple things. They act as unique identifiers, access fences, and search terms. 
         # User roles are soon to become tags. 
         # Project names become tags, with each memo associated with the project getting that project's tag. 
@@ -165,6 +182,9 @@ class DatabaseMgr:
         
     def get_comment_table(self):
         return self.comment_tb
+        
+    def get_aichat_table(self):
+        return self.aichat_tb
         
     def get_tag_table(self):
         return self.tag_tb

@@ -187,7 +187,7 @@ div#uploadDownloadSet {
   padding-right: 10px;
 }
 
-div#uploadDownloadTop a.g5 {
+div#uploadDownloadTop a.g5, div#membersTop a.g5 {
   float: right;
   margin-top: -60px;
 }
@@ -361,7 +361,7 @@ form#editorForm a.button {
 }
 
 div#mainContent div.ql-editor {
-  background: #eee;
+  background: #eef;
   padding: 5px 10px;
 }
 div#mainContent h5 {
@@ -461,7 +461,12 @@ a.twoCols1  {
   font-size: 16px;
   width: 20em;
   height: 2.4em;
-  margin: 0.5em 0 0 0;
+  margin: 1.25em 0 0 0;
+}
+
+div#projectMemoList {
+  margin-top: 0;
+  margin-left: 2em;
 }
 
 div.fourColumns {
@@ -675,6 +680,6 @@ div#userMsg3 {
 
 div.memolist ul li, div.projectlist ul li {
   list-style-type: none;
-  font-size: 2.35em;
+  font-size: 1.7em;
   font-weight: bold;
 }

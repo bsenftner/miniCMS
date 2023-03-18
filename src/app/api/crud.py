@@ -5,6 +5,7 @@ from sqlalchemy import asc
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
 from app.api.models import MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
 from app.api.models import ProjectSchema, ProjectDB, UserActionCreate, UserActionDB, ProjectFileCreate, ProjectFileDB
+from app.api.models import AiChatCreate, AiChatDB, AiChatCreateResponse
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -725,3 +726,72 @@ async def put_user(id: int, user: UserInDB):
 # -----------------------------------------------------------------------------------------
 # note: there is no user delete, that is accomplished by disabling a user. 
 # A user is disabled by adding the "disabled" to their "roles" db field. 
+
+
+
+
+# -----------------------------------------------------------------------------------------
+# for creating new AI Chat exchanges
+async def post_aiChat(payload: AiChatCreate, rawReply: str, user: UserInDB):
+    
+    log.info(f"post_aiChat: here! got {payload} for user {user.userid}, {user.username}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_aichat_table().insert().values(prompt=payload.prompt, 
+                                                      rawReply=rawReply, 
+                                                      reply=payload.reply, 
+                                                      parent=payload.parent,
+                                                      projectid=payload.projectid,
+                                                      userid=user.userid, 
+                                                      username=user.username)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting AI Chat exchanges:
+async def get_aiChat(aichatid: int) -> AiChatDB:
+    
+    # log.info(f"get_aiChat: getting aichatid {aichatid}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_aichat_table().select().where(aichatid == db_mgr.get_aichat_table().c.aichatid)
+    
+    # log.info(f"get_aiChat: query built...")
+    
+    return await db_mgr.get_db().fetch_one(query=query)
+
+
+# -----------------------------------------------------------------------------------------
+# returns all AiChatDB for a given "conversation":
+async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
+    
+    log.info(f"get_all_project_aiChats: getting ai chats for project with id {projectid}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_aichat_table().select().where(projectid == db_mgr.get_aichat_table().c.projectid)
+    
+    log.info(f"get_all_project_aiChats: query built...")
+    
+    chatList = await db_mgr.get_db().fetch_all(query=query)
+        
+    finalList = []
+    for c in chatList:
+        # aichatid = c.aichatid
+        # log.info(f"get_all_project_aiChats: preping comment with id {aichatid}")
+        aiChatExchange = AiChatDB( aichatid = c.aichatid,
+                                   prompt = c.prompt,
+                                   rawReply = c.reply,
+                                   reply = c.reply,
+                                   parent = c.parent,
+                                   projectid = c.projectid,
+                                   userid = c.userid,
+                                   username = c.username,
+                                   created_date = c.created_date)
+        finalList.append(aiChatExchange)
+            
+    log.info(f"get_all_project_aiChats: finalList {finalList}")
+            
+    return finalList
+
+# note: no update or delete for AI Chat Exchanges - they are "atomic" 

@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     MAIL_PORT: int
     MAIL_SERVER: str
     MAIL_FROM_NAME: str
+    
+    OPENAI_API_KEY: str
 
     # the presence of env_file within this child Config class 
     # tells Pydantic's BaseSettings to load our .env file

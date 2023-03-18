@@ -57,14 +57,18 @@ class ProjectFileDB(ProjectFileCreate):
     created_date: datetime
 
 
-    
+# a comment is a additional note added to a Memo, visible beneath a published Memo 
+# Comments cannot be deleted or edited, but that is not controlled or important here;
+#
+# CommentSchema is used to create new comments
 class CommentSchema(BaseModel):
     text: str
     memoid: int 
     userid: int 
     username: str 
     parent: Union[int,None] 
-    
+#
+# a mirror is the db entry for a comment 
 class CommentDB(BaseModel):
     text: str
     commid: int = Field(index=True)
@@ -73,9 +77,39 @@ class CommentDB(BaseModel):
     username: str = Field(..., foreign_key="UserInDB.userid")
     parent: Union[int,None] = Field(default=None, foreign_key="CommentDB.commid")
     created_date: datetime
-
+#
+# Comment creations return this:
 class CommentResponse(BaseModel):
     commid: int
+    
+
+
+# an AiChat is a Project related Project Member conversation with an OpenAI AI. 
+# Each begins with an AiChatCreate used to sent the end-user prompt/question to the AI, 
+# the AI responds, and the response is stored with the original prompt/question. 
+#
+# AiChatCreate is used to create new comments
+class AiChatCreate(BaseModel):
+    prompt: str
+    reply: str
+    parent: int 
+    projectid: int
+#
+# a mirror of the db entry for an AIChat exchange 
+class AiChatDB(BaseModel):
+    prompt: str
+    rawReply: str
+    reply: str
+    aichatid: int = Field(index=True)
+    parent: Union[int,None]
+    projectid: int = Field(..., foreign_key="ProjectDB.projectid")
+    userid: int = Field(...,foreign_key="UserInDB.userid")
+    username: str = Field(..., foreign_key="UserInDB.userid")
+    created_date: datetime
+#
+# AiChatCreate requests return this when successful:
+class AiChatCreateResponse(BaseModel):
+    aichatid: int
     
     
     

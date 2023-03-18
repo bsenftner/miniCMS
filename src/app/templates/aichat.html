@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/static/index.css">
 
 </head>
-<body onload="slidesInit()">
+<body>
 	<div class="grid">
 		{% include 'common_header.html' %}
 
@@ -22,44 +22,43 @@
 			<div id="mainContent">
 				{# title and post contents, with various controls #}
 				<H2> Project: <a href="#" onclick="ProjectPage()">{{parentName}}</a> </H2>
-				<H1> Memo: {{contentPost.title}} </H1>
-				<div class="ql-editor">
-					{{contentPost.text | safe}}
-				</div>
+				<H1> AI Chat: {{contentPost.aichatid}} </H1>
                 <div class="postMetadata">
 				    <h5 class="g1">Author: {{contentPost.username}}</h5>
-				    <h5 class="g2">Status: {{contentPost.status}}</h5>
-				    <h5 class="g3">Access: {{contentPost.access}}</h5>
-				    <h5 class="g4">Created: {{memoCreated}}</h5>
-				    <h5 class="g5">Updated: {{memoUpdated}}</h5>
-                </div>
-                <div>
-				    <h5>Tags: {{contentPost.tags}}</h5>
+				    <h5 class="g2">Created: {{aichatCreated}}</h5>
+				    <h5 class="g3">Updated: {{aichatUpdated}}</h5>
                 </div>
 			</div>
 
-			<div class="twoColumnsMargined"  id="commentsTop">
-				<h2 class="twoCols0">Comments:</h2>
-				<a href="#" class="button twoCols1" onclick="ToggleCommentEditor()">Show / Hide New Comment Editor</a>
-			</div>
-
-            <div id="existingComments">
-                No comments yet; be the first to comment...!
+			<div id="oldConversationWrapper">
+				<h3>AI conversations you can continue:</h3>
+				<div id="oldConversations"></div>
             </div>
 
-			<div id="commentEditorContainer">
+			<div class="twoColumnsMargined"  id="chatTop">
+				<h2 class="twoCols0">AI Conversation:</h2>
+				<a href="#" class="button twoCols1" onclick="ToggleQueryEditor()">Show / Hide New Question Editor</a>
+			</div>
+
+            <div id="currConversation">
+                No conversation yet. 
+            </div>
+
+			<div id="queryEditorContainer">
+				</br>
 				<form id="editorForm" method="post">
 					<div class="editorContainer">
 						<div id="editor">
-							comment...
+							Write your considered question for <b>the AI</b> here.
 						</div>
 					</div>
 				</form>
-				<a href="#" class="button" onclick="PostComment()">Post Comment</a>
-				<p> Keep comments on topic, referencing either the memo, prior comments, or on topic issues and
-					information relevant to the project. <br/>
-					Note that comments cannot be edited or deleted, so write professionally. 
+				<p> Keep questions on project topics and related issues, including information relevant to the 
+                    project, which may be copied and pasted from project files. (No images or video yet.) </br>
+					This <b>AI</b> has passed the <em>CA Bar Exam</em>, so do not hesitate to ask real questions.
+					<b>Note:</b> questions, once asked, cannot be edited or deleted, so write professionally. 
 				</p>
+				<a href="#" class="button" onclick="PostQuery()">Ask the AI</a>
 			</div>
 
 			<div class="twoColumnsMargined">
@@ -85,8 +84,6 @@
 	</footer>
 	</div>
 
-	{% include 'common_slides.html' %}
-
 	{% include 'common_editStyle.html' %}
 
     <!-- include the TinyMCE editor -->
@@ -96,15 +93,15 @@
 
 		document.addEventListener("DOMContentLoaded", function() {
 			page_init();
-			slidesInit();
-			setTimeout( slidesInit, 3000 );
 		});
 		//
 		gUser = {};
 		//
 		function page_init() {
 
-			ToggleCommentEditor();
+			if ('{{contentPost.aichatid}}' != 'new') {
+				ToggleQueryEditor();
+			}
 			ToggleUploadDownloadSet();
 
 			const access_token = localStorage.getItem('token');
@@ -128,42 +125,8 @@
 						<a href="#" class="button" onclick="Logout()">Logout</a>
 						`;
 
-						let status = "{{contentPost.status}}";
-						if (gUser.userid == '{{ contentPost.userid }}') {
-							// user is author
-							if (status.includes('unpublished')) {
-								// memo is unpublished:
-								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="MemoEdit()">Edit Unpublished Memo</a>';
-	
-							}
-							else if (gUser.roles.includes("admin")) {
-								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="MemoEdit()">Edit Published Memo</a>';
-							}
-						}
-						else if (gUser.roles.includes("admin")) {
-							// user is admin:
-							if (status.includes('unpublished')) {
-								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="MemoEdit()">Edit Unpublished Memo (not your memo)</a>';
-							}
-							else if (status.includes('published')) {
-								document.getElementById("mainContent").innerHTML += 
-									'<a href="#" class="button" onclick="MemoEdit()">Edit Published Memo (not your memo)</a>';
-							}
-						} 
-
-						if (status.includes('unpublished')) {
-							document.getElementById("existingComments").innerHTML = 
-								'<p>Commenting available after memo is published</p>';
-							
-							document.getElementById("commentEditorContainer").style.display = 'none';
-						}
-						else {
-							LoadComments();
-							get_uploads("{{contentPost.projectid}}"); // gets project uploads and populates their place on the project page
-						}
+						LoadAIConversations();
+						get_uploads("{{contentPost.projectid}}"); // gets project uploads and populates their place on the project page
 					}
 					else {
 						// something is wrong, user should not be on this page:
@@ -174,68 +137,110 @@
 			}
 			else {
 				// user is not logged in
-				document.getElementById("commentsTop").style.display = 'none';
-				document.getElementById("existingComments").style.display = 'none';
-				document.getElementById("commentEditorContainer").style.display = 'none';
+				document.getElementById("chatTop").style.display = 'none';
+				document.getElementById("currConversation").style.display = 'none';
+				document.getElementById("queryEditorContainer").style.display = 'none';
 			}
 		}
 
-        // configure the TinyMCE editor for comments:
+        // configure the TinyMCE editor for AI Chat queries:
         tinymce.init({
             selector: '#editor',
 			content_style: "body { font-size: 14pt; font-family: sans-serif; }",
             height: 200,
             convert_urls: false,
-            plugins: 'autolink emoticons image media link lists searchreplace visualblocks wordcount',
+            plugins: 'autolink link lists searchreplace visualblocks wordcount',
             menubar: false,
-            toolbar: 'undo redo | bold italic underline strikethrough | link image media | align | checklist numlist bullist indent outdent | emoticons | removeformat',
+            toolbar: 'undo redo | checklist numlist bullist indent outdent | removeformat',
             });
         
 
-		function LoadComments() {
-			fetch("/comment/memo/{{contentPost.memoid}}", { method: 'GET', headers: {} })
+		function truncate( str, n, useWordBoundary ){
+			if (str.length <= n) { return str; }
+			const subString = str.slice(0, n-1); // the original check
+			return (useWordBoundary ? subString.slice(0, subString.lastIndexOf(" ")) 
+				  					: subString) + "&hellip;";
+		};
+
+		function LoadAIConversations() {
+			fetch("/aichat/project/{{contentPost.projectid}}", { method: 'GET', headers: {} })
 			.then(response => response.json())
 			.then( response =>  {
-				let commList = response;
-				console.log( commList );
+				let chatList = response;
+				console.log( chatList );
 
-				let limit = commList.length;
+				let domain = (new URL(window.location));
+				let count = 0;
+				let limit = chatList.length;
 				if (limit>0) {
-					let commHtml = '';
+					let chatHtml = '';
 					for (let i = 0; i < limit; i++) {
-						let comm = commList[i];
-						commHtml += '<div class="comment">';
-						commHtml += '<div>';
-						commHtml += '<h5>On ';
-						let createTime = new Date(comm.created_date + 'Z');  // the 'Z' says this is UTC 
-						commHtml += createTime.toDateString();
-						commHtml += ' at ';
-						commHtml += createTime.toTimeString();
-						commHtml += ' <b>';
-						commHtml += comm.username;
-						commHtml += '</b> adds:</h5>';
-						commHtml += '</div>';
-						commHtml += comm.text;
-						commHtml += '</div>';
+						let chat = chatList[i];
+						if ((chat.parent != 0) || (chat.aichatid == "{{contentPost.aichatid}}"))
+							continue; 
+
+						let createTime = new Date(chat.created_date + 'Z');  // the 'Z' says this is UTC 
+						let shortPrompt = truncate( chat.prompt, 64 )
+
+						chatHtml += '<div class="aichatExchange">';
+                        chatHtml += '<div>';
+                        chatHtml += '<h5>On ';
+						chatHtml += createTime.toDateString();
+						chatHtml += ' at ';
+						chatHtml += createTime.toTimeString();
+						chatHtml += ' <em>';
+                        chatHtml += chat.username;
+						chatHtml += '</em> asked: </h5>';
+						chatHtml += '</div>';
+						chatHtml += '<a href="' + domain.origin + '/aiExchange/' + chat.aichatid + '">' + shortPrompt + '</a>';
+						chatHtml += '</div>';
+						count++;
 					}
-					document.getElementById("existingComments").innerHTML = commHtml;
+					if (count > 0) {
+						document.getElementById("oldConversations").innerHTML = chatHtml;
+					}
+					else {
+						document.getElementById("oldConversations").innerHTML = "<em>Below is this project's first AI conversation.</em>";
+					}
+
+					chatHtml = '';
+					for (let i = 0; i < limit; i++) {
+						let chat = chatList[i];
+						if ((chat.parent == "{{contentPost.aichatid}}") || (chat.aichatid == "{{contentPost.aichatid}}")) {
+
+							let createTime = new Date(chat.created_date + 'Z');  // the 'Z' says this is UTC 
+
+							chatHtml += '<div class="aichatExchange">';
+							chatHtml += '<div><h5>On ' + createTime.toDateString() + ' at ' + createTime.toTimeString() + ' ';
+							chatHtml += '<em>' + chat.username + '</em>';
+							chatHtml += ' asked: </h5>' + chat.prompt + '</div>';
+							chatHtml += '<div><h5> and <em>the AI</em> answered: </h5>';
+							chatHtml += chat.reply;
+							chatHtml += '</div></div>';
+						}
+					}
+					document.getElementById("currConversation").innerHTML = chatHtml;
 				}
 			});
 		}
 
-		function PostComment() {
+		function PostQuery() {
 			if (gUser.hasOwnProperty('roles')) {
 
 				// Get comment's html content
-				var newCommentHTML = tinymce.get("editor").getContent();
+				let newQuery = tinymce.get("editor").getContent({format : 'text'});
 
-				// post as new comment submission:
+				let parentChat = 0;
+				if ('{{contentPost.aichatid}}' != 'new') {
+					parentChat = '{{contentPost.aichatid}}';
+				}
+
+				// post as new question submission:
 				const params = {
-					"text": newCommentHTML, 
-					"memoid": "{{ contentPost.memoid }}",
-					"userid": gUser.userid,
-					"username": gUser.username,
-					"parent": 0,
+					"prompt": newQuery, 
+					"reply": "",
+					"parent": parentChat,
+					"projectid": "{{ contentPost.projectid }}",
 				};
 
 				const options = {
@@ -246,7 +251,7 @@
 					},
 					body: JSON.stringify( params )  
 				};
-				fetch( '/comment', options )
+				fetch( '/aichat', options )
 					.then( response => response.json() )
 					.then( response => {
 						// Do something with response.
@@ -254,8 +259,10 @@
 						if (response.hasOwnProperty('detail')) {
 							alert( 'Please fix the following and try again: ' + response.detail )
 						}
+						else if (response.hasOwnProperty('aichatid')) {
+							window.location.href = "/aiExchange/" + response.aichatid;
+						}
 						else {
-							// reload the page to see the new comment
 							window.location.reload();
 						}
 					})
@@ -263,7 +270,6 @@
 						// Do something with the error
 						console.log(err) 
 						alert( err )
-						// window.location.href = "/memoPage/{{ contentPost.userid }}";
 					}) 
 			}
 			else {
@@ -274,7 +280,7 @@
 		}
             
 		// called when user clicks the "Show / Hide New Comment Editor" button
-		function ToggleCommentEditor() {
+		function ToggleQueryEditor() {
 			const toggle = (e) => {
 				if (e.style.display === "none") {
 					e.style.display = "block";
@@ -283,15 +289,13 @@
 				  }
 			};
 
-			let elem = document.getElementById("commentEditorContainer");
+			let elem = document.getElementById("queryEditorContainer");
 			toggle(elem);
 		}
 
 		function ProjectPage() { window.location.href = "/projectPage/{{ contentPost.projectid }}"; }
 
 		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
-
-		function MemoEdit() { window.location.href = "/memoEditor/{{ contentPost.memoid }}"; }
 
 		function Login() { window.location.href = "/login"; }
 
