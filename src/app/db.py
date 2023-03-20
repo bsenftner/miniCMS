@@ -112,6 +112,7 @@ class DatabaseMgr:
             Column("username", String, ForeignKey("users.username")),
             Column("parent", Integer, default=0, nullable=True),
             Column("created_date", DateTime, default=func.now(), nullable=False),
+            Column("updated_date", DateTime, default=func.now(), onupdate=func.now(), nullable=False),
         )
         
         

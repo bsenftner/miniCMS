@@ -362,130 +362,6 @@ async def memoPage( request: Request,
     
 # ------------------------------------------------------------------------------------------------------------------
 # serve the requested page thru a Jinja2 template:
-@router.get("/newAiExchange/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def newAichatPage( request: Request, 
-                      projectid: int, 
-                      current_user: User = Depends(get_current_active_user) ):
-    
-    proj, tag = await crud.get_project_and_tag(projectid) 
-    if not proj:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_GET_AICHAT'), 
-                                       f"newAichat, project {projectid}, not found" )
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    if not tag:
-        await crud.rememberUserAction( current_user.userid,  
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_GET_AICHAT'), 
-                                       f"newAichat, project {projectid}, '{proj.name}', Tag not found" )
-        raise HTTPException(status_code=500, detail="Project Tag not found")
-    
-    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
-    if not weAreAllowed:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('WARNING'),
-                                       UserAction.index('FAILED_GET_AICHAT'), 
-                                       f"newAichat, project {projectid}, '{proj.name}', not authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
-    
-    await crud.rememberUserAction( current_user.userid, 
-                                   UserActionLevel.index('NORMAL'),
-                                   UserAction.index('NEW_AICHAT_PAGE'), 
-                                   f"newAichat, project {projectid}" )
-    
-    aichatList = await crud.get_all_project_aiChats(projectid)
-    
-    # returns list of project memos this user has access:
-    memoList = await crud.get_all_project_memos(current_user, projectid)
-    
-     # the app runs in UTC local time:
-    created_date = datetime.now()
-    localCreated_dt = convertDateToLocal( created_date )
-    localUpdated_dt = convertDateToLocal( created_date )
-    
-    return TEMPLATES.TemplateResponse(
-        "aichat.html",
-        { "request": request, 
-          "contentPost": { "aichatid":"new", "username":current_user.username, "projectid": projectid }, 
-          "aichatList": aichatList,
-          "parentName": proj.name,
-          "aichatCreated": localCreated_dt.strftime("%c"),
-          "aichatUpdated": localUpdated_dt.strftime("%c"),
-          "frags": FRAGS, 
-          "access": 'private',
-          "memos": memoList,
-        }, 
-        # 'access' key is for template left sidebar construction
-    )
-    
-# ------------------------------------------------------------------------------------------------------------------
-# serve the requested page thru a Jinja2 template:
-@router.get("/aiExchange/{aichatid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
-async def aichatPage( request: Request, 
-                      aichatid: int, 
-                      current_user: User = Depends(get_current_active_user) ):
-    
-    aichat: AiChatDB = await crud.get_aiChat(aichatid)
-    if not aichat:
-        raise HTTPException(status_code=404, detail="AiChat not found")
-    
-    proj, tag = await crud.get_project_and_tag(aichat.projectid) 
-    if not proj:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_GET_AICHAT'), 
-                                       f"aichat, project {aichat.projectid}, not found" )
-        raise HTTPException(status_code=404, detail="Project not found")
-    
-    if not tag:
-        await crud.rememberUserAction( current_user.userid,  
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_GET_AICHAT'), 
-                                       f"aichat, project {proj.projectid}, '{proj.name}', Tag not found" )
-        raise HTTPException(status_code=500, detail="Project Tag not found")
-    
-    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
-    if not weAreAllowed:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('WARNING'),
-                                       UserAction.index('FAILED_GET_AICHAT'), 
-                                       f"aichat, project {proj.projectid}, '{proj.name}', not authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
-    
-    await crud.rememberUserAction( current_user.userid, 
-                                   UserActionLevel.index('NORMAL'),
-                                   UserAction.index('NEW_AICHAT_PAGE'), 
-                                   f"aichat, project {proj.projectid}, chat {aichat.aichatid}" )
-    
-    aichatList = await crud.get_all_project_aiChats(proj.projectid)
-    
-    # returns list of project memos this user has access:
-    memoList = await crud.get_all_project_memos(current_user, proj.projectid)
-    
-     # the app runs in UTC local time:
-    created_date = aichat.created_date
-    localCreated_dt = convertDateToLocal( created_date )
-    localUpdated_dt = convertDateToLocal( created_date )
-    
-    return TEMPLATES.TemplateResponse(
-        "aichat.html",
-        { "request": request, 
-          "contentPost": aichat, 
-          "aichatList": aichatList,
-          "parentName": proj.name,
-          "aichatCreated": localCreated_dt.strftime("%c"),
-          "aichatUpdated": localUpdated_dt.strftime("%c"),
-          "frags": FRAGS, 
-          "access": 'private',
-          "memos": memoList,
-        }, 
-        # 'access' key is for template left sidebar construction
-    )
-    
-# ------------------------------------------------------------------------------------------------------------------
-# serve the requested page thru a Jinja2 template:
 @router.get("/publicmemo/{id}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def memoPublic( request: Request, id: int  ):
     
@@ -643,6 +519,132 @@ async def newMemoEditor( request: Request,
           "frags": FRAGS, 
           "access": 'private', 
           "memos": memoList
+        }, 
+        # 'access' key is for template left sidebar construction
+    )
+    
+
+# ------------------------------------------------------------------------------------------------------------------
+# serve the requested page thru a Jinja2 template:
+@router.get("/newAiExchange/{projectid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def newAichatPage( request: Request, 
+                      projectid: int, 
+                      current_user: User = Depends(get_current_active_user) ):
+    
+    proj, tag = await crud.get_project_and_tag(projectid) 
+    if not proj:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_AICHAT'), 
+                                       f"newAichat, project {projectid}, not found" )
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if not tag:
+        await crud.rememberUserAction( current_user.userid,  
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_AICHAT'), 
+                                       f"newAichat, project {projectid}, '{proj.name}', Tag not found" )
+        raise HTTPException(status_code=500, detail="Project Tag not found")
+    
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
+    if not weAreAllowed:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_AICHAT'), 
+                                       f"newAichat, project {projectid}, '{proj.name}', not authorized" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('NEW_AICHAT_PAGE'), 
+                                   f"newAichat, project {projectid}" )
+    
+    aichatList = await crud.get_all_project_aiChats(projectid)
+    
+    # returns list of project memos this user has access:
+    memoList = await crud.get_all_project_memos(current_user, projectid)
+    
+     # the app runs in UTC local time:
+    created_date = datetime.now()
+    localCreated_dt = convertDateToLocal( created_date )
+    localUpdated_dt = convertDateToLocal( created_date )
+    
+    return TEMPLATES.TemplateResponse(
+        "aichat.html",
+        { "request": request, 
+          "contentPost": { "aichatid":"new", "username":current_user.username, "projectid": projectid }, 
+          "aichatList": aichatList,
+          "parentName": proj.name,
+          "aichatCreated": localCreated_dt.strftime("%c"),
+          "aichatUpdated": localUpdated_dt.strftime("%c"),
+          "frags": FRAGS, 
+          "access": 'private',
+          "memos": memoList,
+        }, 
+        # 'access' key is for template left sidebar construction
+    )
+    
+# ------------------------------------------------------------------------------------------------------------------
+# serve the requested page thru a Jinja2 template:
+@router.get("/aiExchange/{aichatid}", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
+async def aichatPage( request: Request, 
+                      aichatid: int, 
+                      current_user: User = Depends(get_current_active_user) ):
+    
+    aichat: AiChatDB = await crud.get_aiChat(aichatid)
+    if not aichat:
+        raise HTTPException(status_code=404, detail="AiChat not found")
+    
+    proj, tag = await crud.get_project_and_tag(aichat.projectid) 
+    if not proj:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_AICHAT'), 
+                                       f"aichat, project {aichat.projectid}, not found" )
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if not tag:
+        await crud.rememberUserAction( current_user.userid,  
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_GET_AICHAT'), 
+                                       f"aichat, project {proj.projectid}, '{proj.name}', Tag not found" )
+        raise HTTPException(status_code=500, detail="Project Tag not found")
+    
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
+    if not weAreAllowed:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_GET_AICHAT'), 
+                                       f"aichat, project {proj.projectid}, '{proj.name}', not authorized" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
+    
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('NEW_AICHAT_PAGE'), 
+                                   f"aichat, project {proj.projectid}, chat {aichat.aichatid}" )
+    
+    aichatList = await crud.get_all_project_aiChats(proj.projectid)
+    
+    # returns list of project memos this user has access:
+    memoList = await crud.get_all_project_memos(current_user, proj.projectid)
+    
+     # the app runs in UTC local time:
+    created_date = aichat.created_date
+    updated_date = aichat.updated_date
+    localCreated_dt = convertDateToLocal( created_date )
+    localUpdated_dt = convertDateToLocal( updated_date )
+    
+    return TEMPLATES.TemplateResponse(
+        "aichat.html",
+        { "request": request, 
+          "contentPost": aichat, 
+          "aichatList": aichatList,
+          "parentName": proj.name,
+          "aichatCreated": localCreated_dt.strftime("%c"),
+          "aichatUpdated": localUpdated_dt.strftime("%c"),
+          "frags": FRAGS, 
+          "access": 'private',
+          "memos": memoList,
         }, 
         # 'access' key is for template left sidebar construction
     )

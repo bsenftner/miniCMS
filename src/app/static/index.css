@@ -158,6 +158,11 @@ main {
   border: 2px solid #bababa;
 }
 
+#aiGotoWrapper {
+  padding: 10px;
+  border: 2px solid #bababa;
+}
+
 div#main-content {
   box-sizing: border-box;
   font-family: Helvetica, Arial, sans-serif;

@@ -30,13 +30,15 @@
                 </div>
 			</div>
 
-			<div id="oldConversationWrapper">
-				<h3>AI conversations you can continue:</h3>
+			<div class="twoColumnsMargined"  id="oldConversationWrapper">
+				<h2 class="twoCols0">AI conversations you can continue:</h2>
+				<a href="#" class="button twoCols1" onclick="ToggleOldConversations()">Show / Hide Old conversations</a>
+				
 				<div id="oldConversations"></div>
-            </div>
+			</div>
 
 			<div class="twoColumnsMargined"  id="chatTop">
-				<h2 class="twoCols0">AI Conversation:</h2>
+				<h2 class="twoCols0">Curr AI Conversation:</h2>
 				<a href="#" class="button twoCols1" onclick="ToggleQueryEditor()">Show / Hide New Question Editor</a>
 			</div>
 
@@ -67,7 +69,10 @@
 			</div>
 			<script>gUpDownProjId = "{{contentPost.projectid}}";</script>
 			{% include 'common_uploadDownloadSet.html' %}
-
+			<p>
+				For higher quality answers, information and details may be copied from <b>Project Files</b> and pasted into your questions to <b>the AI</b>.
+				Supply as many details as are known about the legal situation and questions as possible. 
+			</p>
 		</main>
 
 		{# the right sidebar #}
@@ -176,7 +181,7 @@
 					let chatHtml = '';
 					for (let i = 0; i < limit; i++) {
 						let chat = chatList[i];
-						if ((chat.parent != 0) || (chat.aichatid == "{{contentPost.aichatid}}"))
+						if (chat.aichatid == "{{contentPost.aichatid}}")
 							continue; 
 
 						let createTime = new Date(chat.created_date + 'Z');  // the 'Z' says this is UTC 
@@ -206,7 +211,7 @@
 					chatHtml = '';
 					for (let i = 0; i < limit; i++) {
 						let chat = chatList[i];
-						if ((chat.parent == "{{contentPost.aichatid}}") || (chat.aichatid == "{{contentPost.aichatid}}")) {
+						if (chat.aichatid == "{{contentPost.aichatid}}") {
 
 							let createTime = new Date(chat.created_date + 'Z');  // the 'Z' says this is UTC 
 
@@ -227,19 +232,18 @@
 		function PostQuery() {
 			if (gUser.hasOwnProperty('roles')) {
 
-				// Get comment's html content
-				let newQuery = tinymce.get("editor").getContent({format : 'text'});
-
-				let parentChat = 0;
 				if ('{{contentPost.aichatid}}' != 'new') {
-					parentChat = '{{contentPost.aichatid}}';
+					PutQuery();
+					return;
 				}
+
+				// Get question
+				let newQuery = tinymce.get("editor").getContent({format : 'text'});
 
 				// post as new question submission:
 				const params = {
 					"prompt": newQuery, 
 					"reply": "",
-					"parent": parentChat,
 					"projectid": "{{ contentPost.projectid }}",
 				};
 
@@ -279,18 +283,62 @@
 			}
 		}
             
+		function PutQuery() {
+			// Get question
+			let newQuery = tinymce.get("editor").getContent({format : 'text'});
+
+			const someData = { "text": newQuery }
+			//
+			const options = {
+				credentials: 'include',
+				method: 'PUT', // Method itself
+				headers: {
+				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify(someData) // We send data in JSON format
+			}
+			//
+			// make the HTTP put request using fetch api
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/aichat/{{ contentPost.aichatid }}';
+			fetch(furl, options) 
+			// .then(response => response.json())
+			.then(response => 
+			{
+				if (response.ok) {
+					window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+				}
+				else {
+					alert( 'Problem updating conversation.' )
+				}
+			}) 
+			.catch(err => {
+				// Do something with the error
+				console.log(err) 
+				alert( err )
+			}) 
+		}
+
+		const toggleElem = (e) => {
+			if (e.style.display === "none") {
+				e.style.display = "block";
+			  } else {
+				e.style.display = "none";
+			  }
+		};
+
 		// called when user clicks the "Show / Hide New Comment Editor" button
 		function ToggleQueryEditor() {
-			const toggle = (e) => {
-				if (e.style.display === "none") {
-					e.style.display = "block";
-				  } else {
-					e.style.display = "none";
-				  }
-			};
-
 			let elem = document.getElementById("queryEditorContainer");
-			toggle(elem);
+			toggleElem(elem);
+		}
+
+		// called when user clicks the "Show / Hide old conversations" button
+		function ToggleOldConversations() {
+			let elem = document.getElementById("oldConversations");
+			toggleElem(elem);
 		}
 
 		function ProjectPage() { window.location.href = "/projectPage/{{ contentPost.projectid }}"; }

@@ -719,7 +719,7 @@ async def put_user(id: int, user: UserInDB):
                  email=user.email,
                  roles=user.roles
                ).returning(db_mgr.get_users_table().c.userid)
-        .returning(db_mgr.get_users_table().c.userid)
+        # .returning(db_mgr.get_users_table().c.userid)
     )
     return await db_mgr.get_db().execute(query=query)
 
@@ -732,16 +732,14 @@ async def put_user(id: int, user: UserInDB):
 
 # -----------------------------------------------------------------------------------------
 # for creating new AI Chat exchanges
-async def post_aiChat(payload: AiChatCreate, rawReply: str, user: UserInDB):
+async def post_aiChat(payload: AiChatCreate, user: UserInDB):
     
     log.info(f"post_aiChat: here! got {payload} for user {user.userid}, {user.username}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
     query = db_mgr.get_aichat_table().insert().values(prompt=payload.prompt, 
-                                                      rawReply=rawReply, 
                                                       reply=payload.reply, 
-                                                      parent=payload.parent,
                                                       projectid=payload.projectid,
                                                       userid=user.userid, 
                                                       username=user.username)
@@ -763,10 +761,10 @@ async def get_aiChat(aichatid: int) -> AiChatDB:
 
 
 # -----------------------------------------------------------------------------------------
-# returns all AiChatDB for a given "conversation":
+# returns all AiChatDB for a given project:
 async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
     
-    log.info(f"get_all_project_aiChats: getting ai chats for project with id {projectid}")
+    # log.info(f"get_all_project_aiChats: getting ai chats for project with id {projectid}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_aichat_table().select().where(projectid == db_mgr.get_aichat_table().c.projectid)
@@ -787,11 +785,60 @@ async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
                                    projectid = c.projectid,
                                    userid = c.userid,
                                    username = c.username,
-                                   created_date = c.created_date)
+                                   created_date = c.created_date,
+                                   updated_date = c.updated_date)
         finalList.append(aiChatExchange)
             
-    log.info(f"get_all_project_aiChats: finalList {finalList}")
+    # log.info(f"get_all_project_aiChats: finalList {finalList}")
             
     return finalList
 
-# note: no update or delete for AI Chat Exchanges - they are "atomic" 
+# -----------------------------------------------------------------------------------------
+# returns all AiChatDB for a given "conversation":
+async def get_all_conversation_aiChats(projectid: int, aichatid: int) -> List[AiChatDB]:
+    
+    log.info(f"get_all_conversation_aiChats: getting ai chats for aichatid {aichatid}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_aichat_table().select().where(projectid == db_mgr.get_aichat_table().c.projectid)
+    
+    log.info(f"get_all_conversation_aiChats: query built...")
+    
+    chatList = await db_mgr.get_db().fetch_all(query=query)
+        
+    finalList = []
+    for c in chatList:
+        aichatid = c.aichatid
+        parent = c.parent
+        if c.aichatid == aichatid or c.parent == aichatid:
+            # log.info(f"get_all_conversation_aiChats: preping comment with id {aichatid}")
+            aiChatExchange = AiChatDB( aichatid = c.aichatid,
+                                       prompt = c.prompt,
+                                       rawReply = c.reply,
+                                       reply = c.reply,
+                                       parent = c.parent,
+                                       projectid = c.projectid,
+                                       userid = c.userid,
+                                       username = c.username,
+                                       created_date = c.created_date)
+            finalList.append(aiChatExchange)
+            
+    log.info(f"get_all_conversation_aiChats: finalList {finalList}")
+            
+    return finalList
+
+# -----------------------------------------------------------------------------------------
+# update an AiChatDB. 
+async def put_aichat(aichat: AiChatDB):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = (
+        db_mgr.get_aichat_table()
+        .update()
+        .where(aichat.aichatid == db_mgr.get_aichat_table().c.aichatid)
+        .values( prompt = aichat.prompt,
+                 reply = aichat.reply ).returning(db_mgr.get_aichat_table().c.aichatid)
+        # .returning(db_mgr.get_users_table().c.userid)
+    )
+    return await db_mgr.get_db().execute(query=query)
+
+# note: no delete for AI Chat Exchanges 

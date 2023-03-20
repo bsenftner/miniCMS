@@ -8,7 +8,7 @@
 
 ## Now ChatGPT Enabled: what the hell, I couldn't help myself... 
 
-New page endpoints, not yet wired into the rest of the GUI:
+New page endpoints, available from a Project page:
 
   - /newAiExchange/[projectId]
 
@@ -114,7 +114,11 @@ Soon those will get attention.
 
 ![webpage screen shot](/src/app/static/MiniCMS-project.jpg)
 
-A Project page showing the project description (top), members, uploaded files, and memo links
+A Project page showing the project description (top), members, uploaded files, memo links, and the AI Attorney access
+
+![webpage screen shot](/src/app/static/MiniCMS-aiAttorney.jpg)
+
+The experimental AI Attorney page; it carries extened conversations with CA legal knowledge.
 
 ![webpage screen shot](/src/app/static/MiniCMS-richEditor.jpg)
 
