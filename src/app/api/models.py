@@ -92,12 +92,14 @@ class CommentResponse(BaseModel):
 class AiChatCreate(BaseModel):
     prompt: str
     reply: str
+    model: str
     projectid: int
 #
 # a mirror of the db entry for an AIChat exchange 
 class AiChatDB(BaseModel):
     prompt: str
     reply: str
+    model: str
     aichatid: int = Field(index=True)
     projectid: int = Field(..., foreign_key="ProjectDB.projectid")
     userid: int = Field(...,foreign_key="UserInDB.userid")

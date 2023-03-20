@@ -22,7 +22,7 @@
 			<div id="mainContent">
 				{# title and post contents, with various controls #}
 				<H2> Project: <a href="#" onclick="ProjectPage()">{{parentName}}</a> </H2>
-				<H1> AI Chat: {{contentPost.aichatid}} </H1>
+				<H1> AI Attorney: {{contentPost.aichatid}} </H1>
                 <div class="postMetadata">
 				    <h5 class="g1">Author: {{contentPost.username}}</h5>
 				    <h5 class="g2">Created: {{aichatCreated}}</h5>
@@ -33,18 +33,19 @@
 			<div class="twoColumnsMargined"  id="oldConversationWrapper">
 				<h2 class="twoCols0">AI conversations you can continue:</h2>
 				<a href="#" class="button twoCols1" onclick="ToggleOldConversations()">Show / Hide Old conversations</a>
-				
 				<div id="oldConversations"></div>
 			</div>
+
+			<div id="newChatDiv"></div>
 
 			<div class="twoColumnsMargined"  id="chatTop">
 				<h2 class="twoCols0">Curr AI Conversation:</h2>
 				<a href="#" class="button twoCols1" onclick="ToggleQueryEditor()">Show / Hide New Question Editor</a>
 			</div>
 
-            <div id="currConversation">
-                No conversation yet. 
-            </div>
+			<div id="currConversation">
+				No conversation yet. 
+			</div>
 
 			<div id="queryEditorContainer">
 				</br>
@@ -56,7 +57,7 @@
 					</div>
 				</form>
 				<p> Keep questions on project topics and related issues, including information relevant to the 
-                    project, which may be copied and pasted from project files. (No images or video yet.) </br>
+					project, which may be copied and pasted from project files. (No images or video yet.) </br>
 					This <b>AI</b> has passed the <em>CA Bar Exam</em>, so do not hesitate to ask real questions.
 					<b>Note:</b> questions, once asked, cannot be edited or deleted, so write professionally. 
 				</p>
@@ -106,6 +107,8 @@
 
 			if ('{{contentPost.aichatid}}' != 'new') {
 				ToggleQueryEditor();
+				document.getElementById("newChatDiv").innerHTML =
+					'</br><a href="#" class="button" onclick="NewAiChat()">Start new AI Attorney conversation</a></br>';
 			}
 			ToggleUploadDownloadSet();
 
@@ -244,6 +247,7 @@
 				const params = {
 					"prompt": newQuery, 
 					"reply": "",
+					"model": "gpt-3.5-turbo",
 					"projectid": "{{ contentPost.projectid }}",
 				};
 
@@ -344,6 +348,8 @@
 		function ProjectPage() { window.location.href = "/projectPage/{{ contentPost.projectid }}"; }
 
 		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
+
+		function NewAiChat() { window.location.href = '/newAiExchange/{{ contentPost.projectid }}'; }
 
 		function Login() { window.location.href = "/login"; }
 

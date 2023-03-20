@@ -105,12 +105,11 @@ class DatabaseMgr:
             self.metadata,
             Column("aichatid", Integer, primary_key=True, index=True),
             Column("prompt", String),
-            Column("rawReply", String),
             Column("reply", String),
+            Column("model", String),
             Column("projectid", Integer, ForeignKey("project.projectid")),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("username", String, ForeignKey("users.username")),
-            Column("parent", Integer, default=0, nullable=True),
             Column("created_date", DateTime, default=func.now(), nullable=False),
             Column("updated_date", DateTime, default=func.now(), onupdate=func.now(), nullable=False),
         )

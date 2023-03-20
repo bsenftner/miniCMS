@@ -740,6 +740,7 @@ async def post_aiChat(payload: AiChatCreate, user: UserInDB):
     # Creates a SQLAlchemy insert object expression query
     query = db_mgr.get_aichat_table().insert().values(prompt=payload.prompt, 
                                                       reply=payload.reply, 
+                                                      model=payload.model, 
                                                       projectid=payload.projectid,
                                                       userid=user.userid, 
                                                       username=user.username)
@@ -779,9 +780,8 @@ async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
         # log.info(f"get_all_project_aiChats: preping comment with id {aichatid}")
         aiChatExchange = AiChatDB( aichatid = c.aichatid,
                                    prompt = c.prompt,
-                                   rawReply = c.reply,
                                    reply = c.reply,
-                                   parent = c.parent,
+                                   model = c.model,
                                    projectid = c.projectid,
                                    userid = c.userid,
                                    username = c.username,
@@ -814,9 +814,8 @@ async def get_all_conversation_aiChats(projectid: int, aichatid: int) -> List[Ai
             # log.info(f"get_all_conversation_aiChats: preping comment with id {aichatid}")
             aiChatExchange = AiChatDB( aichatid = c.aichatid,
                                        prompt = c.prompt,
-                                       rawReply = c.reply,
                                        reply = c.reply,
-                                       parent = c.parent,
+                                       model = c.model,
                                        projectid = c.projectid,
                                        userid = c.userid,
                                        username = c.username,
@@ -837,7 +836,6 @@ async def put_aichat(aichat: AiChatDB):
         .where(aichat.aichatid == db_mgr.get_aichat_table().c.aichatid)
         .values( prompt = aichat.prompt,
                  reply = aichat.reply ).returning(db_mgr.get_aichat_table().c.aichatid)
-        # .returning(db_mgr.get_users_table().c.userid)
     )
     return await db_mgr.get_db().execute(query=query)
 
