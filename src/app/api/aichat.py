@@ -4,20 +4,86 @@
 from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
+from typing import List
 from app.api.users import get_current_active_user, user_has_role
 from app.api.user_action import UserAction, UserActionLevel
 from app.api.models import UserInDB, AiChatDB, AiChatCreate, AiChatCreateResponse, ProjectDB, TagDB, basicTextPayload
 
-from typing import List
-
 from app.config import log, get_settings
 import json
 
+import asyncio
+import openai
+
+# ---------------------------------------------------------------------------------------
+
 router = APIRouter()
 
-import openai
 openai.api_key = get_settings().OPENAI_API_KEY
 
+# create an asyncio fifo queue:
+fifo_queue = asyncio.Queue(maxsize=0)
+
+# ---------------------------------------------------------------------------------------
+# the asyncio worker:
+async def asyncio_fifo_worker():
+    log.info("Starting asyncio_fifo_worker")
+    while True:
+        job = await fifo_queue.get()
+        log.info(f"asyncio_fifo_worker: job: {job})")
+        log.info(f"asyncio_fifo_worker: (size of remaining queue: {fifo_queue.qsize()})")
+        await job['runner']( job['param'] )
+
+
+# ----------------------------------------------------------------------------------------------
+# new communication
+async def OpenAI_communication( aichat: AiChatDB ):
+    
+    log.info(f"OpenAI_communication: prompt '{aichat.prompt}'")
+    
+    prePrompt = '''You are Dr. Ernest, a bilingual English and Spanish attorney and CA Law Professor. 
+    You work for the Gloria Martinez Law Group, a Sacramento Immigration Law firm. 
+    You are meeting a potential client whom is seeking law advice. 
+    You want them to hire the firm. 
+    You only answer truthfully. 
+    If multiple options exist for the client to solve their issue, explain the client's options. 
+    If you do not have an answer, say "I do not know".
+    
+    '''
+    
+    aiResponse = None
+    if aichat.model=="text-davinci-003":        
+        aiResponse = openai.Completion.create(model=aichat.model, 
+                                              prompt= prePrompt + " \n" + aichat.prompt,
+                                              temperature=0,
+                                              max_tokens=900,
+                                              top_p=1,
+                                              frequency_penalty=0.0,
+                                              presence_penalty=0.0,
+                                        )["choices"][0]["text"].strip(" \n")
+    
+    elif aichat.model=="gpt-3.5-turbo":
+        aiResponse = openai.ChatCompletion.create( model=aichat.model,
+                                                   messages=[ {"role": "system", "content": prePrompt },
+                                                              {"role": "user", "content": aichat.prompt } ],
+                                                   temperature=0,
+                                                   max_tokens=900,
+                                                   top_p=1,
+                                                   frequency_penalty=0.0,
+                                                   presence_penalty=0.0,
+                                                )['choices'][0]['message']['content']
+    
+    aichat.reply = aiResponse 
+    
+    log.info(f"OpenAI_communication: reply '{aichat.reply}'")
+    
+    retVal = await crud.put_aichat( aichat )
+    
+    await crud.rememberUserAction( aichat.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('UPDATE_AICHAT'), 
+                                   f"aiChat {retVal} updated in coroutine" )
+        
 # ----------------------------------------------------------------------------------------------
 # declare a POST endpoint on the root 
 @router.post("/", response_model=AiChatCreateResponse, status_code=201)
@@ -49,39 +115,10 @@ async def create_aiChatExchange(payload: AiChatCreate,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                             detail="Not Authorized to create AI Chats for project.")
     
-    prePrompt = '''You are Dr. Ernest, a bilingual English and Spanish attorney and CA Law Professor. 
-    You work for the Gloria Martinez Law Group, a Sacramento Immigration Law firm. 
-    You are meeting a potential client whom is seeking law advice. 
-    You want them to hire the firm. 
-    You only answer truthfully. 
-    If multiple options exist for the client to solve their issue, explain the client's options. 
-    If you do not have an answer, say "I do not know".
-    
-    '''
-    
-    aiResponse = None
     if payload.model=="text-davinci-003":
-        finalPrompt = prePrompt
-        finalPrompt += payload.prompt       # add in user's question
-        
-        log.info(f"create_aiChatExchange: finalPrompt '{finalPrompt}'")
-    
-        aiResponse = openai.Completion.create(model=payload.model, 
-                                              prompt=finalPrompt,
-                                              temperature=0,
-                                              max_tokens=900,
-                                              top_p=1,
-                                              frequency_penalty=0.0,
-                                              presence_penalty=0.0,
-                                            )["choices"][0]["text"].strip(" \n")
-    
+        pass 
     elif payload.model=="gpt-3.5-turbo":
-        aiResponse = openai.ChatCompletion.create( model=payload.model,
-                                                   messages=[
-                                                        {"role": "system", "content": prePrompt },
-                                                        {"role": "user", "content": payload.prompt }
-                                                   ]
-                                                )['choices'][0]['message']['content']
+        pass
     else:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
@@ -90,18 +127,18 @@ async def create_aiChatExchange(payload: AiChatCreate,
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
                             detail=f"Unknown or unsupported model '{payload.model}'")
         
-    payload.reply = aiResponse 
-    #
-    log.info(f"create_aiChatExchange: reply '{payload.reply}'")
-    
     aichatid = await crud.post_aiChat(payload, current_user)
-    
+    #
     log.info(f"create_aiChatExchange: aichatid '{aichatid}'")
-
+    #
     await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('POST_NEW_AICHAT'), 
                                    f"aichatid {aichatid}" )
+    #
+    aichat: AiChatDB = await crud.get_aiChat( aichatid )
+    
+    await fifo_queue.put({ "runner": OpenAI_communication, "param": aichat}) 
     
     return { "aichatid": aichatid }
 
@@ -227,48 +264,18 @@ async def update_aiChatExchange(payload: basicTextPayload,       # a new questio
                                        UserAction.index('FAILED_UPDATE_AICHAT'), 
                                        "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
-    
-    if aichat.model=="text-davinci-003":
-        newPrompt = aichat.prompt + " \n" + aichat.reply + "\n" + payload.text
-        
-        log.info(f"update_aiChatExchange: newPrompt '{newPrompt}'")
-        
-        aiResponse = openai.Completion.create(model=aichat.model, 
-                                              prompt=newPrompt,
-                                              temperature=0,
-                                              max_tokens=900,
-                                              top_p=1,
-                                              frequency_penalty=0.0,
-                                              presence_penalty=0.0,
-                                        )["choices"][0]["text"].strip(" \n")
-    
-    elif aichat.model=="gpt-3.5-turbo":
-        prePrompt = aichat.prompt + " \n" + aichat.reply
-        aiResponse = openai.ChatCompletion.create( model=aichat.model,
-                                                   messages=[
-                                                        {"role": "system", "content": prePrompt },
-                                                        {"role": "user", "content": payload.text }
-                                                   ]
-                                                )['choices'][0]['message']['content']
-    else:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('WARNING'),
-                                       UserAction.index('FAILED_UPDATE_AICHAT'), 
-                                       f"Unknown or unsupported model '{aichat.model}'" )
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
-                            detail=f"Unknown or unsupported model '{aichat.model}'")
         
     aichat.prompt = aichat.prompt + "<br><br>" + aichat.reply + "<br><br>" + payload.text
     
-    aichat.reply = aiResponse 
+    aichat.reply = '' 
     
-    log.info(f"update_aiChatExchange: reply '{aichat.reply}'")
-    
-    retVal = await crud.put_aichat( aichat )
+    retVal = await crud.put_aichat( aichat ) 
     
     await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('UPDATE_AICHAT'), 
-                                   f"aiChat {retVal} updated" )
+                                   f"aiChat {retVal} updated in put" )
+    
+    await fifo_queue.put({ "runner": OpenAI_communication, "param": aichat})
     
     return retVal

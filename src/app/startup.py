@@ -5,6 +5,9 @@ from app.api.upload import check_project_uploads_for_orphans
 
 from app.config import get_settings, log
 
+import asyncio
+from app.api.aichat import asyncio_fifo_worker
+
 import secrets
 import string
 
@@ -58,12 +61,20 @@ appears with the suite of expected <strong>PDF controls</strong>. Of course, the
 the goals of the <strong>Project</strong>.</p>'''
     return ret
 
+
+
+        
+        
 # ---------------------------------------------------------------------------------------
 # Called by app startup event, this ensures site_config exists in the db:
-async def initialize_database_data( ) -> None:
+async def initialize_database_data( app ) -> None:
     
-    settings = get_settings() # application config settings
+    settings = get_settings() # application config settings 
     
+    
+    asyncio.create_task( asyncio_fifo_worker() )  # for handling long running I/O API calls 
+    
+        
     # ensure initial user exists
     log.info("checking initial user exists...")
     adminUser = await crud.get_user_by_id(1)

@@ -101,6 +101,18 @@ img#MiniCMSLogo {
   padding: 0 20px 20px 0;
 }
 
+#wait_spinner {
+  position: fixed;
+  background: url('/static/spinner.gif') no-repeat center center;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+.hide {
+  display: none;
+}
+
 /* button stylines from https://fdossena.com/?p=html5cool/buttons/i.frag */
 a.button {
   display:inline-block;

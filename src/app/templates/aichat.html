@@ -19,6 +19,8 @@
 
 		{# the main content area #}
 		<main>
+			<div id="wait_spinner" class="hide"></div>
+
 			<div id="mainContent">
 				{# title and post contents, with various controls #}
 				<H2> Project: <a href="#" onclick="ProjectPage()">{{parentName}}</a> </H2>
@@ -234,6 +236,8 @@
 
 		function PostQuery() {
 			if (gUser.hasOwnProperty('roles')) {
+
+				document.getElementById("wait_spinner").classList.remove("hide");
 
 				if ('{{contentPost.aichatid}}' != 'new') {
 					PutQuery();

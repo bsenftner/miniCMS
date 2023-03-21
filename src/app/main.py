@@ -2,12 +2,15 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware 
 
+
 from app import config
 from app.db import DatabaseMgr, get_database_mgr
 from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video, htmlpages, upload, backups, user_action, aichat
+from app.config import log
 
 # import sentry_sdk
 
+# ---------------------------------------------------------------------------------------
 # generate our "app"
 def create_application() -> FastAPI:
 
@@ -26,7 +29,6 @@ def create_application() -> FastAPI:
     # enable automatic serving of contents of "static" directory: 
     application.mount("/static", StaticFiles(directory=str(config.get_base_path() / "static")), name="static") 
 
-
     
     
     # isolate these activities into their own file:
@@ -37,13 +39,14 @@ def create_application() -> FastAPI:
     async def startup():
         db_mgr: DatabaseMgr = get_database_mgr()
         await db_mgr.get_db().connect()
-        await initialize_database_data()
+        await initialize_database_data(application)
     #     
     # setup handler for application shutdown that disconnects the db: 
     @application.on_event("shutdown")
     async def shutdown():
         db_mgr: DatabaseMgr = get_database_mgr()
         await db_mgr.get_db().disconnect()
+
 
     # install the ping router into our app:
     application.include_router(ping.router)
