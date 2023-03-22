@@ -63,7 +63,7 @@
 					This <b>AI</b> has passed the <em>CA Bar Exam</em>, so do not hesitate to ask real questions.
 					<b>Note:</b> questions, once asked, cannot be edited or deleted, so write professionally. 
 				</p>
-				<a href="#" class="button" onclick="PostQuery()">Ask the AI</a>
+				<a href="#" class="button" onclick="PostQuery()">Ask the AI Attorney</a>
 			</div>
 
 			<div class="twoColumnsMargined">
@@ -74,7 +74,7 @@
 			{% include 'common_uploadDownloadSet.html' %}
 			<p>
 				For higher quality answers, information and details may be copied from <b>Project Files</b> and pasted into your questions to <b>the AI</b>.
-				Supply as many details as are known about the legal situation and questions as possible. 
+				Supply as many details as are known about the legal situation. 
 			</p>
 		</main>
 
@@ -106,7 +106,7 @@
 		gUser = {};
 		//
 		function page_init() {
-
+			ToggleOldConversations();
 			if ('{{contentPost.aichatid}}' != 'new') {
 				ToggleQueryEditor();
 				document.getElementById("newChatDiv").innerHTML =

@@ -21,11 +21,12 @@ router = APIRouter()
 
 openai.api_key = get_settings().OPENAI_API_KEY
 
+# ---------------------------------------------------------------------------------------
 # create an asyncio fifo queue:
 fifo_queue = asyncio.Queue(maxsize=0)
 
 # ---------------------------------------------------------------------------------------
-# the asyncio worker:
+# asyncio coroutine worker:
 async def asyncio_fifo_worker():
     log.info("Starting asyncio_fifo_worker")
     while True:
@@ -36,7 +37,7 @@ async def asyncio_fifo_worker():
 
 
 # ----------------------------------------------------------------------------------------------
-# new communication
+# new OpenAI communication as coroutine
 async def OpenAI_communication( aichat: AiChatDB ):
     
     log.info(f"OpenAI_communication: prompt '{aichat.prompt}'")
@@ -83,7 +84,50 @@ async def OpenAI_communication( aichat: AiChatDB ):
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('UPDATE_AICHAT'), 
                                    f"aiChat {retVal} updated in coroutine" )
-        
+
+# ----------------------------------------------------------------------------------------------
+# new OpenAI communication as separate thread
+def OpenAI_thread_comm( aichat: AiChatDB ):
+    
+    log.info(f"OpenAI_thread_comm: prompt '{aichat.prompt}'")
+    
+    prePrompt = '''You are Dr. Ernest, a bilingual English and Spanish attorney and CA Law Professor. 
+    You work for the Gloria Martinez Law Group, a Sacramento Immigration Law firm. 
+    You are meeting a potential client whom is seeking law advice. 
+    You want them to hire the firm. 
+    You only answer truthfully. 
+    If multiple options exist for the client to solve their issue, explain the client's options. 
+    If you do not have an answer, say "I do not know".
+    
+    '''
+    
+    aiResponse = None
+    if aichat.model=="text-davinci-003":        
+        aiResponse = openai.Completion.create(model=aichat.model, 
+                                              prompt= prePrompt + " \n" + aichat.prompt,
+                                              temperature=0,
+                                              max_tokens=900,
+                                              top_p=1,
+                                              frequency_penalty=0.0,
+                                              presence_penalty=0.0,
+                                        )["choices"][0]["text"].strip(" \n")
+    
+    elif aichat.model=="gpt-3.5-turbo":
+        aiResponse = openai.ChatCompletion.create( model=aichat.model,
+                                                   messages=[ {"role": "system", "content": prePrompt },
+                                                              {"role": "user", "content": aichat.prompt } ],
+                                                   temperature=0,
+                                                   max_tokens=900,
+                                                   top_p=1,
+                                                   frequency_penalty=0.0,
+                                                   presence_penalty=0.0,
+                                                )['choices'][0]['message']['content']
+    
+    aichat.reply = aiResponse 
+    
+    log.info(f"OpenAI_thread_comm: reply '{aichat.reply}'")
+    
+    
 # ----------------------------------------------------------------------------------------------
 # declare a POST endpoint on the root 
 @router.post("/", response_model=AiChatCreateResponse, status_code=201)
@@ -138,7 +182,19 @@ async def create_aiChatExchange(payload: AiChatCreate,
     #
     aichat: AiChatDB = await crud.get_aiChat( aichatid )
     
-    await fifo_queue.put({ "runner": OpenAI_communication, "param": aichat}) 
+    # this method (commented out) runs with a coroutine:
+    # await fifo_queue.put({ "runner": OpenAI_communication, "param": aichat}) 
+    #
+    # this version runs in a separate thead, requiring the following two lines 
+    # the other method does in its coroutine
+    await asyncio.to_thread(OpenAI_thread_comm, aichat)
+    
+    retVal = await crud.put_aichat( aichat )
+    
+    await crud.rememberUserAction( aichat.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('UPDATE_AICHAT'), 
+                                   f"aiChat {retVal} updated in thread" )
     
     return { "aichatid": aichatid }
 
@@ -276,6 +332,18 @@ async def update_aiChatExchange(payload: basicTextPayload,       # a new questio
                                    UserAction.index('UPDATE_AICHAT'), 
                                    f"aiChat {retVal} updated in put" )
     
-    await fifo_queue.put({ "runner": OpenAI_communication, "param": aichat})
+    # this method (commented out) runs with a coroutine:
+    # await fifo_queue.put({ "runner": OpenAI_communication, "param": aichat})
+    #
+    # this version runs in a separate thead, requiring the following two lines 
+    # the other method does in its coroutine
+    await asyncio.to_thread(OpenAI_thread_comm, aichat )
+    
+    retVal = await crud.put_aichat( aichat )
+    
+    await crud.rememberUserAction( aichat.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('UPDATE_AICHAT'), 
+                                   f"aiChat {retVal} updated in thread" )
     
     return retVal
