@@ -86,10 +86,12 @@ class CommentResponse(BaseModel):
 
 # an AiChat is a Project related Project Member conversation with an OpenAI AI. 
 # Each begins with an AiChatCreate used to sent the end-user prompt/question to the AI, 
-# the AI responds, and the response is stored with the original prompt/question. 
+# The prePrompt field holds conversation context. The prompt field holds the latest   
+# end-user question, and reply holds the most recent AI response. 
 #
 # AiChatCreate is used to create new comments
 class AiChatCreate(BaseModel):
+    prePrompt: str
     prompt: str
     reply: str
     model: str
@@ -97,6 +99,7 @@ class AiChatCreate(BaseModel):
 #
 # a mirror of the db entry for an AIChat exchange 
 class AiChatDB(BaseModel):
+    prePrompt: str
     prompt: str
     reply: str
     model: str

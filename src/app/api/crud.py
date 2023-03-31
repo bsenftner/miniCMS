@@ -738,7 +738,8 @@ async def post_aiChat(payload: AiChatCreate, user: UserInDB):
     
     db_mgr: DatabaseMgr = get_database_mgr()
     # Creates a SQLAlchemy insert object expression query
-    query = db_mgr.get_aichat_table().insert().values(prompt=payload.prompt, 
+    query = db_mgr.get_aichat_table().insert().values(prePrompt=payload.prePrompt, 
+                                                      prompt=payload.prompt, 
                                                       reply=payload.reply, 
                                                       model=payload.model, 
                                                       projectid=payload.projectid,
@@ -779,6 +780,7 @@ async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
         # aichatid = c.aichatid
         # log.info(f"get_all_project_aiChats: preping comment with id {aichatid}")
         aiChatExchange = AiChatDB( aichatid = c.aichatid,
+                                   prePrompt = c.prePrompt,
                                    prompt = c.prompt,
                                    reply = c.reply,
                                    model = c.model,
@@ -813,6 +815,7 @@ async def get_all_conversation_aiChats(projectid: int, aichatid: int) -> List[Ai
         if c.aichatid == aichatid or c.parent == aichatid:
             # log.info(f"get_all_conversation_aiChats: preping comment with id {aichatid}")
             aiChatExchange = AiChatDB( aichatid = c.aichatid,
+                                       prePrompt = c.prePrompt,
                                        prompt = c.prompt,
                                        reply = c.reply,
                                        model = c.model,
@@ -834,7 +837,8 @@ async def put_aichat(aichat: AiChatDB):
         db_mgr.get_aichat_table()
         .update()
         .where(aichat.aichatid == db_mgr.get_aichat_table().c.aichatid)
-        .values( prompt = aichat.prompt,
+        .values( prePrompt = aichat.prePrompt,
+                 prompt = aichat.prompt,
                  reply = aichat.reply ).returning(db_mgr.get_aichat_table().c.aichatid)
     )
     return await db_mgr.get_db().execute(query=query)

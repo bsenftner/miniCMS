@@ -5,8 +5,8 @@ from app.api.upload import check_project_uploads_for_orphans
 
 from app.config import get_settings, log
 
-import asyncio
-from app.api.aichat import asyncio_fifo_worker
+# import asyncio
+# from app.api.aichat import asyncio_fifo_worker
 
 import secrets
 import string
@@ -72,7 +72,7 @@ async def initialize_database_data( app ) -> None:
     settings = get_settings() # application config settings 
     
     
-    asyncio.create_task( asyncio_fifo_worker() )  # for handling long running I/O API calls 
+    # asyncio.create_task( asyncio_fifo_worker() )  # for handling long running I/O API calls 
     
         
     # ensure initial user exists

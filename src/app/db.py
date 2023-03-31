@@ -104,6 +104,7 @@ class DatabaseMgr:
             "aichat",
             self.metadata,
             Column("aichatid", Integer, primary_key=True, index=True),
+            Column("prePrompt", String),
             Column("prompt", String),
             Column("reply", String),
             Column("model", String),
