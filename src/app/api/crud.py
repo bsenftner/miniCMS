@@ -771,7 +771,7 @@ async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_aichat_table().select().where(projectid == db_mgr.get_aichat_table().c.projectid)
     
-    log.info(f"get_all_project_aiChats: query built...")
+    # log.info(f"get_all_project_aiChats: query built...")
     
     chatList = await db_mgr.get_db().fetch_all(query=query)
         
@@ -799,12 +799,12 @@ async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
 # returns all AiChatDB for a given "conversation":
 async def get_all_conversation_aiChats(projectid: int, aichatid: int) -> List[AiChatDB]:
     
-    log.info(f"get_all_conversation_aiChats: getting ai chats for aichatid {aichatid}")
+    # log.info(f"get_all_conversation_aiChats: getting ai chats for aichatid {aichatid}")
     
     db_mgr: DatabaseMgr = get_database_mgr()
     query = db_mgr.get_aichat_table().select().where(projectid == db_mgr.get_aichat_table().c.projectid)
     
-    log.info(f"get_all_conversation_aiChats: query built...")
+    # log.info(f"get_all_conversation_aiChats: query built...")
     
     chatList = await db_mgr.get_db().fetch_all(query=query)
         
@@ -825,7 +825,7 @@ async def get_all_conversation_aiChats(projectid: int, aichatid: int) -> List[Ai
                                        created_date = c.created_date)
             finalList.append(aiChatExchange)
             
-    log.info(f"get_all_conversation_aiChats: finalList {finalList}")
+    # log.info(f"get_all_conversation_aiChats: finalList {finalList}")
             
     return finalList
 

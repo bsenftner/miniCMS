@@ -429,7 +429,7 @@ async def get_project_projectfiles(projectid: int,
             checked_date = None
             #
             projFileDB: ProjectFileDB = await crud.get_projectfile_by_filename(filename, proj.projectid)
-            log.info( f"get_project_projectfiles: projFileDB.pfid is {projFileDB.pfid}")
+            # log.info( f"get_project_projectfiles: projFileDB.pfid is {projFileDB.pfid}")
             if projFileDB:
                 version = projFileDB.version
                 checked_userid = projFileDB.checked_userid
