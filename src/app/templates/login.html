@@ -79,7 +79,8 @@
 			if (typeof access_token !== 'undefined') {
 
 				// if already authenticated, this will return valid user data:
-				fetch("/users/me")
+				const options = { headers: { "Authorization": "Bearer " + access_token } }
+				fetch("/users/me", options)
 				.then(response => response.json())
 				.then( response =>  {
 
@@ -99,7 +100,7 @@
 							AddEmailVerifyMarkup( "mainContent" );
 						}
 
-						GetUserProjects();
+						GetUserProjects( options );
 					}
 				});
 			}

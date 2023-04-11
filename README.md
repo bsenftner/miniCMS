@@ -1,8 +1,11 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Version 1.1, in beta, looking for issues
+## Version 1.2, in beta, looking for issues
 
 ### All required functionality is in place for secure project document & associated info management with remote located project members
+
+### Latest changes: Dropped use of Traefik for ssl certs, am using Cloudflare Tunnels now
+
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
