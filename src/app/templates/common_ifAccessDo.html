@@ -6,8 +6,12 @@
             window.location.href = "/"; 
         }
         else {
+            let domain = (new URL(window.location));
+            const prebsjnk = domain.origin;
+            let furl = prebsjnk + '/users/me';
+            //
             const options = { headers: { "Authorization": "Bearer " + access_token } }
-            fetch("/users/me", options )
+            fetch(furl, options )
             .then(response => response.json())
             .then( response =>  {
 
@@ -18,7 +22,13 @@
                     if (typeof callback == "function")
                         callback();
                 }
-            });
+            })
+			.catch(err => {
+				// Do something with the error
+				console.log(err) 
+				// alert( err )
+				// crtMsg.innerHTML = 'Problem: ' + err;
+			});
         }
     }
     
@@ -28,8 +38,12 @@
             window.location.href = "/"; 
         }
         else {
+            let domain = (new URL(window.location));
+            const prebsjnk = domain.origin;
+            let furl = prebsjnk + '/users/me';
+            //
             const options = { headers: { "Authorization": "Bearer " + access_token } }
-            fetch("/users/me", options )
+            fetch( furl, options )
             .then(response => response.json())
             .then( response =>  {
 
@@ -40,7 +54,13 @@
                     if (typeof callback == "function")
                         callback(response);
                 }
-            });
+            })
+			.catch(err => {
+				// Do something with the error
+				console.log(err) 
+				// alert( err )
+				// crtMsg.innerHTML = 'Problem: ' + err;
+			});
         }
     }
 </script>

@@ -296,9 +296,13 @@
 		//
 		// get list of users and populate user selection list:
 		const get_user_list = () => {
-			fetch('/users/', { // GET endpoint
+			const access_token = localStorage.getItem('token');
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/users/';
+			fetch(furl, { // GET endpoint
 				  method: 'GET',
-				  headers: {}
+				  headers: { "Authorization": "Bearer " + access_token }
 			}).then(
 				  response => response.json() // if the response is a JSON object
 			 ).then(
@@ -349,13 +353,14 @@
 		// get list of user actions and populate selection list:
 		function get_user_action_count( userIdParam, userIndexParam ) {
 
+			const access_token = localStorage.getItem('token');
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
 			let furl = prebsjnk + '/user_action/count/' + userIdParam;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
-				  headers: {}
+				  headers: { "Authorization": "Bearer " + access_token }
 			}).then(
 				  response => response.json() // if the response is a JSON object
 			 ).then(
@@ -407,13 +412,14 @@
 				actionLimit = 50;
 			}
 
+			const access_token = localStorage.getItem('token');
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
 			let furl = prebsjnk + '/user_action/user/' + userId + '/' + actionLimit + '/' + actionOffset;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
-				  headers: {}
+				  headers:  { "Authorization": "Bearer " + access_token }
 			}).then(
 				  response => response.json() // if the response is a JSON object
 			 ).then(
@@ -474,9 +480,10 @@
 
 		// get list of backup files and populate download selection list:
 		const get_available_backups = () => {
+			const access_token = localStorage.getItem('token');
 			fetch('/backups/', { // GET endpoint
 				  method: 'GET',
-				  headers: {}
+				  headers:  { "Authorization": "Bearer " + access_token }
 			}).then(
 				  response => response.json() // if the response is a JSON object
 			 ).then(

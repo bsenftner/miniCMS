@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRES_MINUTES: int
     JWT_ALGORITHM: str
 
-    CLIENT_ORIGIN: str      # currently unused
+    CLIENT_ORIGIN: str      
     
     ADMIN_USERNAME: str
     ADMIN_EMAIL: str
