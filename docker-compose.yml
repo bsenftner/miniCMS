@@ -1,5 +1,11 @@
 version: '3.8'
 
+networks:
+  web:
+    external: true
+  internal:
+    external: false
+
 services:
   web:
     build: ./src
@@ -8,9 +14,13 @@ services:
     volumes:
       - ./src/:/home/app/web
     ports:
-      - 8004:8000
+      # hostPort:containerPort
+      - 8000:8000
     environment:
       - DATABASE_URL=postgresql://collectAdmin:K0113ct10n$$!@db/lawOfficeAC
+    networks:
+      - internal
+      - web
   db:
     image: postgres:13-alpine
     volumes:
@@ -20,7 +30,9 @@ services:
     environment:
       - POSTGRES_USER=collectAdmin
       - POSTGRES_PASSWORD=K0113ct10n$$!
-      - POSTGRES_DB=lawOfficeAC
+      - POSTGRES_DB=lawOfficeAC    
+    networks:
+      - internal
 
 volumes:
   postgres_data:

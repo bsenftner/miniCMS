@@ -22,6 +22,7 @@ docs.zip
 archive.zip
 *.gz
 acme.json
+.sec 
 
 # vim temporary files
 *~
@@ -33,3 +34,4 @@ src/app/uploads/MiniCMS/flames.mp4
 src/app/uploads/MiniCMS/MediaPipe_UV_Layout_Transfer-1.pdf
 traefik/traefik_dynamic.toml
 traefik/traefik.toml
+cloudflare-tunnel.sec
