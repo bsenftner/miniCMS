@@ -1,7 +1,7 @@
 <script>
 
-    function GetUserProjects() {
-        fetch("/project")
+    function GetUserProjects(fetch_options) {
+        fetch("/project", fetch_options)
         .then(response => response.json())
         .then( response =>  {
 
