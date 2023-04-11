@@ -1,7 +1,8 @@
 <script>
 
     function GetUserProjects() {
-        fetch("/project")
+        const options = { headers: { "Authorization": "Bearer " + access_token } }
+        fetch("/project", options)
         .then(response => response.json())
         .then( response =>  {
 
