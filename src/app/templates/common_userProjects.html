@@ -1,7 +1,10 @@
 <script>
 
     function GetUserProjects(fetch_options) {
-        fetch("/project", fetch_options)
+        let domain = (new URL(window.location));
+		const prebsjnk = domain.origin;
+		const furl = prebsjnk + '/project';
+        fetch(furl, fetch_options)
         .then(response => response.json())
         .then( response =>  {
 
