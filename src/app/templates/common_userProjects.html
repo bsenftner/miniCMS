@@ -1,10 +1,12 @@
 <script>
 
     function GetUserProjects(fetch_options) {
+        const access_token = localStorage.getItem('token');
+        const options = { headers: { "Authorization": "Bearer " + access_token } }
         let domain = (new URL(window.location));
 		const prebsjnk = domain.origin;
 		const furl = prebsjnk + '/project';
-        fetch(furl, fetch_options)
+        fetch(furl, options)
         .then(response => response.json())
         .then( response =>  {
 
@@ -39,6 +41,12 @@
                 document.getElementById("mainContent").innerHTML += newHtml
             }
             
+        })
+        .catch(err => {
+            // Do something with the error
+            console.log(err) 
+            // alert( err )
+            // crtMsg.innerHTML = 'Problem: ' + err;
         });
     }
 
