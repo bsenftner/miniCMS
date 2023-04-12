@@ -6,6 +6,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>MiniCMS</title>
   <link rel="stylesheet" href="/static/index.css">
 </head>
@@ -102,6 +103,12 @@
 
 						GetUserProjects( options );
 					}
+				})
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					// alert( err )
+					// crtMsg.innerHTML = 'Problem: ' + err;
 				});
 			}
 		}

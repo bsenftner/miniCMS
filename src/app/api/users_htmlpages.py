@@ -129,6 +129,9 @@ async def refresh_token(response: Response, request: Request):
             response_model=UserPublic)
 async def read_users_me(request: Request, 
                         current_user: UserInDB = Depends(users.get_current_active_user)):
+    
+    log.info(f'read_users_me: got {current_user}')
+    
     # print(request.cookies)
     return {"username": current_user.username, 
             "userid": current_user.userid, 
@@ -144,6 +147,8 @@ async def read_users_me(request: Request,
 async def read_users(request: Request, 
                     current_user: UserInDB = Depends(users.get_current_active_user)) -> List[UserPublic]:
     
+    log.info(f'read_users: got {current_user}')
+    
     if not users.user_has_role( current_user, 'admin' ):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
@@ -153,6 +158,8 @@ async def read_users(request: Request,
     
     userList = await crud.get_all_users()
     
+    log.info(f'read_users: returning userList {userList}')
+    
     return userList
 
 # --------------------------------------------------------------------------------------------------------------
@@ -161,9 +168,11 @@ async def read_users(request: Request,
             status_code=status.HTTP_200_OK, 
             summary="Get list of Project users given the Project Tag, admin use only", 
             response_model=List[UserPublic])
-async def read_users(request: Request, 
+async def read_project_users(request: Request, 
                      projectTag: str,
                      current_user: UserInDB = Depends(users.get_current_active_user)) -> List[UserPublic]:
+    
+    log.info(f'read_project_users: got {current_user}')
     
     if not users.user_has_role( current_user, 'admin' ) and not users.user_has_role( current_user, projectTag ):
         await crud.rememberUserAction( current_user.userid, 
