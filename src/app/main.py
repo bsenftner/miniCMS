@@ -16,7 +16,7 @@ def create_application() -> FastAPI:
 
     application = FastAPI(title="MiniCMS", openapi_url="/openapi.json")
 
-    origins = [ config.get_settings().CLIENT_ORIGIN, "https://static.cloudflareinsights.com" ]
+    origins = ["*"]
     
     # add CORS handling: 
     application.add_middleware(
