@@ -42,7 +42,7 @@ COPY --chown=app:app . /home/app/web
 USER app
 
 
-EXPOSE 5000
+EXPOSE 8000
 
 # make sure all messages always reach console
 ENV PYTHONUNBUFFERED=1
@@ -56,5 +56,5 @@ ENV PATH="/home/app/venv/bin:$PATH"
 
 # /dev/shm is mapped to shared memory and should be used for gunicorn heartbeat
 # this will improve performance and avoid random freezes
-CMD ["gunicorn", "--reload", "-b", "0.0.0.0:5000",  "-w", "4", "-k", "gevent", "--worker-tmp-dir", "/dev/shm", "app:app"]
+CMD ["gunicorn", "--reload", "-b", "0.0.0.0:8000",  "-w", "4", "-k", "gevent", "--worker-tmp-dir", "/dev/shm", "app:app"]
 
