@@ -47,7 +47,7 @@ async def create_note(payload: NoteSchema,
 # ----------------------------------------------------------------------------------------------
 # get note, with protection: only works for owner and admins
 # Note: id's type is validated as greater than 0
-@router.get("/{id}/", response_model=NoteDB)
+@router.get("/{id}", response_model=NoteDB)
 async def read_note(id: int = Path(..., gt=0),
                     current_user: UserInDB = Depends(get_current_active_user)) -> NoteDB:
     
