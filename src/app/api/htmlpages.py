@@ -112,14 +112,14 @@ async def login( request: Request ):
 @router.get("/profile", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def profilePage( request: Request,  
                        current_user: User = Depends(get_current_active_user) ):
+    
+    config.log.info(f"profilePage: current_user: {current_user}")
 
     await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('GET_USER_PROFILE'), "" )
     
     memoList = await crud.get_all_memos(current_user)
-    
-    # config.log.info(f"profilePage: current_user: {current_user}")
     
     return TEMPLATES.TemplateResponse(
         "profile.html",

@@ -6,9 +6,10 @@
             window.location.href = "/"; 
         }
         else {
-            let domain = (new URL(window.location));
-            const prebsjnk = domain.origin;
-            let furl = prebsjnk + '/users/me';
+            // let domain = (new URL(window.location));
+            // const prebsjnk = domain.origin;
+            // let furl = prebsjnk + '/users/me';
+            let furl = '/users/me';
             //
             const options = { headers: { "Authorization": "Bearer " + access_token } }
             fetch(furl, options )
@@ -38,9 +39,10 @@
             window.location.href = "/"; 
         }
         else {
-            let domain = (new URL(window.location));
-            const prebsjnk = domain.origin;
-            let furl = prebsjnk + '/users/me';
+            // let domain = (new URL(window.location));
+            // const prebsjnk = domain.origin;
+            // let furl = prebsjnk + '/users/me';
+            let furl = '/users/me';
             //
             const options = { headers: { "Authorization": "Bearer " + access_token } }
             fetch( furl, options )

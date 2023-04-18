@@ -485,6 +485,7 @@ a.twoCols1  {
 div#projectMemoList {
   margin-top: 0;
   margin-left: 2em;
+  margin-bottom: 1.5em;
 }
 
 div.fourColumns {
@@ -535,22 +536,22 @@ label {
   font-weight: 700;
   padding-right: 10px;
 }
-input#username {
+input#username, input#reg_username {
   width: 50%;
   font-size: 1.75em;;
   font-weight: bold;
 }
-input#password, input#password2 {
+input#password, input#password2, input#reg_password {
   width: 50%;
   font-size: 1.75em;;
   font-weight: bold;
 }
-input#email, input#email2 {
+input#email, input#email2, input#reg_email {
   width: 50%;
   font-size: 1.75em;;
   font-weight: bold;
 }
-input#confirmPass {
+input#confirmPass, input#reg_confirmPass {
   width: 50%;
   font-size: 1.75em;;
   font-weight: bold;
@@ -668,7 +669,7 @@ div#userRegistration {
   padding: 0 0 0 0;
 }
 div#userRegistration label {
-  width: 350px;
+  width: 475px;
 }
 
 div#backupList {

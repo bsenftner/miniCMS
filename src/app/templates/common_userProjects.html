@@ -1,12 +1,12 @@
 <script>
 
-    function GetUserProjects(fetch_options) {
+    function GetUserProjects() {
         const access_token = localStorage.getItem('token');
         const options = { headers: { "Authorization": "Bearer " + access_token } }
         // let domain = (new URL(window.location));
 		// const prebsjnk = domain.origin;
 		// const furl = prebsjnk + '/project';
-		const furl = '/project';
+		const furl = '/project/';
         console.log('going to fetch: ' + furl) 
         fetch(furl, options)
         .then(response => response.json())

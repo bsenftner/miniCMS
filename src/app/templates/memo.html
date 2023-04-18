@@ -248,7 +248,7 @@
 					},
 					body: JSON.stringify( params )  
 				};
-				fetch( '/comment', options )
+				fetch( '/comment/', options )
 					.then( response => response.json() )
 					.then( response => {
 						// Do something with response.

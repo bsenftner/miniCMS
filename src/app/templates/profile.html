@@ -6,6 +6,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>MiniCMS</title>
   <link rel="stylesheet" href="/static/index.css">
 
@@ -90,7 +91,7 @@
 						<a href="#" class="button" onclick="Logout()">Logout</a>
 						`;
 
-						GetUserProjects( options );
+						GetUserProjects();
 					}
 				});
 			}

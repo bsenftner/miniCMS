@@ -80,17 +80,17 @@
 				<div id="CreateAccountSet">
 					<div id="userRegistration">
 						<br/>
-						<label for="username">Username:</label>
-							<input type="text" id="username" name="label" value="">
+						<label for="reg_username">Username:</label>
+							<input type="text" id="reg_username" name="label" value="">
 						<br/>
-						<label for="email">Email Addr:</label>
-							<input type="text" id="email" name="label" value="">
+						<label for="reg_email">Email Addr:</label>
+							<input type="text" id="reg_email" name="label" value="">
 						<br/>
-						<label for="password">Password:</label>
-							<input type="password" id="password" name="label" value="">
+						<label for="reg_password">Password:</label>
+							<input type="password" id="reg_password" name="label" value="">
 						<br/>
-						<label for="confirmPass">Confirm Password:</label>
-							<input type="password" id="confirmPass" name="label" value="">
+						<label for="reg_confirmPass">Confirm Password:</label>
+							<input type="password" id="reg_confirmPass" name="label" value="">
 						<br/>
 					</div>
 					<h4>Use these controls to create new user accounts. 
@@ -215,10 +215,10 @@
 		function CreateUserAccount() { 
             
             // get the user's info:
-			const regUser = document.getElementById("username").value;
-			const regEmail = document.getElementById("email").value;
-			const regPass = document.getElementById("password").value;
-			const regConf = document.getElementById("confirmPass").value;
+			const regUser = document.getElementById("reg_username").value;
+			const regEmail = document.getElementById("reg_email").value;
+			const regPass = document.getElementById("reg_password").value;
+			const regConf = document.getElementById("reg_confirmPass").value;
 
 			const crtMsg = document.getElementById("createMsg");
             if (regPass.length < 12) {
@@ -261,10 +261,10 @@
                     else {
 						get_user_list();
                         crtMsg.innerHTML = 'Success! New user account named ' + regUser + ' created.';
-						document.getElementById("username").value = "";
-						document.getElementById("email").value = "";
-						document.getElementById("password").value = "";
-						document.getElementById("confirmPass").value = "";
+						document.getElementById("reg_username").value = "";
+						document.getElementById("reg_email").value = "";
+						document.getElementById("reg_password").value = "";
+						document.getElementById("reg_confirmPass").value = "";
                     }
                 })
 				.catch(err => {
@@ -298,9 +298,10 @@
 		// get list of users and populate user selection list:
 		const get_user_list = () => {
 			const access_token = localStorage.getItem('token');
-			let domain = (new URL(window.location));
-			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/users/';
+			// let domain = (new URL(window.location));
+			// const prebsjnk = domain.origin;
+			// let furl = prebsjnk + '/users/';
+			let furl = '/users';
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
 				  headers: { "Authorization": "Bearer " + access_token }

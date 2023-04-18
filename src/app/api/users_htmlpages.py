@@ -31,10 +31,11 @@ async def login_for_access_token(response: Response,
 
     user = await users.authenticate_user_password(form_data.username, form_data.password)
     if not user:
+        """ can't do this without a violating the userid's foreign key constraint - no userid 0
         await crud.rememberUserAction( 0, # userid == 0 because we don't know who is doing this
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('BAD_USERNAME_OR_PASSWORD'), 
-                                       f"attempted with {form_data.username} and {form_data.password}" )
+                                       f"attempted with {form_data.username} and {form_data.password}" ) """
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Bad username or password",

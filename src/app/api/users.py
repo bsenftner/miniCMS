@@ -122,17 +122,6 @@ def user_initial_roles( isAdmin: bool ) -> str:
 def user_has_role( user: UserInDB, role: str) -> bool:
     return role in user.roles
 
-
-# -------------------------------------------------------------------------------------
-# use this to verify a roles string only contains valid roles
-def user_role_verify( roles: str ) -> bool:
-    role_list = roles.split()
-    for r in role_list:
-        if r not in "staff admin unverified public":
-            return False
-    return True
-
-
 # -------------------------------------------------------------------------------------
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     credentials_exception = HTTPException(

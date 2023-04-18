@@ -267,7 +267,7 @@
 					},
 					body: JSON.stringify( params )  
 				};
-				fetch( '/aichat', options )
+				fetch( '/aichat/', options )
 					.then( response => response.json() )
 					.then( response => {
 						// Do something with response.

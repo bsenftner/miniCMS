@@ -1,4 +1,4 @@
-version: "3.3"
+version: "3.8"
 
 networks:
   web:
@@ -6,12 +6,19 @@ networks:
   internal:
     name: internal
     external: false
+  agent_network:
+    name: agent_network
+    driver: overlay
+    driver_opts:
+      com.docker.network.driver.mtu: 1400
+    attachable: true
+  proxy:
+    external: true
 
 services:
 
   traefik:
     image: "traefik:v3.0"
-    # image: "traefik:v2.9"
     container_name: "traefik"
     command:
       - "--log.level=DEBUG"
@@ -40,17 +47,14 @@ services:
       bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --reload --workers 4 --host 0.0.0.0 --port 8000'
     labels:
       - traefik.enable=true
-      - traefik.http.routers.web.rule=Host(`martinezlaw2023.cow-quail.ts.net`)
+      - traefik.http.routers.web.rule=Host(`${MACHINENAME}.${TAILNET}`)
       - traefik.http.routers.web.tls.certresolver=myresolver
       - traefik.http.services.web.loadbalancer.server.port=8000
       - traefik.http.routers.web.entrypoints=websecure
     volumes:
       - ./src/:/home/app/web
-    # ports:
-      # hostPort:containerPort
-      # - 8000:8000
     environment:
-      - DATABASE_URL=postgresql://collectAdmin:K0113ct10n$$!@db/lawOfficeAC
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db/${DB_NAME}
     networks:
       - web
       - internal
@@ -64,9 +68,9 @@ services:
     expose:
       - 5432
     environment:
-      - POSTGRES_USER=collectAdmin
-      - POSTGRES_PASSWORD=K0113ct10n$$!
-      - POSTGRES_DB=lawOfficeAC    
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}    
     networks:
       - internal
 
