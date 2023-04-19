@@ -2,18 +2,23 @@ version: "3.8"
 
 networks:
   web:
+    name: web
     external: true
-  internal:
-    name: internal
-    external: false
-  agent_network:
-    name: agent_network
     driver: overlay
     driver_opts:
       com.docker.network.driver.mtu: 1400
     attachable: true
-  proxy:
-    external: true
+  internal:
+    name: internal
+    external: false
+#  agent_network:
+#    name: agent_network
+#    driver: overlay
+#    driver_opts:
+#      com.docker.network.driver.mtu: 1400
+#    attachable: true
+#  proxy:
+#    external: true
 
 services:
 
@@ -44,7 +49,7 @@ services:
     build: ./src
     container_name: "web"
     command: |
-      bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --reload --workers 4 --host 0.0.0.0 --port 8000'
+      bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000'
     labels:
       - traefik.enable=true
       - traefik.http.routers.web.rule=Host(`${MACHINENAME}.${TAILNET}`)
