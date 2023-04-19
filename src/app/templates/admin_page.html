@@ -184,9 +184,10 @@
 			}
 
 			// make the HTTP put request using fetch api  (this furl building is required, apparently)
-			let domain = (new URL(window.location));
-			const prebsjnk = domain.origin;
-			const furl = prebsjnk + '/notes/1';
+			// let domain = (new URL(window.location));
+			// const prebsjnk = domain.origin;
+			// const furl = prebsjnk + '/notes/1';
+			const furl = '/notes/1';
 			//
 			fetch( furl, options )
 					.then( response => response.json() )
@@ -286,14 +287,71 @@
 					     'UserId: '   + gUsers[userIndex].userid + '</br>' +
 						 'Roles: ' + gUsers[userIndex].roles + '</br>' +
 						 'Email: ' + gUsers[userIndex].email + '</br></br>';
+
+			if (gUsers[userIndex].roles.includes(' admin')) {
+				markup += '<a href="#" class="button" onclick="RemoveAdminRole('+userIndex+')">Remove Admin Role</a></br></br>'
+			}
+			else {
+				markup += '<a href="#" class="button" onclick="AddAdminRole('+userIndex+')">Make Admin</a></br></br>'
+			}
+
 			if (actionCount >= 0) {
 				markup += 'User Actions: ' + actionCount + '</h4>';
 			}
 			else {
 				markup += 'User Actions: (loading...)</h4>';
 			}
+
 			document.getElementById("userInfoDiv").innerHTML = markup;
 		}
+		//
+		function RemoveAdminRole(userIndex) {
+            let user = gUsers[userIndex];
+            if (user != null) {
+                // post user role update:
+			    const params = {
+				    "text": user.roles.replace(" admin", "")
+			    };
+                //
+                UpdateUserRoles( user.userid, params );
+            }
+		}
+		//
+		function AddAdminRole(userIndex) {
+			let user = gUsers[userIndex];
+            if (user != null) {
+                // post user role update:
+			    const params = {
+				    "text": user.roles + " admin",
+			    };
+                //
+                UpdateUserRoles( user.userid, params );
+            }
+		}
+		function UpdateUserRoles( userid, params ) {
+            const options = {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', },
+                body: JSON.stringify( params )  
+            };
+            fetch( `/users/roles/${userid}`, options )
+                .then( response => response.json() )
+                .then( response => {
+                    // Do something with response.
+                    console.log( response )
+                    if (response.hasOwnProperty('detail')) {
+                        alert( 'Please fix the following and try again: ' + response.detail )
+                    }
+                    else {
+                        window.location.reload();
+                    }
+                })
+                .catch(err => {
+                    // Do something with the error
+                    console.log(err) 
+                    alert( err )
+                }) 
+          }
 		//
 		// get list of users and populate user selection list:
 		const get_user_list = () => {
@@ -356,9 +414,10 @@
 		function get_user_action_count( userIdParam, userIndexParam ) {
 
 			const access_token = localStorage.getItem('token');
-			let domain = (new URL(window.location));
-			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/user_action/count/' + userIdParam;
+			// let domain = (new URL(window.location));
+			// const prebsjnk = domain.origin;
+			// let furl = prebsjnk + '/user_action/count/' + userIdParam;
+			let furl = '/user_action/count/' + userIdParam;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',
@@ -415,9 +474,10 @@
 			}
 
 			const access_token = localStorage.getItem('token');
-			let domain = (new URL(window.location));
-			const prebsjnk = domain.origin;
-			let furl = prebsjnk + '/user_action/user/' + userId + '/' + actionLimit + '/' + actionOffset;
+			// let domain = (new URL(window.location));
+			// const prebsjnk = domain.origin;
+			// let furl = prebsjnk + '/user_action/user/' + userId + '/' + actionLimit + '/' + actionOffset;
+			let furl = '/user_action/user/' + userId + '/' + actionLimit + '/' + actionOffset;
 
 			fetch(furl, { // GET endpoint
 				  method: 'GET',

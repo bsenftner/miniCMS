@@ -477,10 +477,19 @@ async def set_user_roles(userid: int,
     existingUser = await crud.get_user_by_id(userid)
     if not existingUser:
         raise HTTPException( status_code=status.HTTP_404_NOT_FOUND, detail="User not found", headers={"WWW-Authenticate": "Bearer"}, )
+        
+    if existingUser==1:
+        # don't allow admin role to be taken away from superuser 
+        if not "admin" in payload.text:
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserActionLevel.index('BANNED_ACTION'),
+                                           UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
+                                           f"tried to give userid {userid} non-admin roles: {payload.text}" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to remove admin from superuser")
     
     log.info(f"set_user_roles: user: {existingUser.username}, {existingUser.userid}")
     
-    old_roles = existingUser.role
+    old_roles = existingUser.roles
     existingUser.roles = payload.text
     
     # update user in the database: 
@@ -492,10 +501,10 @@ async def set_user_roles(userid: int,
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    await crud.rememberUserAction( existingUser.userid, 
+    await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('USER_ROLES_ASSIGNMENT'), 
-                                   f"old roles: {old_roles}, new roles {existingUser.roles}" )
+                                   f"user {existingUser.userid} old roles: {old_roles}, new roles {existingUser.roles}" )
     
     return { 'status': 'ok' }
 
