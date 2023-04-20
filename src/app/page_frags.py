@@ -10,7 +10,7 @@ FRAGS = [
     <h5> version 1.25 </h5>
 </div>""",
 
-        "footer": "<h5>(C) Copyright 2022 by Blake Senftner, All Rights Reserved, unless otherwise noted.</h5>",
+        "footer": "<h5>(C) Copyright 2023 by Blake Senftner, All Rights Reserved, unless otherwise noted.</h5>",
 
         "links" : [ """<a href="/">Home</a><br>""",
                   ],
