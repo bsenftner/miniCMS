@@ -115,7 +115,7 @@ def user_initial_roles( isAdmin: bool ) -> str:
     ret = 'staff unverified'
     if isAdmin:
         ret += ' admin'
-        
+    ret += ' MiniCMS' # site documentation project
     return ret
 
 # -------------------------------------------------------------------------------------

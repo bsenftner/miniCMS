@@ -27,7 +27,7 @@ router = APIRouter()
 async def create_project(payload: ProjectRequest, 
                          current_user: UserInDB = Depends(get_current_active_user)):
     
-    if not user_has_role(current_user, "admin"):
+    if not user_has_role(current_user, " admin"):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('FAILED_POST_NEW_PROJECT'), 

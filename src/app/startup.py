@@ -15,25 +15,45 @@ import string
 def docsHtml() -> str:
     ret = '''<h2>Welcome to MiniCMS Documentation</h2>
 <h3>The Basics</h3>
-<p><strong>MiniCMS</strong> is a project organized document and related memo managment system for secure in-office and remote work use.</p>
-<p>As a <strong>Staff</strong> user you can see a listing of any <strong>Projects</strong> you are a member by clicking on the <strong>Profile Button</strong> located on the upper right of most <strong>MiniCMS</strong> pages. <br>Once on your <strong>Profile</strong> page you will see a listing of the <strong>Projects</strong> you are a member, just click their titles to enter the <strong>Project.</strong></p>
+<p><strong>MiniCMS</strong> is a project organized document and memo managment system for secure in-office and remote work use. 
+Being <em>project based</em> means use of <strong>MiniCMS</strong> is centered around "projects" - organized activities with a goal. 
+Typically that goal includes the sharing of information in the form of <em>files</em> that originate outside of <strong>MiniCMS</strong>, 
+and <strong>project member<em> </em></strong>communications related to these files, and the project itself. 
+These communications take the form of <strong>m</strong><strong>emos</strong> written and read here on <strong>MiniMCS</strong> as well as 
+<strong>comments</strong> to those <strong>memos</strong>. Oh, CMS stands for <em>Content Management System</em>; indicating 
+<strong>MiniCMS</strong> is a <em>miniture content management system</em>, with a limited scope. For example, there are no "social network" 
+functionalities, only features to support organizing and accomplishing projects. </p>
+<p>As a <strong>Staff</strong> user you can see a listing of any <strong>Projects</strong> you are a member by clicking on the 
+<strong>Profile Button</strong> located on the upper right of most <strong>MiniCMS</strong> pages. <br>Once on your <strong>Profile</strong> 
+page you will see a listing of the <strong>Projects</strong> you are a member, just click their titles to enter the <strong>Project.</strong></p>
 <p>A <strong>Project</strong> is a few things:</p>
 <ul>
 <li>A <strong>Project</strong> is a collection of people, the <strong>Project Members</strong>, collected for a purpose outside of <strong>MiniCMS</strong></li>
 <li>A <strong>Project</strong> has a statement of purpose, presented when first loading the <strong>Project</strong> page, which is simply a <em>description</em> of the project
 <ul>
 <li>Your role as a member of the <strong>Project</strong> should be apparent from the <strong>Project</strong> description</li>
+<li>You are reading a <strong>Project description<em> </em></strong>right now - this is the documentation project for MiniCMS.</li>
 </ul>
 </li>
 <li>A <strong>Project</strong> has <strong>Uploaded Files</strong> related and for the purpose of the <strong>Project</strong> that are shared between <strong>Project Members</strong>
 <ul>
-<li>For example, one may have a <strong>Project </strong>that collects <strong>files </strong>related to a client matter. By placing the <strong>files </strong>into the <strong>Project </strong>they become available anywhere you can access <strong>MiniCMS</strong>.</li>
+<li>For example, one may have a <strong>Project </strong>that collects <strong>files </strong>related to a client matter. By placing the <strong>files </strong>into 
+the <strong>Project </strong>they become available anywhere you can access <strong>MiniCMS</strong>.</li>
 </ul>
 </li>
 <li>A <strong>Project</strong> has <strong>Memos</strong> that are notes written between <strong>Project Members</strong> related to the <strong>Project</strong> which need to be retained</li>
+<li>A <strong>Project's</strong> <strong>Memos</strong> can have <strong>Comments</strong> added, written by other <strong>Project Members</strong></li>
 </ul>
-<p><strong>Project</strong> is something people are trying to accomplish as a team. <strong>MiniCMS</strong> provides a way of organizing and sharing the files and information of the <strong>Project</strong> between in-office and remote workers without triggering expensive cloud file sharing fees imposed on businesses.</p>
-<p>See the <strong><a href="/memoPage/1">About Project Memos</a> Memo</strong> for more site documentation.</p>'''
+<p>A <strong>Project </strong>is something people are trying to accomplish as a team. <strong>MiniCMS</strong> provides a way of organizing and sharing the files and 
+information of the <strong>Project</strong> between in-office and remote workers without triggering expensive cloud file sharing fees imposed on businesses.</p>
+<p>See the <strong><a href="/memoPage/1">About Project Memos</a> Memo</strong> for more site documentation.</p>
+<p><strong>Advanced Usage</strong></p>
+<p><strong>MiniCMS</strong> also has experimental integration with the <strong>OpenAI ChatGPT4 Artificial Intelligence</strong>. Currently there is only one interface to 
+the AI in MiniCMS, with more to follow. The existing ChatGPT interface is role playing as an immigration attorney working for this firm, the <strong>Gloria Martinez Law Group of Sacramento, CA</strong>. 
+In that role, the AI acts in the role of <em>an attorney interviewing a potential new client for the firm</em>. Your role as the human operator of the AI is intended for use
+when interviewing potential new clients: you can enter the person's legal situation and the AI will respond with legal advice within California law, as well as interleave their advice with 
+recommendations this law firm can help them, of appropriate. Note that the potential new client's situation may be entered <em>in any human language. </em>Be sure<em> </em>you request the 
+AI's answer in both English as well as the other language, <em>so you can read the answer and continue the conversation yourself!</em></p>'''
     return ret
 
 def memoHtml() -> str:

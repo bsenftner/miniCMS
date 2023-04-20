@@ -204,14 +204,6 @@ async def sign_up(user: UserReg, background_tasks: BackgroundTasks):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
                                 detail="Public registration is unauthorized")
     
-    """ site_config: NoteDB = await crud.get_note(1)
-    assert site_config != None
-    log.info(f"sign_up: site_config.title is {site_config.title}")
-    log.info(f"sign_up: site_config.description is {site_config.description}")
-    log.info(f"sign_up: site_config.data is {site_config.data}")
-    log.info(f"sign_up: site_config.id is {site_config.id}")
-    log.info(f"sign_up: site_config.owner is {site_config.owner}") """
-    
     ret = await validate_new_user_info(user)
     # log.info(f"sign_up: ret is {ret}")
     #
@@ -271,7 +263,7 @@ async def sign_up(payload: UserReg,
     
     log.info(f'sign_up: got {payload}')
     
-    if not user_has_role(current_user, "admin"):
+    if not user_has_role(current_user, " admin"):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('BANNED_ACTION'),
                                        UserAction.index('NONADMIN_REQUESTED_CREATE_NEW_USER'), 
@@ -467,7 +459,7 @@ async def set_user_roles(userid: int,
 
     log.info(f"set_user_roles: working with userid {userid} and payload >{payload.text}<")
     
-    if not user_has_role(current_user, "admin"):
+    if not user_has_role(current_user, " admin"):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('BANNED_ACTION'),
                                        UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
@@ -480,7 +472,7 @@ async def set_user_roles(userid: int,
         
     if existingUser==1:
         # don't allow admin role to be taken away from superuser 
-        if not "admin" in payload.text:
+        if not " admin" in payload.text:
             await crud.rememberUserAction( current_user.userid, 
                                            UserActionLevel.index('BANNED_ACTION'),
                                            UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
