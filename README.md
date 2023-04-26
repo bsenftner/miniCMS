@@ -4,8 +4,7 @@
 
 ### All required functionality is in place for secure project document & associated info management with remote located project members
 
-### Latest changes: ~~Dropped use of Traefik for ssl certs, am using Cloudflare Tunnels now~~
-Cloudflare Tunnels has a bandwidth limitation, so it is out. Back on Tailscale with Traefik integration, trying to make it work without warnings. 
+### Latest changes: ~~Dropped use of Traefik for ssl certs, am using Cloudflare Tunnels now~~ Cloudflare Tunnels has a bandwidth limitation, so it is out. Back on Tailscale with Traefik integration, trying to make it work without warnings. 
 
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
