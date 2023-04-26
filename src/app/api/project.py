@@ -27,12 +27,13 @@ router = APIRouter()
 async def create_project(payload: ProjectRequest, 
                          current_user: UserInDB = Depends(get_current_active_user)):
     
-    if not user_has_role(current_user, " admin"):
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('WARNING'),
-                                       UserAction.index('FAILED_POST_NEW_PROJECT'), 
-                                       "Not Authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
+    # now, if you're logged in you can create new projects:
+    # if not user_has_role(current_user, " admin"):
+    #     await crud.rememberUserAction( current_user.userid, 
+    #                                    UserActionLevel.index('WARNING'),
+    #                                    UserAction.index('FAILED_POST_NEW_PROJECT'), 
+    #                                    "Not Authorized" )
+    #     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
     
     # project tag must be all letters or numbers, no spaces or puncuation 
     # (going to be used as directory name as well as an access role name)

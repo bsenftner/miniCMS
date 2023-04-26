@@ -208,16 +208,16 @@
 
 			if (Number("{{contentPost.projectid}}") == 0) {
 
-				// we're creating a new project, make sure user is allowed:
+				// we're creating a new project, all logged in users are allowed: 
 				if (userdata.hasOwnProperty('roles')) {
-					if (!userdata.roles.includes('admin')) {
+					/* if (!userdata.roles.includes('admin')) {
 						// only admins can create projects: 
 						window.location.href = '/';
-					}
+					} */
 				}
-				else { // user should not be here:
+				else { // user should not be here, not logged in:
 					window.location.href = '/';
-				}
+				} 
 
 				// user is allowed, so change the button options:
 				document.getElementById("divBeneathTheEditor").innerHTML =
@@ -241,7 +241,7 @@
 			else { // we are editing an existing project:
 
 				if (userdata.hasOwnProperty('roles')) {
-					if (!userdata.roles.includes("{{contentPost.name}}") && !userdata.roles.includes('admin')) {
+					if (!userdata.roles.includes("{{contentPost.name}}")) { // && !userdata.roles.includes('admin')) {
 						// this user does not have permission to see or edit this project 
 						window.location.href = '/';
 					}
