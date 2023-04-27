@@ -449,6 +449,8 @@ async def memoEditor( request: Request,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
+         "userid": current_user.userid,
+         "isAdmin": isAdmin
         }, 
         # 'access' key is for template left sidebar construction
     )
