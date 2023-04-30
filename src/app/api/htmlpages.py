@@ -438,7 +438,9 @@ async def memoEditor( request: Request,
     
     localCreated_dt = convertDateToLocal( memo.created_date )
     localUpdated_dt = convertDateToLocal( memo.updated_date )
-         
+    
+    isAdmin = user_has_role(current_user,"admin")
+
     return TEMPLATES.TemplateResponse(
         "memoEditor.html", 
         {"request": request, 
@@ -449,6 +451,8 @@ async def memoEditor( request: Request,
          "frags": FRAGS, 
          "access": 'private', 
          "memos": memoList,
+         "userid": current_user.userid,
+         "isAdmin": isAdmin
         }, 
         # 'access' key is for template left sidebar construction
     )
