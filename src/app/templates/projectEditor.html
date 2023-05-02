@@ -241,7 +241,9 @@
 			else { // we are editing an existing project:
 
 				if (userdata.hasOwnProperty('roles')) {
-					if (!userdata.roles.includes("{{contentPost.name}}") && !userdata.roles.includes('admin')) {
+					if (!userdata.roles.includes("{{contentPost.name}}") && 
+					    !userdata.roles.includes('admin') &&
+						(Number("{{contentPost.userid}}") != userdata.userid)) {
 						// this user does not have permission to see or edit this project 
 						window.location.href = '/';
 					}

@@ -39,3 +39,4 @@ docker-compose-prod.yml
 src/app/uploads/AITran1/BUEN SAMARITANO USA.docx
 src/app/uploads/AITran1/translated_to_English.docx
 docker-compose-prod-local.yml
+src/app/uploads/bsjnk/Put-People-into-Advertising.pdf

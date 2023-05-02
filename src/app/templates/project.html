@@ -162,6 +162,10 @@
 								document.getElementById("mainContent").innerHTML += 
 									'<a href="#" class="button" onclick="ProjectEdit()">Admin Edit Published Project</a>';
 							}
+							else {
+								document.getElementById("mainContent").innerHTML += 
+									'<a href="#" class="button" onclick="ProjectEdit()">Author Edit Published Project</a>';
+							}
 						}
 						else if (gUser.roles.includes("admin")) {
 							// user is admin (and not author):

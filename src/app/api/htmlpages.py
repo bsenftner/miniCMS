@@ -213,25 +213,29 @@ async def projectEditor( request: Request,
                                        f"projectEditor {id}, not found" )
         raise HTTPException(status_code=404, detail="Project not found")
 
-    isAdmin = user_has_role(current_user,"admin")
+    if not tag:
+        await crud.rememberUserAction( current_user.userid,  
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_EDIT_PROJECT'), 
+                                       f"ProjectPage {id}, '{proj.name}', Tag not found" )
+        raise HTTPException(status_code=500, detail="Project Tag not found")
     
-    # edit access is for project owner and admins only:
-    if proj.userid != current_user.userid and not isAdmin:
+    weAreAllowed = crud.user_has_project_access( current_user, proj, tag )
+    if not weAreAllowed:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('FAILED_EDIT_PROJECT'), 
-                                       f"projectEditor {id}, '{proj.name}', not authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, 
-                            detail="Not Authorized to edit other's Projects")
-        
-    # tag = await crud.get_tag( proj.tagid )
-    if not tag:
+                                       f"ProjectPage {id}, '{proj.name}', not authorized" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to edit project.")
+    
+    if (proj.status == 'archived'):
         await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('SITEBUG'),
+                                       UserActionLevel.index('WARNING'),
                                        UserAction.index('FAILED_EDIT_PROJECT'), 
-                                       f"projectEditor {id}, '{proj.name}', Tag not found" )
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-                            detail="Project Tag not found")
+                                       f"ProjectPage {id}, '{proj.name}', is archived, cannot be edited" )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized, archived project.") 
+        
+    isAdmin = user_has_role(current_user,"admin")
         
     memoList = await crud.get_all_project_memos(current_user, id)
     
@@ -263,13 +267,15 @@ async def projectEditor( request: Request,
 async def newProjectEditor( request: Request, 
                             current_user: User = Depends(get_current_active_user) ):
     
+    
     isAdmin = user_has_role(current_user,"admin")
     
+    """ allowing non-admins to create projects:
     if not isAdmin:
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('NONADMIN_ATTEMPTED_EDIT_NEW_PROJECT'), "" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to create Projects") """
     
     # the app runs in UTC local time:
     created_date = datetime.now()

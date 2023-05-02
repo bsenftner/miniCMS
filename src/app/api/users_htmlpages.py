@@ -150,12 +150,13 @@ async def read_users(request: Request,
     
     log.info(f'read_users: got {current_user}')
     
+    """ so staff can add/remove people from their own projects, commented out that is
     if not users.user_has_role( current_user, 'admin' ):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('NONADMIN_REQUESTED_USER_LIST'), 
                                        "Not Authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access User list")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access User list") """
     
     userList = await crud.get_all_users()
     
@@ -175,12 +176,13 @@ async def read_project_users(request: Request,
     
     log.info(f'read_project_users: got {current_user}')
     
+    """ 
     if not users.user_has_role( current_user, 'admin' ) and not users.user_has_role( current_user, projectTag ):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
                                        UserAction.index('NONMEMBER_ATTEMPTED_GET_PROJECT_MEMBERS'), 
                                        "Not Authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access Project User list")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access Project User list") """
     
     userList = await crud.get_all_users_by_role(projectTag)
     
@@ -448,8 +450,8 @@ async def reset_user_password(payload: basicTextPayload):
     return { 'status': 'ok' }
 
 
-# -------------------------------------------------------------------------------------
-# expects payload to be new roles setting for user with userid, admins only 
+# -----------------------------------------------------------------------------------------------
+# expects payload to be new roles setting for user with userid, admins and own user account only 
 @router.post("/users/roles/{userid}",  
              status_code=status.HTTP_200_OK, 
              summary="sets a user's roles, admins only")
@@ -459,25 +461,40 @@ async def set_user_roles(userid: int,
 
     log.info(f"set_user_roles: working with userid {userid} and payload >{payload.text}<")
     
+    isAdmin = True
     if not user_has_role(current_user, " admin"):
-        await crud.rememberUserAction( current_user.userid, 
+        # user is not an admin:
+        if userid == current_user.userid:
+            isAdmin = False
+        else:
+            await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('BANNED_ACTION'),
                                        UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
                                        f"tried to give userid {userid} roles: {payload.text}" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to modify users")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to modify users")
     
     existingUser = await crud.get_user_by_id(userid)
     if not existingUser:
         raise HTTPException( status_code=status.HTTP_404_NOT_FOUND, detail="User not found", headers={"WWW-Authenticate": "Bearer"}, )
         
-    if existingUser==1:
+    if existingUser.userid==1:
         # don't allow admin role to be taken away from superuser 
         if not " admin" in payload.text:
             await crud.rememberUserAction( current_user.userid, 
                                            UserActionLevel.index('BANNED_ACTION'),
                                            UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
                                            f"tried to give userid {userid} non-admin roles: {payload.text}" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to remove admin from superuser")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to remove admin from superuser")
+    
+    if not isAdmin:
+        # don't allow nonAdmins to make themselves admin: 
+        # (if not an admin, can only be their own account)
+        if " admin" in payload.text:
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserActionLevel.index('BANNED_ACTION'),
+                                           UserAction.index('NONADMIN_ATTEMPTED_USER_ROLES_ASSIGNMENT'), 
+                                           f"tried to give userid {userid} admin roles: {payload.text}" )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to make admin")
     
     log.info(f"set_user_roles: user: {existingUser.username}, {existingUser.userid}")
     

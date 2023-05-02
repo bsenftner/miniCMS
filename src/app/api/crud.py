@@ -141,8 +141,11 @@ def user_has_project_access( user: UserInDB, proj: ProjectDB, projTag: TagDB ) -
         # next admins automatically get access:
         weAreAllowed = user_has_role(user, 'admin')
         if not weAreAllowed:
+            # if we're the creator:
+            if proj.userid == user.userid:
+                weAreAllowed = True
             # for everyone else must be project member and project is published:
-            if user_has_role(user, projTag.text) and proj.status == 'published':
+            elif user_has_role(user, projTag.text) and proj.status == 'published':
                 weAreAllowed = True
                 
     return weAreAllowed
