@@ -98,8 +98,6 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
         
-        
-        
         self.aichat_tb = Table(
             "aichat",
             self.metadata,
@@ -163,6 +161,17 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
         
+        self.invite_tb = Table(
+            "invite",
+            self.metadata,
+            Column("inviteid", Integer, primary_key=True, index=True),          # a project invite id
+            Column("projectid", Integer, ForeignKey("project.projectid")),      # this project...
+            Column("tag", String, index=True, unique=False, nullable=False),    # ...using this tag...
+            Column("byuserid", Integer, ForeignKey("users.userid")),            # ...this user...
+            Column("touserid", Integer, ForeignKey("users.userid")),            # ...invites this user
+            Column("status", Integer, index=True),                              # =0 pending, =1 accepted, =2 denied
+        )
+        
         # databases query builder
         self.database = Database(get_settings().DATABASE_URL)
 
@@ -201,6 +210,9 @@ class DatabaseMgr:
         
     def get_action_table(self):
         return self.action_tb
+        
+    def get_invite_table(self):
+        return self.invite_tb
 
 
 # ----------------------------------------------------------------------------------------------

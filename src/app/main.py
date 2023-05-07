@@ -5,7 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.db import DatabaseMgr, get_database_mgr
-from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video, htmlpages, upload, backups, user_action, aichat
+from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video
+from app.api import htmlpages, upload, backups, user_action, aichat, invite
 from app.config import log
 
 # import sentry_sdk
@@ -64,6 +65,9 @@ def create_application() -> FastAPI:
 
     # install the project router into our app with a prefix & tag too:
     application.include_router(project.router, prefix="/project", tags=["project"])
+    
+    # install the project invite router into our app with a prefix & tag too:
+    application.include_router(invite.router, prefix="/proj_invite", tags=["proj_invite"])
     
     # install the memo router into our app with a prefix & tag too:
     application.include_router(memo.router, prefix="/memo", tags=["memo"])

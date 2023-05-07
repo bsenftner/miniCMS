@@ -85,12 +85,14 @@
 				.then(response => response.json())
 				.then( response =>  {
 
-					if (response.hasOwnProperty('roles')) {
+					let userdata = response;
+
+					if (userdata.hasOwnProperty('roles')) {
 
 						// user is logged in, change right sidebar links:
 							
 						document.getElementById("mainContent").innerHTML = 
-								"<h2>Welcome back, " + response.username + "</h2>";
+								"<h2>Welcome back, " + userdata.username + "</h2>";
 							
 						document.getElementById("aside").innerHTML = 
 							'<a href="#" class="button" onclick="Profile()">Profile</a><br/><br/>' + 
@@ -101,7 +103,8 @@
 							AddEmailVerifyMarkup( "mainContent" );
 						}
 
-						GetUserProjects();
+						GetUserProjects( userdata );
+						GetUserInvites( userdata );
 					}
 				})
 				.catch(err => {

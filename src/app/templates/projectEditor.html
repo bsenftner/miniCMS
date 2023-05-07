@@ -53,7 +53,7 @@
                             Roles & Projects:
                         </div>
                         <div class="ProjMembershipGrid2">
-                            Add/Remove To/From Project:
+                            Add/Remove/Invite To/From/To Project:
                         </div>
                     </div>
                 </div>
@@ -163,6 +163,9 @@
 	
 		let gUser = {};     // current user 
         let gUsers = {};    // all users
+		let gUsersLoaded = false;
+        let gInvites = {};    // this project's invites
+		let gInvitesLoaded = false;
 
 		function page_init_work(userdata) {
 
@@ -271,6 +274,8 @@
 					while also providing <b>User Project Access control.</b>
 					`;
 
+				get_project_invites();
+
 				get_users();                         // get all the users and populate the project membership controls
 	
 				get_uploads("{{contentPost.projectid}}"); // read and then populate the upload links grid
@@ -283,8 +288,36 @@
 			ifAccessDoWithUser(page_init_work);
 		}
 
+	    // get list of users and populate project membership controls:
+		const get_project_invites = () => {
+			gInvitesLoaded = false;
+			fetch("/proj_invite/project/{{contentPost.projectid}}", { // GET endpoint
+				method: 'GET',
+				headers: {}
+			}).then(
+				response => response.json() // if the response is a JSON object
+			).then(
+				// Handle the success response object
+				success => {
+					console.log( success )  
+					//
+					gInvites = success;       // remember API return data
+					gInvitesLoaded = true;
+                    //
+					if (gUsersLoaded) {
+						UpdateProjectUsersUI();
+					}
+				}
+			).catch(
+				error => {
+					console.log( error ) // Handle the error response object
+				}
+			);
+		}	  
+
         // get list of users and populate project membership controls:
 		const get_users = () => {
+			gUsersLoaded = false;
 			fetch('/users', { // GET endpoint
 				  method: 'GET',
 				  headers: {}
@@ -296,34 +329,10 @@
 					console.log( success )  
 					//
 					gUsers = success;       // remember API return data
+					gUsersLoaded = true;
                     //
-					let divProjectMembers = document.getElementById("projectMembers")
-					divProjectMembers.innerHTML = '';
-
-					for (let i = 0; i < gUsers.length; i++) {
-						let username = gUsers[i].username;
-						let roles = gUsers[i].roles;
-                        let userid = gUsers[i].userid;
-                        let actionBttn = `<a href="#" class="button" onclick="AddUserProject(${userid})">Add to Project</a>`;
-                        let isMember =  roles.includes("{{projectTag}}");
-                        if (isMember) {
-                            actionBttn = `<a href="#" class="button" onclick="RemoveUserProject(${userid})">Remove from Project</a>`;
-                        }
-
-						let markup = `
-						<div class="divProjMembershipGridParent">
-							<div class="ProjMembershipGrid0">
-								<b>${username}</b>
-							</div>
-							<div class="ProjMembershipGrid1">
-								${roles}
-							</div>
-							<div class="ProjMembershipGrid2">
-								${actionBttn}
-							</div>
-						</div>`;
-
-						divProjectMembers.innerHTML += markup;
+					if (gInvitesLoaded) {
+						UpdateProjectUsersUI();
 					}
 				}
 			 ).catch(
@@ -331,9 +340,213 @@
 					console.log( error ) // Handle the error response object
 				}
 			);
-		  };
+		};
 
-          function UpdateUserRoles( userid, params ) {
+		  // this is the list of project members, with the add/remote/invite buttons
+		function UpdateProjectUsersUI() {
+			let divProjectMembers = document.getElementById("projectMembers")
+			divProjectMembers.innerHTML = '';
+
+			let isAdmin = ("{{isAdmin}}" == 'True');
+			let ownerId = Number("{{contentPost.userid}}");
+
+			for (let i = 0; i < gUsers.length; i++) {
+				let username = gUsers[i].username;
+				let roles = gUsers[i].roles;
+                let userid = gUsers[i].userid;
+				let isOwner = (ownerId == userid);
+				let isCurrUser = (gUser.userid == userid);
+
+				let has_invite = false;
+				let the_invite = {};
+				for (let k = 0; k < gInvites.length; k++)
+					if (gInvites[k].touserid == userid) {
+						the_invite = gInvites[k];
+						has_invite = true;
+					}
+
+                let actionBttn = "";
+				
+				let isMember =  roles.includes("{{projectTag}}");
+				if (isAdmin) {
+					if (isMember) {
+						if (!isOwner) {
+							actionBttn = `<a href="#" class="button" onclick="RemoveUserProject(${userid})">Remove from Project</a>`;
+						}
+						else {
+							actionBttn = "<em>project owner</em>"
+						}
+					}
+					else {
+						if (has_invite) {
+							if (isCurrUser) {
+								if (the_invite.status == 0) {
+									actionBttn =  `<a href="#" class="button" onclick="AcceptProjectInvite(${the_invite.inviteid})">Accept Invitation</a> ` +
+										  		  `<a href="#" class="button" onclick="DeclineProjectInvite(${the_invite.inviteid})">Decline Invitation</a>`
+								}
+								else if (the_invite.status == 1) {
+									actionBttn = "Invitation accepted"
+								}
+								else if (the_invite.status == 2) {
+									actionBttn = "Invitation declined"
+								}
+							}
+							else {
+								if (the_invite.status == 0) {
+									actionBttn = "Invite sent, waiting response"
+								}
+								else if (the_invite.status == 1) {
+									actionBttn = "Invitation accepted"
+								}
+								else if (the_invite.status == 2) {
+									actionBttn = "Invitation declined"
+								}
+							}
+						}
+						else {
+							actionBttn =  `<a href="#" class="button" onclick="AddUserProject(${userid})">Add to Project</a> ` +
+										  `<a href="#" class="button" onclick="InviteUserProject(${userid})">Invite to Project</a>`
+						}
+					}
+				}
+				else {
+					if (!isMember) {
+						if (has_invite) {
+							if (the_invite.status == 0) {
+								if (isCurrUser) {
+									actionBttn =  `<a href="#" class="button" onclick="AcceptProjectInvite(${the_invite.inviteid})">Accept Invitation</a> ` +
+										  		  `<a href="#" class="button" onclick="DeclineProjectInvite(${the_invite.inviteid})">Decline Invitation</a>`
+								}
+								else {
+									actionBttn = "Invite sent, waiting response"
+								}
+							}
+							else if (the_invite.status == 1) {
+								actionBttn = "Invitation accepted"
+							}
+							else if (the_invite.status == 2) {
+								actionBttn = "Invitation declined"
+							}
+						}
+						else {
+							if (!isOwner) {
+								actionBttn = `<a href="#" class="button" onclick="InviteUserProject(${userid})">Invite to Project</a>`;
+							}
+							else {
+								actionBttn = "<em>project owner</em>"
+							}
+						}
+					}
+					else {
+						if (isOwner) {
+							actionBttn = "<em>project owner</em>"
+						}
+					}
+				}
+
+				let markup = `
+				<div class="divProjMembershipGridParent">
+					<div class="ProjMembershipGrid0">
+						<b>${username}</b>
+					</div>
+					<div class="ProjMembershipGrid1">
+						${roles}
+					</div>
+					<div class="ProjMembershipGrid2">
+						${actionBttn}
+					</div>
+				</div>`;
+
+				divProjectMembers.innerHTML += markup;
+			}
+		}
+
+        function InviteUserProject( userid ) {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
+			// post as new invite submission:
+			const params = {
+				"projectid": "{{contentPost.projectid}}", 
+				"tag": "{{projectTag}}",
+				"touserid": userid
+			};
+            const options = {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', },
+                body: JSON.stringify( params )  
+            };
+            fetch( "/proj_invite/", options )
+                .then( response => response.json() )
+                .then( response => {
+                    // Do something with response.
+                    console.log( response )
+                    if (response.hasOwnProperty('detail')) {
+                        alert( 'Please fix the following and try again: ' + response.detail )
+                    }
+                    else {
+                        // window.location.reload();
+						get_project_invites();
+                    }
+                })
+                .catch(err => {
+                    // Do something with the error
+                    console.log(err) 
+                    alert( err )
+                }) 
+        }
+
+		function ReturnProjectInvite( inviteid, response ) {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
+			
+			// response is 1 for accept and 2 for decline
+			const params = { "status": response };
+			//
+			const options = {
+				credentials: 'include',
+				method: 'PUT', // Method itself
+				headers: {
+				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				},
+				body: JSON.stringify(params) // We send data in JSON format
+			}
+
+			// make the HTTP put request using fetch api
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			const furl = prebsjnk + '/proj_invite/' + inviteid;
+
+            fetch( furl, options )
+                .then( response => response.json() )
+                .then( response => {
+                    // Do something with response.
+                    console.log( response )
+                    if (response.hasOwnProperty('detail')) {
+                        alert( 'Please fix the following and try again: ' + response.detail )
+                    }
+                    else {
+                        window.location.reload();
+                    }
+                })
+                .catch(err => {
+                    // Do something with the error
+                    console.log(err) 
+                    alert( err )
+                }) 
+        }
+		function AcceptProjectInvite( inviteid ) {
+			ReturnProjectInvite( inviteid, 1 );
+		}
+		function DeclineProjectInvite( inviteid ) {
+			ReturnProjectInvite( inviteid, 2 );
+		}
+
+        function UpdateUserRoles( userid, params ) {
 			if ("{{contentPost.status}}" == "archived") {
 				alert( 'Archived Projects cannot be modified.' )
 				return;
@@ -360,19 +573,25 @@
                     console.log(err) 
                     alert( err )
                 }) 
-          }
-          function AddUserProject( userid ) {
-			if ("{{contentPost.status}}" == "archived") {
-				alert( 'Archived Projects cannot be modified.' )
-				return;
-			}
-            let user = null;
+        }
+
+		function FindUser( userid ) {
+			let user = null;
             for (let i = 0; i < gUsers.length; i++) {
                 if (gUsers[i].userid == userid) {
                     user = gUsers[i];
                     break;
                 }
             }
+			return user;
+		}
+
+        function AddUserProject( userid ) {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
+            let user = FindUser( userid );
             if (user != null) {
                 // post user role update:
 			    const params = {
@@ -381,20 +600,14 @@
                 //
                 UpdateUserRoles( userid, params );
             }
-          };
-          //
-          function RemoveUserProject( userid ) {
+        };
+
+        function RemoveUserProject( userid ) {
 			if ("{{contentPost.status}}" == "archived") {
 				alert( 'Archived Projects cannot be modified.' )
 				return;
 			}
-            let user = null;
-            for (let i = 0; i < gUsers.length; i++) {
-                if (gUsers[i].userid == userid) {
-                    user = gUsers[i];
-                    break;
-                }
-            }
+            let user = FindUser( userid );
             if (user != null) {
                 // post user role update:
 			    const params = {
@@ -403,10 +616,11 @@
                 //
                 UpdateUserRoles( userid, params );
             }
-          };
+        };
 
 		  // called when user clicks the "Show / Hide Project Members" button
-		function ToggleProjectMemberSet() {
+		
+		  function ToggleProjectMemberSet() {
 			const toggle = (e) => {
 				if (e.style.display === "none") {
 					e.style.display = "block";
@@ -483,6 +697,11 @@
 		}
 
 		function ProjectUpdateWork() {
+			if ("{{contentPost.status}}" == "archived") {
+				alert( 'Archived Projects cannot be modified.' )
+				return;
+			}
+
 			let updatedStatus = document.getElementById("statusSelectBox").value;
 
 			const someData = {

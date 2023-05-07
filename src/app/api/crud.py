@@ -5,7 +5,7 @@ from sqlalchemy import asc
 from app.api.models import NoteSchema, MemoSchema, UserReg, UserInDB, UserPublic
 from app.api.models import MemoDB, NoteDB, CommentSchema, CommentDB, TagDB, basicTextPayload
 from app.api.models import ProjectSchema, ProjectDB, UserActionCreate, UserActionDB, ProjectFileCreate, ProjectFileDB
-from app.api.models import AiChatCreate, AiChatDB, AiChatCreateResponse
+from app.api.models import AiChatCreate, AiChatDB, ProjectInviteCreate, ProjectInviteDB, ProjectInviteUpdate
 
 from app.db import DatabaseMgr, get_database_mgr
 
@@ -847,3 +847,94 @@ async def put_aichat(aichat: AiChatDB):
     return await db_mgr.get_db().execute(query=query)
 
 # note: no delete for AI Chat Exchanges 
+
+
+
+
+# -----------------------------------------------------------------------------------------
+# for creating new project invites
+async def post_projInvite(payload: ProjectInviteCreate, tag: str, user: UserInDB):
+    
+    log.info(f"post_projInvite: here! got {payload} by user {user.userid}, {user.username}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    # Creates a SQLAlchemy insert object expression query
+    query = db_mgr.get_invite_table().insert().values(projectid=payload.projectid, 
+                                                      tag=tag, 
+                                                      byuserid=user.userid, 
+                                                      touserid=payload.touserid, 
+                                                      status=0)
+    # Executes the query and returns the generated ID
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# for getting project invites:
+async def get_projInvite(projInviteId: int) -> ProjectInviteDB:
+    
+    # log.info(f"get_projInvite: getting projInviteId {projInviteId}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_invite_table().select().where(projInviteId == db_mgr.get_invite_table().c.inviteid)
+    
+    # log.info(f"get_projInvite: query built...")
+    
+    return await db_mgr.get_db().fetch_one(query=query)
+
+# -----------------------------------------------------------------------------------------
+# returns all project invites for a given user:
+async def get_user_projInvites(user: UserInDB) -> List[ProjectInviteDB]:
+    
+    log.info(f"get_user_projInvites: getting project invites for user {user.userid}, {user.username}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_invite_table().select().where(user.userid == db_mgr.get_invite_table().c.touserid)
+    
+    log.info(f"get_user_projInvites: query built...")
+    
+    inviteList = await db_mgr.get_db().fetch_all(query=query)
+            
+    return inviteList
+
+# -----------------------------------------------------------------------------------------
+# returns all project invites for a given project:
+async def get_project_projInvites(projectid: int) -> List[ProjectInviteDB]:
+    
+    log.info(f"get_project_projInvites: getting project invites for projeect {projectid}")
+    
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_invite_table().select().where(projectid == db_mgr.get_invite_table().c.projectid)
+    
+    log.info(f"get_project_projInvites: query built...")
+    
+    inviteList = await db_mgr.get_db().fetch_all(query=query)
+            
+    finalList = []
+    for invite in inviteList:
+        full = ProjectInviteDB( inviteid = invite.inviteid,
+                                projectid = invite.projectid,
+                                tag = invite.tag,
+                                byuserid = invite.byuserid,
+                                touserid = invite.touserid,
+                                status = invite.status)
+        finalList.append(full)
+        
+    return finalList
+
+# -----------------------------------------------------------------------------------------
+# update a ProjectInviteDB. 
+async def put_projInvite( projInviteId: int, inviteUpdate: ProjectInviteUpdate):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = (
+        db_mgr.get_invite_table()
+        .update()
+        .where(projInviteId == db_mgr.get_invite_table().c.inviteid)
+        .values( status = inviteUpdate.status ).returning(db_mgr.get_invite_table().c.inviteid)
+    )
+    return await db_mgr.get_db().execute(query=query)
+
+# -----------------------------------------------------------------------------------------
+# delete a ProjectInviteDB:
+async def delete_projInvite(id: int):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_invite_table().delete().where(id == db_mgr.get_invite_table().c.inviteid)
+    return await db_mgr.get_db().execute(query=query)

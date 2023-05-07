@@ -106,19 +106,20 @@ async def create_project(payload: ProjectRequest,
                                    UserAction.index('POST_NEW_PROJECT'), 
                                    f"Project '{payload.name}'" )
     
-    # make creating user automagically a member of the project:
-    old_roles = current_user.roles
-    current_user.roles += " " + payload.tag
-    
-    id = await crud.put_user( current_user.userid, current_user )
-    if id!=current_user.userid:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    await crud.rememberUserAction( current_user.userid, 
+    if not payload.tag in current_user.roles:
+        # make creating user automagically a member of the project:
+        old_roles = current_user.roles
+        current_user.roles += " " + payload.tag
+        #
+        id = await crud.put_user( current_user.userid, current_user )
+        if id!=current_user.userid:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        #
+        await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('USER_ROLES_ASSIGNMENT'), 
                                    f"user {current_user.userid} old roles: {old_roles}, new roles {current_user.roles}" )

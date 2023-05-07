@@ -71,17 +71,19 @@
 				.then(response => response.json())
 				.then( response =>  {
 
-					if (response.hasOwnProperty('roles')) {
+					let userdata = response;
+
+					if (userdata.hasOwnProperty('roles')) {
 
 						// user is logged in:
 
 						// if user is unverified put the email verification controls beneath their initial page contents:
-						if (response.roles.includes('unverified')) {
+						if (userdata.roles.includes('unverified')) {
 							AddEmailVerifyMarkup( "mainContent" );
 						}
 						
 						/* change right sidebar links
-						if (response.roles.includes("admin")) {
+						if (userdata.roles.includes("admin")) {
 							// user is admin:
 							document.getElementById("aside").innerHTML = `<a href="#" class="button" onclick="NewProject()">New Project</a><br/><br/>`
 						} */
@@ -94,7 +96,8 @@
 						<a href="#" class="button" onclick="Logout()">Logout</a>
 						`;
 
-						GetUserProjects();
+						GetUserProjects( userdata );
+						GetUserInvites( userdata );
 					}
 				});
 			}

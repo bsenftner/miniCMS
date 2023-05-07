@@ -587,7 +587,7 @@ select#userSelectBox {
 } 
 select#userSelectBox option {
   font-weight: bold;
-  font-size: 20px;
+  font-size: 16px;
 }
 div#userInfoDiv {
   grid-area: 1 / 2 / 2 / 3;
@@ -697,7 +697,7 @@ div#userMsg3 {
   margin-top: 40px;
 }
 
-div.memolist ul li, div.projectlist ul li {
+div.memolist ul li, div.projectlist ul li, div.invitelist ul {
   list-style-type: none;
   font-size: 1.7em;
   font-weight: bold;

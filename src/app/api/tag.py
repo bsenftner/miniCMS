@@ -41,8 +41,7 @@ async def read_tag(id: int = Path(..., gt=0),
     
     log.info("read_tag: here!!")
     
-    tag = await crud.get_tag(id)
-    
+    tag: TagDB = await crud.get_tag(id)
     if tag is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
     

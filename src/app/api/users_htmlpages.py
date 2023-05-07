@@ -498,8 +498,19 @@ async def set_user_roles(userid: int,
     
     log.info(f"set_user_roles: user: {existingUser.username}, {existingUser.userid}")
     
+    first = True
+    final = ""
+    roles = payload.text.split()
+    for role in roles:
+        if not role in final:
+            if first:
+                first = False
+            else:
+                final += " "
+            final += role
+            
     old_roles = existingUser.roles
-    existingUser.roles = payload.text
+    existingUser.roles = final
     
     # update user in the database: 
     id = await crud.put_user( existingUser.userid, existingUser )

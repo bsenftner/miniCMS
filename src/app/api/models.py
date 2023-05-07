@@ -122,6 +122,7 @@ class TagDB(BaseModel):
     text: str = Field(index=True)
 
 
+
 class ProjectRequest(BaseModel):
     name: str                                                   # project name
     text: str                                                   # project description
@@ -143,7 +144,25 @@ class ProjectSchema(BaseModel):
 class ProjectDB(ProjectSchema):
     projectid: int = Field(index=True)
     created_date: datetime
+
+
+class ProjectInviteCreate(BaseModel):
+    projectid: int
+    touserid: int
     
+class ProjectInviteDB(BaseModel):
+    inviteid: int = Field(index=True)
+    projectid: int = Field(..., foreign_key="ProjectDB.projectid")  # invitation to this project
+    tag: str                                                        # invite project tag
+    byuserid: int = Field(...,foreign_key="UserInDB.userid")        # invited by person
+    touserid: int = Field(...,foreign_key="UserInDB.userid")        # invited to person
+    status: int = Field(index=True)                                 # =0 pending, =1 accepted, =2 denied
+
+class ProjectInviteUpdate(BaseModel):
+    status: int
+    
+class ProjectInvitePublic(ProjectInviteDB):
+    projectname: str
 
 # an access token used by authentication
 class Token(BaseModel):
