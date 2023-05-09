@@ -133,9 +133,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
         settings = get_settings() # application config settings
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
         username: str = payload.get("sub")
-        # log.info(f"get_current_user: username is {username}")
+        log.info(f"get_current_user: username is {username}")
         expTime: str = payload.get("exp")
-        # log.info(f"get_current_user: exp is {expTime}")
+        log.info(f"get_current_user: exp is {expTime}")
         if username is None:
             raise credentials_exception
         if expTime is None:
