@@ -11,14 +11,6 @@ networks:
   internal:
     name: internal
     external: false
-#  agent_network:
-#    name: agent_network
-#    driver: overlay
-#    driver_opts:
-#      com.docker.network.driver.mtu: 1400
-#    attachable: true
-#  proxy:
-#    external: true
 
 services:
 

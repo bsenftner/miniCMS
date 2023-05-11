@@ -125,9 +125,10 @@ def user_has_role( user: UserInDB, role: str) -> bool:
 # -------------------------------------------------------------------------------------
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserInDB:
     credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
+        status_code=302, # status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        # headers={"WWW-Authenticate": "Bearer"},
+        headers={"Location": "/login"},
     )
     try:
         settings = get_settings() # application config settings
