@@ -1,18 +1,19 @@
 <div id="uploadDownloadSet">
     <form id="uploadForm">
         <div class="upload1">
-            <label>Manual File Upload:</label>
+            <label>Manual File Uploads:</label>
         </div>
         <div class="upload2">
             <input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" multiple>
         </div>
         <div class="upload3">
-            <a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Select a file first</a>
+            <a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Use the Browse button to select upload files before using this button</a>
         </div>
     </form>
     <div id="divUploadMsg">
-        Use the <b>Browse</b> button to select a file to upload; after selection that right-most button 
-        becomes a 'start this upload' button
+        Use the <b>Browse</b> button to select file(s) to upload; use of the <b>ctrl</b> and <b>shift</b> keys 
+		can select multiple files for uploading at once. After selection the right-most button above this line 
+		changes to become a <b>start this upload</b> button
     </div>
 
     <div id="divUploadLinksHeader">
@@ -145,7 +146,7 @@
 			// user may select more than one file, so unpload each in kind:
 			let len = input.files.length;
 			for (let i = 0; i < len; i++) {
-				console.log("uploading '" + input.files[i].)
+				console.log("uploading '" + input.files[i])
 				upload(input.files[i]);
 			}
 		}
