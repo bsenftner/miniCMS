@@ -59,10 +59,22 @@
 		function onUploadChangeFunc() {
 			fileInputCtrl = document.getElementById("NewUploadInput")
 
-			let selected = fileInputCtrl.value; 	// has fake path components before filename
-			const pathArray = selected.split("\\");	// prepare...
-   			const lastIndex = pathArray.length - 1; // ...to remove...
-			selected = pathArray[lastIndex];		// ...path components.
+			let selected = "";
+
+			let fileList = fileInputCtrl.files;
+			if (fileList.length > 1) {
+				selected = fileList.length + " files"
+			}
+			else if (fileList.length == 1) {
+				selected = fileInputCtrl.files[0]; 	// has fake path components before filename
+				const pathArray = selected.split("\\");	// prepare...
+   				const lastIndex = pathArray.length - 1; // ...to remove...
+				selected = pathArray[lastIndex];		// ...path components.
+			}
+			else {
+				alert("Please select file(s) to upload first!");
+				return;
+			}
 
 			fileUploadButton = document.getElementById("uploadBttn")
 			fileUploadButton.innerHTML = 'Upload "' + selected + '"'
@@ -81,11 +93,11 @@
 			// Select your input type file and store it in a variable
 			const input = document.getElementById('NewUploadInput');
 
-			var data = new FormData()
-			data.append('file', input.files[0])
-
-			// This will upload the file after having read it
+			// This will upload one file after having read it
 			const upload = (file) => {
+
+				let uploadfileformdata = new FormData()
+				uploadfileformdata.append('file', file)
 
 				let domain = (new URL(window.location));
 				const prebsjnk = domain.origin;
@@ -96,7 +108,7 @@
 				}
 
 				fetch( furl, { // POST endpoint
-	  				method: 'POST', headers: {}, body: data // This is your file object
+	  				method: 'POST', headers: {}, body: uploadfileformdata // This is your file object
 				}).then(
 	  				response => response.json() // if the response is a JSON object
 				 ).then(
@@ -129,8 +141,13 @@
 					}
 				);
   			};
-  
-  			upload(input.files[0]);
+
+			// user may select more than one file, so unpload each in kind:
+			let len = input.files.length;
+			for (let i = 0; i < len; i++) {
+				console.log("uploading '" + input.files[i].)
+				upload(input.files[i]);
+			}
 		}
 
         function EmbedPdf( pdfLink ) {
