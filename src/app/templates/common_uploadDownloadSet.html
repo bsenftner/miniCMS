@@ -4,7 +4,7 @@
             <label>Manual File Upload:</label>
         </div>
         <div class="upload2">
-            <input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" >
+            <input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" multiple>
         </div>
         <div class="upload3">
             <a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Select a file first</a>
@@ -387,8 +387,9 @@
 					console.log( error ) // Handle the error response object
 				}
 			);
-		  };
+		};
 
+		
 		// called when "Download this file" buttons are clicked
 		function DownloadFile(fileUrl, filename) {
 			fetch(fileUrl)

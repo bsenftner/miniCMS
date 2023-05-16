@@ -297,7 +297,9 @@ async def check_project_uploads_for_orphans(current_user: UserInDB):
                     project_upload_fileList = []
                     project_upload_fileList.extend(glob.glob(str(project_upload_path)))
                     #
+                    # default recovered project status: 
                     new_status = 'unpublished'
+                    # if the directory contains one file, that file is a zip with the name in zip_archive_path, it's an archived project:
                     if len(project_upload_fileList)==1:
                         zip_archive_path = str(config.get_base_path()) + '/uploads/' + dirname + '/project_' + str(dirname) + 'archive.zip'
                         if project_upload_fileList[0] == zip_archive_path:
