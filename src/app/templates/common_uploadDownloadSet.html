@@ -11,9 +11,9 @@
         </div>
     </form>
     <div id="divUploadMsg">
-        Use the <b>Browse</b> button to select file(s) to upload; use of the <b>ctrl</b> and <b>shift</b> keys 
-		can select multiple files for uploading at once. After selection the right-most button above this line 
-		changes to become a <b>start this upload</b> button
+        Use the <b>Browse</b> button to <b>select file(s) to upload</b>; use the <b>ctrl</b> and <b>shift</b> keys 
+		to select multiple files, which will all upload together. After file selection, the <b>right-most button</b>  
+		above this line changes to become a <b>start the upload</b> button
     </div>
 
     <div id="divUploadLinksHeader">
@@ -80,7 +80,7 @@
 			fileUploadButton = document.getElementById("uploadBttn")
 			fileUploadButton.innerHTML = 'Upload "' + selected + '"'
 
-			document.getElementById("divUploadMsg").innerHTML = 'Now use the <b>Upload "' + selected + '"</b> button to upload the file'
+			document.getElementById("divUploadMsg").innerHTML = 'Now use the <b>Upload "' + selected + '"</b> button to upload the file(s)'
 		}
 		
 		// works for uploads of ordinary files or project files
@@ -95,7 +95,7 @@
 			const input = document.getElementById('NewUploadInput');
 
 			// This will upload one file after having read it
-			const upload = (file) => {
+			const upload = (file, ordinal, limit) => {
 
 				let uploadfileformdata = new FormData()
 				uploadfileformdata.append('file', file)
@@ -115,25 +115,34 @@
 				 ).then(
 	  				success => {
 						console.log( success.message ) // Handle the success response object
-						document.getElementById("divUploadMsg").innerHTML = '<p>Success msg: ' +  success.message + '</p>';
-						//
-						// populate listbox for upload selection:
-						if (gUpDownProjId != null) {
-							get_uploads(gUpDownProjId);
+
+						let msgElm = document.getElementById("divUploadMsg").innerHTML;
+						if (ordinal == 1) {
+							msgElm = '<p>Success msg: ' +  success.message + '</p>';
 						}
 						else {
-							get_uploads();
+							msgElm += '<p>Success msg: ' +  success.message + '</p>';
 						}
-						//
-						// clear the file upload ctrl, now that the file has been uploaded
-						fileInputCtrl = document.getElementById("NewUploadInput")
-						fileInputCtrl.value = '';
-						//
-						fileUploadButton = document.getElementById("uploadBttn")
-						fileUploadButton.innerHTML = 'Select a file first'
-
-						// after all that, we need to reload the page anyway:
-						window.location.reload();
+						
+						if (ordinal == limit) {
+							// populate listbox for upload selection:
+							if (gUpDownProjId != null) {
+								get_uploads(gUpDownProjId);
+							}
+							else {
+								get_uploads();
+							}
+							//
+							// clear the file upload ctrl, now that the file has been uploaded
+							fileInputCtrl = document.getElementById("NewUploadInput")
+							fileInputCtrl.value = '';
+							//
+							fileUploadButton = document.getElementById("uploadBttn")
+							fileUploadButton.innerHTML = 'Select a file first'
+	
+							// after all that, we need to reload the page anyway:
+							window.location.reload();
+						}
 					}
 				 ).catch(
 	  				error => {
@@ -147,7 +156,7 @@
 			let len = input.files.length;
 			for (let i = 0; i < len; i++) {
 				console.log("uploading '" + input.files[i])
-				upload(input.files[i]);
+				upload(input.files[i], i+1, len);
 			}
 		}
 

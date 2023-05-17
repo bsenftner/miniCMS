@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, status, Depends
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
-
+import os
 from datetime import datetime
 # from dateutil import tz
 
@@ -160,6 +160,21 @@ async def projectPage( request: Request, projectid: int,
                                        f"ProjectPage {projectid}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
     
+    # projects all receive their own upload directory with the name of the tag text,
+    # but the developer may delete project dirs willy-nilly, let's verify that dir exists:
+    proj_upload_path = config.get_base_path() / 'uploads' / tag.text
+    if not os.path.exists(proj_upload_path):
+        config.log.info(f"projectPage: attempting to create dir '{proj_upload_path}'")
+        try:
+            os.makedirs(proj_upload_path, exist_ok = True)
+        except OSError as error:
+            config.log.info(f"projectPage: failed creating project upload dir '{proj_upload_path}', {error}")
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserActionLevel.index('SITEBUG'),
+                                           UserAction.index('FAILED_GET_PROJECT'), 
+                                           f"Failed creating project upload dir '{proj_upload_path}', {error}" )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
+        
     if (proj.status == 'archived'):
         proj.name += ' (archived)'
         proj.text = '<h3>(Embedded files do not display in archived projects)</h3>' + proj.text 
@@ -228,6 +243,21 @@ async def projectEditor( request: Request,
                                        f"ProjectPage {id}, '{proj.name}', not authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to edit project.")
     
+    # projects all receive their own upload directory with the name of the tag text,
+    # but the developer may delete project dirs willy-nilly, let's verify that dir exists:
+    proj_upload_path = config.get_base_path() / 'uploads' / tag.text
+    if not os.path.exists(proj_upload_path):
+        config.log.info(f"projectPage: attempting to create dir '{proj_upload_path}'")
+        try:
+            os.makedirs(proj_upload_path, exist_ok = True)
+        except OSError as error:
+            config.log.info(f"projectPage: failed creating project upload dir '{proj_upload_path}', {error}")
+            await crud.rememberUserAction( current_user.userid, 
+                                           UserActionLevel.index('SITEBUG'),
+                                           UserAction.index('FAILED_EDIT_PROJECT'), 
+                                           f"Failed creating project upload dir '{proj_upload_path}', {error}" )
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
+        
     if (proj.status == 'archived'):
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('WARNING'),
