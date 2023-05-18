@@ -337,6 +337,12 @@ async def put_projectfile(projFile: ProjectFileDB):
     )
     return await db_mgr.get_db().execute(query=query)
 
+# -----------------------------------------------------------------------------------------
+# delete a projectfile:
+async def delete_projectfile(id: int):
+    db_mgr: DatabaseMgr = get_database_mgr()
+    query = db_mgr.get_projectfile_table().delete().where(id == db_mgr.get_projectfile_table().c.pfid)
+    return await db_mgr.get_db().execute(query=query)
 
 
 

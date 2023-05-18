@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
+from fastapi import APIRouter, Path, File, UploadFile, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 
 import aiofiles
@@ -658,7 +658,7 @@ async def checkin_projectfile(pfid: int,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     
     if proj.status == 'archived':
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Archived projects cannot receive uploads")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Archived projects cannot receive checkins")
         
     if not tag:
         raise HTTPException(status_code=500, detail="Project Tag not found")
@@ -730,3 +730,61 @@ async def checkin_projectfile(pfid: int,
 
     
     return {"message": f"Successfully checked in {tag.text} {file.filename}"}
+
+
+# ----------------------------------------------------------------------------------------------
+# Note: id's type is validated as greater than 0  
+@router.delete("/{pfid}", status_code=200)
+async def delete_projectfile(pfid: int = Path(..., gt=0), 
+                             current_user: UserInDB = Depends(get_current_active_user)):
+    
+    log.info(f"delete_projectfile: got pfid {pfid}")
+    
+    projFile: ProjectFileDB = await crud.get_projectfile(pfid)
+    if projFile is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project file not found")
+    
+    proj, tag = await crud.get_project_and_tag(projFile.projectid)
+    if proj is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    
+    if proj.status == 'archived':
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Archived projects cannot be modified")
+        
+    if not tag:
+        raise HTTPException(status_code=500, detail="Project Tag not found")
+    
+    if projFile.checked_userid != None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Project file is checked out; cancel check out or check in the file first")
+
+    isAdmin = user_has_role(current_user,"admin")
+    isProjOwner = user_has_role(current_user, tag.text) and proj.userid == current_user.userid
+    
+    log.info( f"delete_projectfile: isAdmin is {isAdmin}, isProjOwner is {isProjOwner}")
+    
+    # only admins and project owners continue from here:
+    if not isAdmin and not isProjOwner:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('WARNING'),
+                                       UserAction.index('FAILED_FILE_DELETE'), 
+                                       "Not Authorized" )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not Authorized to delete {tag.text} files") 
+    
+    await crud.delete_projectfile(pfid)
+    
+    log.info( f"delete_projectfile: deleted database record...")
+
+    await crud.rememberUserAction( current_user.userid, 
+                                   UserActionLevel.index('NORMAL'),
+                                   UserAction.index('DELETE_FILE'), 
+                                   f"File {pfid}, {projFile.filename}" )
+    
+    # make sure file on disk exists before deleting it:
+    upload_path = config.get_base_path() / 'uploads' / tag.text / projFile.filename
+    if os.path.isfile(upload_path):
+        os.remove(upload_path)
+        log.info( f"delete_projectfile: deleted file {projFile.filename}")
+    else:
+        log.info( f"delete_projectfile: file {projFile.filename} did not exist to delete!")
+    
+    return {"message": "success" }

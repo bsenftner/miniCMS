@@ -180,6 +180,7 @@ async def projectPage( request: Request, projectid: int,
         proj.text = '<h3>(Embedded files do not display in archived projects)</h3>' + proj.text 
         
     isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
      
     # returns list of all project users:
     userList = await crud.get_all_users_by_role( proj.name )
@@ -207,7 +208,8 @@ async def projectPage( request: Request, projectid: int,
           "users": userList,
           "memos": memoList,
           "userid": current_user.userid,
-          "isAdmin": isAdmin
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -266,6 +268,7 @@ async def projectEditor( request: Request,
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized, archived project.") 
         
     isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
         
     memoList = await crud.get_all_project_memos(current_user, id)
     
@@ -278,15 +281,16 @@ async def projectEditor( request: Request,
     
     return TEMPLATES.TemplateResponse(
         "projectEditor.html", 
-        {"request": request, 
-         "contentPost": proj, 
-         "projectTag": tag.text,
-         "projectCreated": local_dt.strftime("%c"),
-         "frags": FRAGS, 
-         "access": 'private', 
-         "memos": memoList,
-         "userid": current_user.userid,
-         "isAdmin": isAdmin
+        { "request": request, 
+          "contentPost": proj, 
+          "projectTag": tag.text,
+          "projectCreated": local_dt.strftime("%c"),
+          "frags": FRAGS, 
+          "access": 'private', 
+          "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -296,7 +300,6 @@ async def projectEditor( request: Request,
 @router.get("/newProject", status_code=status.HTTP_200_OK, response_class=HTMLResponse)
 async def newProjectEditor( request: Request, 
                             current_user: User = Depends(get_current_active_user) ):
-    
     
     isAdmin = user_has_role(current_user,"admin")
     
@@ -336,7 +339,8 @@ async def newProjectEditor( request: Request,
          "access": 'private', 
          "memos": memoList,
          "userid": current_user.userid,
-         "isAdmin": isAdmin
+         "isAdmin": isAdmin,
+         "isOwner": True
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -382,6 +386,9 @@ async def memoPage( request: Request,
     localCreated_dt = convertDateToLocal( memo.created_date )
     localUpdated_dt = convertDateToLocal( memo.updated_date )
     
+    isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
+    
     return TEMPLATES.TemplateResponse(
         "memo.html",
         { "request": request, 
@@ -392,6 +399,9 @@ async def memoPage( request: Request,
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -476,19 +486,21 @@ async def memoEditor( request: Request,
     localUpdated_dt = convertDateToLocal( memo.updated_date )
     
     isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
 
     return TEMPLATES.TemplateResponse(
         "memoEditor.html", 
-        {"request": request, 
-         "contentPost": memo, 
-         "memoCreated": localCreated_dt.strftime("%c"),
-         "memoUpdated": localUpdated_dt.strftime("%c"),
-         "parentName": proj.name,
-         "frags": FRAGS, 
-         "access": 'private', 
-         "memos": memoList,
-         "userid": current_user.userid,
-         "isAdmin": isAdmin
+        { "request": request, 
+          "contentPost": memo, 
+          "memoCreated": localCreated_dt.strftime("%c"),
+          "memoUpdated": localUpdated_dt.strftime("%c"),
+          "parentName": proj.name,
+          "frags": FRAGS, 
+          "access": 'private', 
+          "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -533,6 +545,9 @@ async def newMemoEditor( request: Request,
     created_date = datetime.now()
     local_dt = convertDateToLocal( created_date )
     
+    isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
+    
     memo = MemoDB( memoid=0,
                    title='your memo title',
                    text='Edit this to be your memo.',
@@ -558,7 +573,10 @@ async def newMemoEditor( request: Request,
           "memoUpdated": local_dt.strftime("%c"),  # new memo, so both are same
           "frags": FRAGS, 
           "access": 'private', 
-          "memos": memoList
+          "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -609,6 +627,9 @@ async def newAichatPage( request: Request,
     localCreated_dt = convertDateToLocal( created_date )
     localUpdated_dt = convertDateToLocal( created_date )
     
+    isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
+    
     return TEMPLATES.TemplateResponse(
         "aichat.html",
         { "request": request, 
@@ -620,6 +641,9 @@ async def newAichatPage( request: Request,
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )
@@ -674,6 +698,9 @@ async def aichatPage( request: Request,
     localCreated_dt = convertDateToLocal( created_date )
     localUpdated_dt = convertDateToLocal( updated_date )
     
+    isAdmin = user_has_role(current_user,"admin")
+    isOwner = current_user.userid == proj.userid
+    
     return TEMPLATES.TemplateResponse(
         "aichat.html",
         { "request": request, 
@@ -685,6 +712,9 @@ async def aichatPage( request: Request,
           "frags": FRAGS, 
           "access": 'private',
           "memos": memoList,
+          "userid": current_user.userid,
+          "isAdmin": isAdmin,
+          "isOwner": isOwner
         }, 
         # 'access' key is for template left sidebar construction
     )

@@ -123,6 +123,7 @@
 						else {
 							msgElm += '<p>Success msg: ' +  success.message + '</p>';
 						}
+						document.getElementById("divUploadMsg").innerHTML = msgElm;
 						
 						if (ordinal == limit) {
 							// populate listbox for upload selection:
@@ -286,6 +287,38 @@
 			);
 		}
 
+		// called when "Admin/Owner Delete File" buttons are clicked
+		function DeleteFile( pfid ) {
+
+			const options = {
+				// credentials: 'include',
+				method: 'DELETE' // Method itself
+			}
+
+			let domain = (new URL(window.location));
+			const prebsjnk = domain.origin;
+			let furl = prebsjnk + '/upload/' + pfid;
+			
+			fetch(furl, options)
+			.then( function(response) {
+					return response.json();
+				}
+			).then( function(data) {
+					if (data.hasOwnProperty('detail')) {
+						alert( 'Please fix the following and try again: ' + response.detail )
+					}
+					else {
+						window.location.reload();
+					}
+				}
+			).catch(
+				error => {
+					console.log( error ) // Handle the error response object
+					document.getElementById("divUploadMsg").innerHTML = '<p>Error msg: ' + error + '</p>';
+				}
+			);
+		}
+
 		// get list of uploaded files and populate upload selection list:
 		// 'projectid' can be null/undefined and uploads go to general upload directory
 		function get_uploads( projectid ) {
@@ -353,11 +386,20 @@
 								if ("{{isAdmin}}") {
 									lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Admin Cancel Check out</a>`;
 								}
+								else if ("{{isOwner}}") {
+									lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Project Owner Cancel Check out</a>`;
+								}
 							}
 						}
-
-
-						// lastBttn = "" // `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
+						else {
+							if ("{{isAdmin}}") {
+								lastBttn = `<a href="#" class="button" onclick="DeleteFile('${pfid}')">Admin Delete File</a>`;
+							}
+							else if ("{{isOwner}}") {
+								lastBttn = `<a href="#" class="button" onclick="DeleteFile('${pfid}')">Project Owner Delete File</a>`;
+							}
+							// lastBttn = "" // `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
+						}
 						
 						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link</a></br>(for embedding)`;
 
