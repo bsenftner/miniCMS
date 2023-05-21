@@ -6,14 +6,17 @@
         <div class="upload2">
             <input type="file" id="NewUploadInput" name="label" onchange="onUploadChangeFunc();" multiple>
         </div>
+		<!--
         <div class="upload3">
             <a href="#" class="button" id="uploadBttn" onclick="UploadFile()">Use the Browse button to select upload files before using this button</a>
         </div>
+		-->
     </form>
     <div id="divUploadMsg">
-        Use the <b>Browse</b> button to <b>select file(s) to upload</b>; use the <b>ctrl</b> and <b>shift</b> keys 
-		to select multiple files, which will all upload together. After file selection, the <b>right-most button</b>  
-		above this line changes to become a <b>start the upload</b> button
+        Use the <b>Choose Files</b> button to <b>select file(s) to upload</b>; use the <b>ctrl</b> and <b>shift</b> keys 
+		to <b>select multiple files for uploading together</b>. After file selection, this line becomes an interface for 
+		<b>verifying the file list for uploading</b>, as well as specifying which files <b>can be modified</b> by project 
+		members or are to be treated as <b>read only</b> within the project.
     </div>
 
     <div id="divUploadLinksHeader">
@@ -67,38 +70,56 @@
 				selected = fileList.length + " files"
 			}
 			else if (fileList.length == 1) {
-				selected = fileInputCtrl.files[0]; 	// has fake path components before filename
-				const pathArray = selected.split("\\");	// prepare...
-   				const lastIndex = pathArray.length - 1; // ...to remove...
-				selected = pathArray[lastIndex];		// ...path components.
+				selected = fileInputCtrl.files[0].name; 	// ?? has fake path components before filename
 			}
 			else {
 				alert("Please select file(s) to upload first!");
 				return;
 			}
 
-			fileUploadButton = document.getElementById("uploadBttn")
-			fileUploadButton.innerHTML = 'Upload "' + selected + '"'
+			// fileUploadButton = document.getElementById("uploadBttn")
+			// fileUploadButton.innerHTML = 'Upload "' + selected + '"'
 
-			document.getElementById("divUploadMsg").innerHTML = 'Now use the <b>Upload "' + selected + '"</b> button to upload the file(s)'
+			let markup = 'Below are the files <b>ready for upload</b>, please verify the list. If the list is not correct, use the "Choose Files" button again. ' +
+						 'When the upload file list is correct, select the checkboxes for the files that <b>can be modified by project members</b>. The files <b>unchecked</b> ' +
+						 'become <b>read only</b> within the project:</br><div id="uploadCandidates" class="resizeable">';
+			for (let i = 0; i < fileList.length; i++) {
+				markup += '<input type="checkbox" id="' +  fileInputCtrl.files[i].name + '" />' + fileInputCtrl.files[i].name + '<br />';
+			}
+			markup += '</div></br>';
+			markup += '<a href="#" class="button" id="uploadBttn" onclick="UploadFileSet()">Upload these file(s) with the checked files being Modifiable by Project Members</a>';
+
+			document.getElementById("divUploadMsg").innerHTML = markup;
 		}
 		
 		// works for uploads of ordinary files or project files
-		function UploadFile() {
+		function UploadFileSet() {
 			
 			if ("{{contentPost.status}}" == "archived") {
 				alert( 'Archived Projects cannot be modified.' )
 				return;
 			}
 
-			// Select your input type file and store it in a variable
-			const input = document.getElementById('NewUploadInput');
+			// the file input list:
+			const uploadFileList = document.getElementById('NewUploadInput');
+			// const modifiables = document.getElementById('uploadCandidates');
+
+			// Get the container element for the checkbox list for these files being modifiable:
+			const writablesContainer = document.getElementById("uploadCandidates");
+			//
+			// Find its child `input` elements of type checkbox
+			const modifiableCheckboxElements = writablesContainer.querySelectorAll("input[type=checkbox]");
+
+			// Convert NodeList to an array
+			const modifiableArray = Array.from(modifiableCheckboxElements);
+
 
 			// This will upload one file after having read it
 			const upload = (file, ordinal, limit) => {
 
-				let uploadfileformdata = new FormData()
-				uploadfileformdata.append('file', file)
+				let uploadfileformdata = new FormData();
+				uploadfileformdata.append('file', file);
+				uploadfileformdata.append('modifiable', file.modifiable);
 
 				let domain = (new URL(window.location));
 				const prebsjnk = domain.origin;
@@ -138,8 +159,8 @@
 							fileInputCtrl = document.getElementById("NewUploadInput")
 							fileInputCtrl.value = '';
 							//
-							fileUploadButton = document.getElementById("uploadBttn")
-							fileUploadButton.innerHTML = 'Select a file first'
+							// fileUploadButton = document.getElementById("uploadBttn")
+							// fileUploadButton.innerHTML = 'Use the Browse button to select upload files before using this button';
 	
 							// after all that, we need to reload the page anyway:
 							window.location.reload();
@@ -153,11 +174,13 @@
 				);
   			};
 
-			// user may select more than one file, so unpload each in kind:
-			let len = input.files.length;
+			// user may select more than one file, so upload each in kind:
+			let len = uploadFileList.files.length;
 			for (let i = 0; i < len; i++) {
-				console.log("uploading '" + input.files[i])
-				upload(input.files[i], i+1, len);
+				console.log("uploading '" + uploadFileList.files[i].name + "'")
+				// create a "modifiable" field on the files[i] element with our readOnly/modifiable checkbox status:
+				uploadFileList.files[i].modifiable = modifiableArray[i].checked;
+				upload(uploadFileList.files[i], i+1, len);
 			}
 		}
 
@@ -351,6 +374,7 @@
 						let ext = fnParts[ fnParts.length - 1 ].toLowerCase();
 						let fileType = fileLinks[i].type;
 						let fileLink = fileLinks[i].link;
+						let modifiable = fileLinks[i].modifiable;
 						let version = fileLinks[i].version;
 						let checked_userid = fileLinks[i].checked_userid;
 						let checked_date = fileLinks[i].checked_date;
@@ -368,37 +392,43 @@
 						}
 						
 						let lastBttn = "";
+						let chkoutDloadBttn = "";
+						let versionMarkup = `version: ${version}`;
 
 						// set this first:
-						let chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${pfid}', '${filename}')">Check out file</a></br>(to modify)`;
-						if (checked_userid > 0) {
-							if ("{{userid}}" == checked_userid) {
-								chkoutDloadBttn = 
-								    `<a href="#" class="button" onclick="document.getElementById('CheckInInput').click();">Check file in</a></br>You're modifying this file
-									<input type="file" style="display:none;" id="CheckInInput" name="checkInInput" onchange="CheckinFile('${pfid}', '${filename}')" >`;
+						if (modifiable) {
+								
+							chkoutDloadBttn = `<a href="#" class="button" onclick="CheckoutFile('${pfid}', '${filename}')">Check out file</a></br>(to modify)`;
+							if (checked_userid > 0) {
+								if ("{{userid}}" == checked_userid) {
+									chkoutDloadBttn = 
+										`<a href="#" class="button" onclick="document.getElementById('CheckInInput').click();">Check file in</a></br>You're modifying this file
+										<input type="file" style="display:none;" id="CheckInInput" name="checkInInput" onchange="CheckinFile('${pfid}', '${filename}')" >`;
 
-								lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Cancel Check out</a>`;
-							}
-							else { // current user is not the checker
-								chkoutDloadBttn = 'Checked out by UserId ' + checked_userid + '</br>' + 
-								`<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download Last Version</a>`;
-
-								if ("{{isAdmin}}") {
-									lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Admin Cancel Check out</a>`;
+									lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Cancel Check out</a>`;
 								}
-								else if ("{{isOwner}}") {
-									lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Project Owner Cancel Check out</a>`;
+								else { // current user is not the checker
+									chkoutDloadBttn = 'Checked out by UserId ' + checked_userid + '</br>' + 
+									`<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download Last Version</a>`;
+
+									if ("{{isOwner}}" == "True") {
+										lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Project Owner Cancel Check out</a>`;
+									}
+									else if ("{{isAdmin}}" == "True") {
+										lastBttn = `<a href="#" class="button" onclick="CheckoutCancel('${pfid}', '${filename}')">Admin Cancel Check out</a>`;
+									}
 								}
 							}
 						}
 						else {
-							if ("{{isAdmin}}") {
-								lastBttn = `<a href="#" class="button" onclick="DeleteFile('${pfid}')">Admin Delete File</a>`;
-							}
-							else if ("{{isOwner}}") {
-								lastBttn = `<a href="#" class="button" onclick="DeleteFile('${pfid}')">Project Owner Delete File</a>`;
-							}
-							// lastBttn = "" // `<a href="#" class="button" onclick="DownloadFile('${fileLink}','${filename}')">Download file</a>`;
+							versionMarkup = `<em>read only</em>`;
+						}
+
+						if ("{{isOwner}}" == "True") {
+							lastBttn = `<a href="#" class="button" onclick="DeleteFile('${pfid}')">Project Owner Delete File</a>`;
+						}
+						else if ("{{isAdmin}}" == "True") {
+							lastBttn = `<a href="#" class="button" onclick="DeleteFile('${pfid}')">Admin Delete File</a>`;
 						}
 						
 						let docLinkBttn = `<a href="#" class="button" onclick="navigator.clipboard.writeText('${fileLink}')">Copy link</a></br>(for embedding)`;
@@ -427,7 +457,7 @@
 								<b>${filename}</b>
 							</div>
 							<div id="divUploadLinksGrid1">
-								version: ${version}
+								${versionMarkup}
 							</div>
 							<div id="divUploadLinksGrid2">
 								${fileType}, ${fileSizeStr}

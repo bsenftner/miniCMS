@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Path, File, UploadFile, Depends, HTTPException, status
+from typing import Annotated
+from fastapi import APIRouter, Path, File, UploadFile, Depends, HTTPException, status, Form
 from fastapi.responses import FileResponse
 
 import aiofiles
@@ -126,7 +127,15 @@ async def read_all_uploads(current_user: UserInDB = Depends(get_current_active_u
 @router.post("/{projectid}", status_code=200)
 async def upload_projectfile(projectid: int, 
                              file: UploadFile = File(...), 
+                             modifiable: str = Form(None),
                              current_user: UserInDB = Depends(get_current_active_user)):
+    
+    log.info( f"upload_projectfile: file attributes are:")
+    temp = vars(file)
+    for item in temp:
+        # log.info( item, ':', temp[item])
+        log.info( item )
+    log.info( f"upload_projectfile: modifiable is {modifiable}")
     
     proj, tag = await crud.get_project_and_tag(projectid)
     # proj = await crud.get_project( projectid )
@@ -211,7 +220,8 @@ async def upload_projectfile(projectid: int,
     finally:
         await file.close()
 
-    pfc = ProjectFileCreate( filename=file.filename, projectid=projectid )
+    modBool = modifiable == 'true'
+    pfc = ProjectFileCreate( filename=file.filename, projectid=projectid, modifiable=modBool )
     pfid = await crud.post_projectfile( pfc, current_user.userid )
     if not pfid:
         await crud.rememberUserAction( current_user.userid, 
@@ -343,7 +353,7 @@ async def check_project_upload_directory_for_orphans(dirname: str, proj: Project
             pfid = await crud.get_projectfile_by_filename( pufname, proj.projectid )
             if not pfid:
                 # located an untracked file inside that recovered project upload directory, let's recover the file too:
-                pfc = ProjectFileCreate( filename=pufname, projectid=proj.projectid )
+                pfc = ProjectFileCreate( filename=pufname, projectid=proj.projectid, modifiable=True ) 
                 pfid = await crud.post_projectfile( pfc, current_user.userid )
                 if not pfid:
                     log.info(f"check_project_upload_directory_for_orphans: failed recovering orphaned file '{pufname}' for project '{proj.name}'")
@@ -429,10 +439,12 @@ async def get_project_projectfiles(projectid: int,
             version = 0
             checked_userid = None
             checked_date = None
+            modifiable = False
             #
             projFileDB: ProjectFileDB = await crud.get_projectfile_by_filename(filename, proj.projectid)
             # log.info( f"get_project_projectfiles: projFileDB.pfid is {projFileDB.pfid}")
             if projFileDB:
+                modifiable = projFileDB.modifiable
                 version = projFileDB.version
                 checked_userid = projFileDB.checked_userid
                 checked_date   = projFileDB.checked_date
@@ -455,6 +467,7 @@ async def get_project_projectfiles(projectid: int,
                 "type": mo.file_type,
                 "link": link,
                 "size": fileSize,
+                "modifiable": modifiable,
                 "version": version,
                 "checked_userid": checked_userid,
                 "checked_date": checked_date
@@ -566,8 +579,9 @@ async def checkout_projectfile(pfid: int,
     
     isAdmin = user_has_role(current_user,"admin")
     isProjMember = user_has_role(current_user, tag.text)
+    isModifiable = projFile.modifiable
     
-    if not isAdmin and not isProjMember:
+    if not isAdmin and not isProjMember or not isModifiable:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     if proj.status == 'archived':
@@ -635,6 +649,9 @@ async def checkcancel_projectfile(pfid: int,
     if proj.status == 'published' and (not isAdmin and not isChecker):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
+    if not projFile.modifiable:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
+    
     # update the projectfile to reflect it is no longer checked out:
     projFile.checked_userid = None
     projFile.checked_date = None 
@@ -662,6 +679,9 @@ async def checkin_projectfile(pfid: int,
         
     if not tag:
         raise HTTPException(status_code=500, detail="Project Tag not found")
+    
+    if not projFile.modifiable:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorized")
     
     isAdmin = user_has_role(current_user,"admin")
     isProjMember = user_has_role(current_user, tag.text)

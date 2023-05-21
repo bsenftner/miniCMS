@@ -58,9 +58,10 @@ class DatabaseMgr:
         self.projectfile_tb = Table(
             "projectfile",   
             self.metadata, 
-            Column("pfid", Integer, primary_key=True, index=True),  # project file id
+            Column("pfid", Integer, primary_key=True, index=True, autoincrement="auto"),  # project file id
             Column("filename", String, index=True),
             Column("projectid", Integer, ForeignKey("project.projectid")),
+            Column("modifiable", Boolean, default=False, nullable=False),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("checked_userid", Integer, ForeignKey("users.userid")),  # if checked out, by who 
             Column("checked_date", DateTime, default=None, nullable=True),  # if checked out, when

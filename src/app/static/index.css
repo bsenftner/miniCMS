@@ -244,6 +244,15 @@ div#divUploadMsg {
   margin-top: -5px;
   margin-bottom: 20px;
 }
+div#divUploadMsg div#uploadCandidates {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-left: 10px;
+  border: 2px solid #ccc; 
+  /* width:300px; */
+  height: 4.5em; 
+  overflow-y: scroll; 
+}
 div#divUploadLinksMsg {
   margin-top: 10px;
   margin-bottom: 15px;

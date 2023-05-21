@@ -285,6 +285,7 @@ async def post_projectfile(payload: ProjectFileCreate, userid: int ):
     # Creates a SQLAlchemy insert object expression query
     query = db_mgr.get_projectfile_table().insert().values(filename=payload.filename, 
                                                            projectid=payload.projectid,
+                                                           modifiable=payload.modifiable,
                                                            userid=userid,
                                                            version=1,
                                                            status="latest",

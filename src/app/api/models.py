@@ -47,6 +47,7 @@ class MemoResponse(BaseModel):
 class ProjectFileCreate(BaseModel):
     filename: str = Field(index=True)  # uploaded filename+extension only, not full path, that's calc'ed from project
     projectid: int = Field(index=True) # project this file is associated
+    modifiable: bool = Field(...)
     
 class ProjectFileDB(ProjectFileCreate):
     pfid: int = Field(index=True)
