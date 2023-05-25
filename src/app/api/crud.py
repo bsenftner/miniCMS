@@ -13,6 +13,8 @@ from app.api.users import user_has_role
 
 from app.config import log
 
+from app.worker import celery_app
+from celery.exceptions import TimeoutError
 
 # ---------------------------------------------------------------------------------------
 async def rememberUserAction( userid: int, actionLevel: int, action: int, desc: str ):
@@ -752,11 +754,34 @@ async def post_aiChat(payload: AiChatCreate, user: UserInDB):
                                                       prompt=payload.prompt, 
                                                       reply=payload.reply, 
                                                       model=payload.model, 
+                                                      status='ready', 
+                                                      taskid='none',
                                                       projectid=payload.projectid,
                                                       userid=user.userid, 
                                                       username=user.username)
     # Executes the query and returns the generated ID
     return await db_mgr.get_db().execute(query=query)
+
+# ------------------------------------------------------------------------------------------------
+# communications with OpenAI take place in a Celery Task, and this is used to recover the results:
+async def resolve_aichat_task_results( aichat: AiChatDB ) -> AiChatDB:
+    # Celery task results recovery logic:
+    task_result = celery_app.AsyncResult(aichat.taskid)
+    if task_result.status == 'SUCCESS':
+        try:
+            resObj = task_result.get(timeout=0.001)
+            aichat.reply = resObj.reply 
+            aichat.reply = "<p>" + aichat.reply.replace("\n", "<br>") + "</p>"
+            aichat.status = resObj.status 
+            await put_aichat( aichat )
+        except TimeoutError:
+            log.info(f"resolve_aichat_task_results: TimeoutError!")
+    elif task_result.status == 'FAILURE':
+        task_result.forget()
+        aichat.status = 'failed'
+        await put_aichat( aichat )
+            
+    return aichat
 
 # -----------------------------------------------------------------------------------------
 # for getting AI Chat exchanges:
@@ -769,7 +794,13 @@ async def get_aiChat(aichatid: int) -> AiChatDB:
     
     # log.info(f"get_aiChat: query built...")
     
-    return await db_mgr.get_db().fetch_one(query=query)
+    aichat: AiChatDB = await db_mgr.get_db().fetch_one(query=query)
+    
+    # special Celery task results recovery logic:
+    if aichat.status == 'inuse':
+        aichat = await resolve_aichat_task_results( aichat )
+            
+    return aichat
 
 
 # -----------------------------------------------------------------------------------------
@@ -794,11 +825,18 @@ async def get_all_project_aiChats(projectid: int) -> List[AiChatDB]:
                                    prompt = c.prompt,
                                    reply = c.reply,
                                    model = c.model,
+                                   status = c.status,
+                                   taskid = c.taskid,
                                    projectid = c.projectid,
                                    userid = c.userid,
                                    username = c.username,
                                    created_date = c.created_date,
                                    updated_date = c.updated_date)
+        #
+        # special Celery task results recovery logic:
+        if aiChatExchange.status == 'inuse':
+            aiChatExchange = await resolve_aichat_task_results( aiChatExchange )
+        #
         finalList.append(aiChatExchange)
             
     # log.info(f"get_all_project_aiChats: finalList {finalList}")
@@ -829,10 +867,17 @@ async def get_all_conversation_aiChats(projectid: int, aichatid: int) -> List[Ai
                                        prompt = c.prompt,
                                        reply = c.reply,
                                        model = c.model,
+                                       status = c.status,
+                                       taskid = c.taskid,
                                        projectid = c.projectid,
                                        userid = c.userid,
                                        username = c.username,
                                        created_date = c.created_date)
+            #
+            # special Celery task results recovery logic:
+            if aiChatExchange.status == 'inuse':
+                aiChatExchange = await resolve_aichat_task_results( aiChatExchange )
+            #
             finalList.append(aiChatExchange)
             
     # log.info(f"get_all_conversation_aiChats: finalList {finalList}")
@@ -849,7 +894,9 @@ async def put_aichat(aichat: AiChatDB):
         .where(aichat.aichatid == db_mgr.get_aichat_table().c.aichatid)
         .values( prePrompt = aichat.prePrompt,
                  prompt = aichat.prompt,
-                 reply = aichat.reply ).returning(db_mgr.get_aichat_table().c.aichatid)
+                 reply = aichat.reply,
+                 status = aichat.status,
+                 taskid = aichat.taskid ).returning(db_mgr.get_aichat_table().c.aichatid)
     )
     return await db_mgr.get_db().execute(query=query)
 

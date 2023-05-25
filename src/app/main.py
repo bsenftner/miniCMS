@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import config
 from app.db import DatabaseMgr, get_database_mgr
 from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video
-from app.api import htmlpages, upload, backups, user_action, aichat, invite
+from app.api import htmlpages, upload, backups, user_action, aichat, invite, tasks
 from app.config import log
 
 # import sentry_sdk
@@ -95,6 +95,9 @@ def create_application() -> FastAPI:
 
     # install the html pages router into our app with tag too:
     application.include_router(htmlpages.router, tags=["general-pages"])
+    
+    # install the tasks router into our app with tag too:
+    application.include_router(tasks.router, tags=["tasks"])
     
     return application
 

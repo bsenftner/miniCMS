@@ -107,6 +107,8 @@ class DatabaseMgr:
             Column("prompt", String),
             Column("reply", String),
             Column("model", String),
+            Column("status", String),
+            Column("taskid", String),
             Column("projectid", Integer, ForeignKey("project.projectid")),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("username", String, ForeignKey("users.username")),

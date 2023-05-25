@@ -111,6 +111,40 @@
 				ToggleQueryEditor();
 				document.getElementById("newChatDiv").innerHTML =
 					'</br><a href="#" class="button" onclick="NewAiChat()">Start new AI Attorney conversation</a></br>';
+
+				// check for task still running
+				if ('{{contentPost.status}}' == 'inuse') {
+					document.getElementById("wait_spinner").classList.remove("hide");
+					setInterval(function() {
+						
+						const options = {
+							credentials: 'include',
+							method: 'GET', // Method itself
+							headers: {
+									 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+									 // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+							},
+						}
+			
+						fetch('/aichat/{{ contentPost.aichatid }}', options) 
+						// .then(response => response.json())
+						.then(response => 
+						{
+							if (response.ok) {
+								window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+							}
+							else {
+								alert( 'Problem updating conversation.' )
+							}
+						}) 
+						.catch(err => {
+							// Do something with the error
+							console.log(err) 
+							alert( err )
+						}) 
+
+					}, 5000);
+				} 
 			}
 			ToggleUploadDownloadSet();
 
@@ -309,11 +343,12 @@
 				body: JSON.stringify(someData) // We send data in JSON format
 			}
 			//
-			// make the HTTP put request using fetch api
+			/* make the HTTP put request using fetch api
 			let domain = (new URL(window.location));
 			const prebsjnk = domain.origin;
-			const furl = prebsjnk + '/aichat/{{ contentPost.aichatid }}';
-			fetch(furl, options) 
+			const furl = prebsjnk + '/aichat/{{ contentPost.aichatid }}'; */
+
+			fetch('/aichat/{{ contentPost.aichatid }}', options) 
 			// .then(response => response.json())
 			.then(response => 
 			{

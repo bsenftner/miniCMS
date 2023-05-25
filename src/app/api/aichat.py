@@ -7,13 +7,22 @@ from app.api import crud
 from typing import List
 from app.api.users import get_current_active_user, user_has_role
 from app.api.user_action import UserAction, UserActionLevel
-from app.api.models import UserInDB, AiChatDB, AiChatCreate, AiChatCreateResponse, ProjectDB, TagDB, basicTextPayload
+from app.api.models import UserInDB, AiChatDB, AiChatTask, AiChatCreate, AiChatCreateResponse
+from app.api.models import ProjectDB, TagDB, basicTextPayload
 
 from app.config import log, get_settings
 import json
 
 import asyncio
 import openai
+
+from app.worker import celery_app
+
+# ---------------------------------------------------------------------------------------
+
+# Celery specific:
+from app.worker import OpenAI_Comm
+from celery.result import AsyncResult
 
 # ---------------------------------------------------------------------------------------
 
@@ -108,6 +117,7 @@ async def create_aiChatExchange(payload: AiChatCreate,
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, 
                             detail=f"Unknown or unsupported model '{payload.model}'")
         
+    # first create a db entry for this new aichat 
     aichatid = await crud.post_aiChat(payload, current_user)
     #
     log.info(f"create_aiChatExchange: aichatid '{aichatid}'")
@@ -119,14 +129,33 @@ async def create_aiChatExchange(payload: AiChatCreate,
     #
     aichat: AiChatDB = await crud.get_aiChat( aichatid )
     
-    await asyncio.to_thread(OpenAI_thread_comm, aichat)
-    
+    # this is the "old" method that blocks during long process hits 
+    # await asyncio.to_thread(OpenAI_thread_comm, aichat)
+    #
+    # new method sends a message to Celery that runs a Task to do this longer communication:
+    aichat_task = AiChatTask( prePrompt = aichat.prePrompt, 
+                              prompt = aichat.prompt, 
+                              reply = aichat.reply, 
+                              model = aichat.model,
+                              status = aichat.status,
+                              taskid = aichat.taskid,
+                              aichatid = aichat.aichatid )
+    #
+    log.info(f"create_aiChatExchange: created aichat_task, launching task...")
+    #
+    task = OpenAI_Comm.delay( aichat_task ) 
+    #
+    log.info(f"create_aiChatExchange: ...back from task launch, taskid is: {task.id}")
+    #
+    aichat.status = 'inuse'
+    aichat.taskid = task.id
+    #
     retVal = await crud.put_aichat( aichat )
     
     await crud.rememberUserAction( aichat.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('UPDATE_AICHAT'), 
-                                   f"aiChat {retVal} updated in thread" )
+                                   f"aiChat {retVal} waiting on Celery as task {task.id}" )
     
     return { "aichatid": aichatid }
 
@@ -166,12 +195,12 @@ async def read_aichatExchange(id: int = Path(..., gt=0),
                                        UserAction.index('FAILED_GET_AICHAT'), 
                                        "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
-    
+        
     await crud.rememberUserAction( current_user.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('GET_AICHAT'), 
                                    f"AIChat {aichat.aichatid}" )
-     
+    
     return aichat
 
 # ----------------------------------------------------------------------------------------------
@@ -240,6 +269,8 @@ async def update_aiChatExchange(payload: basicTextPayload,       # a new questio
                                 aichatid: int = Path(..., gt=0), # the aichatid
                                 current_user: UserInDB = Depends(get_current_active_user)) -> int:
 
+    log.info(f"update_aiChatExchange: here!")
+    
     aichat = await crud.get_aiChat(aichatid)
     if aichat is None:
         await crud.rememberUserAction( current_user.userid, 
@@ -272,17 +303,46 @@ async def update_aiChatExchange(payload: basicTextPayload,       # a new questio
                                        "Not Authorized" )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
         
-
+    log.info(f"update_aiChatExchange: aichat.status is {aichat.status}")
+    
+    if aichat.status == 'inuse':
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_UPDATE_AICHAT'), 
+                                       f"AIChat {id} still processing last request" )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="AIChat still processing last request")
+    
+    # new prompt is the prior conversation with our new question appended:
     aichat.prompt = aichat.prompt + "<br><br>" + aichat.reply + "<br><br>" + payload.text
     aichat.reply = ''
-    await asyncio.to_thread(OpenAI_thread_comm, aichat )
-
     
+    # this is the "old" method that blocks during long process hits 
+    # await asyncio.to_thread(OpenAI_thread_comm, aichat)
+    #
+    # new method sends a message to Celery that runs a Task to do this longer communication:
+    aichat_task = AiChatTask( prePrompt = aichat.prePrompt, 
+                              prompt = aichat.prompt, 
+                              reply = aichat.reply, 
+                              model = aichat.model,
+                              status = aichat.status,
+                              taskid = aichat.taskid,
+                              aichatid = aichat.aichatid )
+    #
+    log.info(f"update_aiChatExchange: created aichat_task, launching update task...")
+    #
+    task = OpenAI_Comm.delay( aichat_task ) 
+    #
+    log.info(f"update_aiChatExchange: ...back from update task launch, taskid is: {task.id}" )
+    #
+    aichat.status = 'inuse'
+    aichat.taskid = task.id
+    #
+    # remember this status and taskid
     retVal = await crud.put_aichat( aichat )
     
     await crud.rememberUserAction( aichat.userid, 
                                    UserActionLevel.index('NORMAL'),
                                    UserAction.index('UPDATE_AICHAT'), 
-                                   f"aiChat {retVal} updated in thread" )
+                                   f"aiChat {retVal} waiting on Celery as task {task.id}" )
     
     return retVal

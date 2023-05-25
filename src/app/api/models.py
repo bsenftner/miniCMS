@@ -1,6 +1,7 @@
 from typing import Union
 from pydantic import BaseModel, Field, EmailStr, constr
 from datetime import datetime
+import json
 
 # create a "Pydantic Model" of the data we want to maintain in the database
 # by inheriting from BaseModel. This inherits data parsing and validation 
@@ -104,12 +105,47 @@ class AiChatDB(BaseModel):
     prompt: str
     reply: str
     model: str
+    status: str                             # used to track Celery task, default is 'ready' - no active task
+    taskid: str                             # Celery taskid, it's a guid type string, default is 'none' - no active task
     aichatid: int = Field(index=True)
     projectid: int = Field(..., foreign_key="ProjectDB.projectid")
     userid: int = Field(...,foreign_key="UserInDB.userid")
     username: str = Field(..., foreign_key="UserInDB.userid")
     created_date: datetime
     updated_date: datetime
+#
+# used to pass less than an entire AiChatDB to a Celery task:
+class  AiChatTask:
+    prePrompt: str
+    prompt: str
+    reply: str
+    model: str
+    status: str                             
+    taskid: str                             
+    aichatid: int
+    #
+    def __init__(self, prePrompt: str, prompt: str, reply: str, model: str, status: str, taskid: str, aichatid: int):
+        self.prePrompt = prePrompt
+        self.prompt = prompt
+        self.reply = reply
+        self.model = model
+        self.status = status
+        self.taskid = taskid
+        self.aichatid = aichatid
+#
+class AiChatTaskEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, AiChatTask):
+            return {
+                'prePrompt': obj.prePrompt,
+                'prompt': obj.prompt,
+                'reply': obj.reply,
+                'model': obj.model,
+                'status': obj.status,
+                'taskid': obj.taskid,
+                'aichatid': obj.aichatid
+            }
+        return super(AiChatTaskEncoder, self).default(obj)
 #
 # AiChatCreate requests return this when successful:
 class AiChatCreateResponse(BaseModel):

@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException, Path, Depends, status
 
 from app.api import crud
 from app.api.users import get_current_active_user, user_has_role
-from app.api.models import UserInDB, TagDB, basicTextPayload
+from app.api.models import UserInDB, TagDB, basicTextPayload, ProjectDB, MemoDB
 
 from typing import List
 
@@ -39,13 +39,37 @@ async def create_tag(payload: basicTextPayload,
 async def read_tag(id: int = Path(..., gt=0),
                    current_user: UserInDB = Depends(get_current_active_user)) -> TagDB:
     
-    log.info("read_tag: here!!")
+    # log.info("read_tag: here!!")
     
     tag: TagDB = await crud.get_tag(id)
     if tag is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
     
     return tag
+
+
+# ----------------------------------------------------------------------------------------------
+# Note: id's type is validated as greater than 0  
+""" @router.get("/{id}/content", response_model=TagDB)
+async def read_tag_content(id: int = Path(..., gt=0),
+                           current_user: UserInDB = Depends(get_current_active_user)):
+    
+    log.info("read_tag_content: here!!")
+    
+    tag: TagDB = await crud.get_tag(id)
+    if tag is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+    
+    projMemos = None
+    #
+    proj: ProjectDB = await crud.get_project_by_tagid(id)
+    if proj:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Tag not found")
+    else:
+        projMemos: List[MemoDB] = await crud.get_all_project_memos( current_user, proj.projid )
+
+    
+    return tag """
 
 # ---------------------------------------------------------------------------------------------- 
 @router.get("/name/{tagName}", response_model=TagDB)

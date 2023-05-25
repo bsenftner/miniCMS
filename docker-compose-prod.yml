@@ -41,7 +41,7 @@ services:
     build: ./src
     container_name: "web"
     command: |
-      bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --reload --workers 8 --host 0.0.0.0 --port 8000'
+      bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --port 8000'
     labels:
       - traefik.enable=true
       - traefik.http.routers.web.rule=Host(`${MACHINENAME}.${TAILNET}`)
@@ -52,9 +52,13 @@ services:
       - ./src/:/home/app/web
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db/${DB_NAME}
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     networks:
       - web
       - internal
+    depends_on:
+      - redis
 
   db:
     # image: "postgres:latest"
@@ -70,6 +74,43 @@ services:
       - POSTGRES_DB=${DB_NAME}    
     networks:
       - internal
+
+  worker:
+    build: ./src
+    command: celery -A app.worker.celery_app worker --loglevel=info --logfile=app/logs/celery.log
+    volumes:
+      - ./src:/home/app/web
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0 
+    networks:
+      - internal
+    depends_on:
+      - web
+      - redis
+
+  redis:
+    image: redis:7 
+    networks:
+      - internal
+
+  dashboard:
+    build: ./src
+    command: celery --broker=redis://redis:6379/0 flower --port=5555
+    ports:
+      - 5556:5555
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    networks:
+      - web
+      - internal
+    depends_on:
+      - web
+      - redis
+      - worker
+
+  
 
 volumes:
   postgres_data:
