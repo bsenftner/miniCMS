@@ -127,15 +127,16 @@
 						}
 			
 						fetch('/aichat/{{ contentPost.aichatid }}', options) 
-						// .then(response => response.json())
+						.then(response => response.json())
 						.then(response => 
 						{
-							if (response.ok) {
-								window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+							if (response.hasOwnProperty('aichatid')) {
+								let aichat = response;
+								if (aichat.status != 'inuse') {
+									window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+								}
 							}
-							else {
-								alert( 'Problem updating conversation.' )
-							}
+							
 						}) 
 						.catch(err => {
 							// Do something with the error
