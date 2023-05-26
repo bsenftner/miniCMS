@@ -1,11 +1,12 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Version 1.2, in beta, looking for issues
+## Version 1.3, in beta, looking for issues
 
 ### All required functionality is in place for secure project document & associated info management with remote located project members
 
-### Latest changes: ~~Dropped use of Traefik for ssl certs, am using Cloudflare Tunnels now~~ Cloudflare Tunnels has a bandwidth limitation, so it is out. Back on Tailscale with Traefik integration, trying to make it work without warnings. 
+### Latest changes: Communications with OpenAI are now Celery tasks via Redis, with Flower
 
+Still outstanding issues with Tailscale/Traefik integration and ssl cert generation
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
@@ -13,11 +14,11 @@
 
 New page endpoints, available from a Project page:
 
-  - /newAiExchange/[projectId]
+- /newAiExchange/[projectId]
 
 and
 
-  - /aiExchange/[aichatid]
+- /aiExchange/[aichatid]
 
 converse with an "AI Attorney" I'm experimenting with; Looking into embedding CA legal case law knowledge
 

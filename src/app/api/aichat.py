@@ -147,6 +147,7 @@ async def create_aiChatExchange(payload: AiChatCreate,
     #
     log.info(f"create_aiChatExchange: ...back from task launch, taskid is: {task.id}")
     #
+    # update in db with 'inuse' status, which signals the get endpoints to check for the task finishing:
     aichat.status = 'inuse'
     aichat.taskid = task.id
     #
@@ -305,6 +306,7 @@ async def update_aiChatExchange(payload: basicTextPayload,       # a new questio
         
     log.info(f"update_aiChatExchange: aichat.status is {aichat.status}")
     
+    # do not allow updates when a Celery task is processing:
     if aichat.status == 'inuse':
         await crud.rememberUserAction( current_user.userid, 
                                        UserActionLevel.index('SITEBUG'),

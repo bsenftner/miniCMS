@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------------------------------------
-# This file contains the JSON endpoints for Celery Tasks
+# This file contains the JSON endpoints for one barebones Celery Task
 #
 
 from fastapi import APIRouter, Depends
@@ -14,7 +14,6 @@ from app.config import log
 # Celery specific:
 from app.worker import create_task
 from celery.result import AsyncResult
-
 
 
 # the "task" router
