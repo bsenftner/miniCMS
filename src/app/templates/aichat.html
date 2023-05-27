@@ -107,46 +107,6 @@
 		//
 		function page_init() {
 			ToggleOldConversations();
-			if ('{{contentPost.aichatid}}' != 'new') {
-				ToggleQueryEditor();
-				document.getElementById("newChatDiv").innerHTML =
-					'</br><a href="#" class="button" onclick="NewAiChat()">Start new AI Attorney conversation</a></br>';
-
-				// check for task still running
-				if ('{{contentPost.status}}' == 'inuse') {
-					document.getElementById("wait_spinner").classList.remove("hide");
-					setInterval(function() {
-						
-						const options = {
-							credentials: 'include',
-							method: 'GET', // Method itself
-							headers: {
-									 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
-									 // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
-							},
-						}
-			
-						fetch('/aichat/{{ contentPost.aichatid }}', options) 
-						.then(response => response.json())
-						.then(response => 
-						{
-							if (response.hasOwnProperty('aichatid')) {
-								let aichat = response;
-								if (aichat.status != 'inuse') {
-									window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
-								}
-							}
-							
-						}) 
-						.catch(err => {
-							// Do something with the error
-							console.log(err) 
-							alert( err )
-						}) 
-
-					}, 5000);
-				} 
-			}
 			ToggleUploadDownloadSet();
 
 			const access_token = localStorage.getItem('token');
@@ -172,6 +132,49 @@
 
 						LoadAIConversations();
 						get_uploads("{{contentPost.projectid}}"); // gets project uploads and populates their place on the project page
+
+						if ('{{contentPost.aichatid}}' != 'new') {
+							ToggleQueryEditor();
+							document.getElementById("newChatDiv").innerHTML =
+								'</br><a href="#" class="button" onclick="NewAiChat()">Start new AI Attorney conversation</a></br>';
+			
+							// check for task still running
+							if ('{{contentPost.status}}' == 'inuse') {
+								document.getElementById("wait_spinner").classList.remove("hide");
+								UpdateWhenAnswered();
+								/*
+								setInterval(function() {
+									
+									const options = {
+										credentials: 'include',
+										method: 'GET', // Method itself
+										headers: {
+												 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+												 // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+										},
+									}
+						
+									fetch('/aichat/{{ contentPost.aichatid }}', options) 
+									.then(response => response.json())
+									.then(response => 
+									{
+										if (response.hasOwnProperty('aichatid')) {
+											let aichat = response;
+											if (aichat.status != 'inuse') {
+												window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+											}
+										}
+										
+									}) 
+									.catch(err => {
+										// Do something with the error
+										console.log(err) 
+										alert( err )
+									}) 
+			
+								}, 5000); */
+							} 
+						}
 					}
 					else {
 						// something is wrong, user should not be on this page:
@@ -200,6 +203,7 @@
             });
         
 
+		// truncate the passed string 
 		function truncate( str, n, useWordBoundary ){
 			if (str.length <= n) { return str; }
 			const subString = str.slice(0, n-1); // the original check
@@ -269,6 +273,36 @@
 			});
 		}
 
+		function UpdateWhenAnswered() {
+			setInterval(function() {
+									
+				const options = {
+					credentials: 'include',
+					method: 'GET', 
+					headers: {'Content-type': 'application/json; charset=UTF-8' },
+				}
+				//
+				fetch('/aichat/{{contentPost.aichatid}}', options) 
+				.then(response => response.json())
+				.then(response => 
+				{
+					if (response.hasOwnProperty('aichatid')) {
+						let aichat = response;
+						if (aichat.status != 'inuse') {
+							window.location.href = "/aiExchange/{{contentPost.aichatid}}";
+						}
+					}
+					
+				}) 
+				.catch(err => {
+					// Do something with the error
+					console.log(err) 
+					alert( err )
+				}) 
+
+			}, 5000);
+		}
+
 		function PostQuery() {
 			if (gUser.hasOwnProperty('roles')) {
 
@@ -310,6 +344,8 @@
 						}
 						else if (response.hasOwnProperty('aichatid')) {
 							window.location.href = "/aiExchange/" + response.aichatid;
+							// can't use the below because we don't have an aichatid yet:
+							// UpdateWhenAnswered();
 						}
 						else {
 							window.location.reload();
@@ -336,28 +372,26 @@
 			//
 			const options = {
 				credentials: 'include',
-				method: 'PUT', // Method itself
+				method: 'PUT', 
 				headers: {
-				 		'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
-				 		// "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+				 		'Content-type': 'application/json; charset=UTF-8',  
 				},
 				body: JSON.stringify(someData) // We send data in JSON format
 			}
 			//
-			/* make the HTTP put request using fetch api
-			let domain = (new URL(window.location));
-			const prebsjnk = domain.origin;
-			const furl = prebsjnk + '/aichat/{{ contentPost.aichatid }}'; */
-
 			fetch('/aichat/{{ contentPost.aichatid }}', options) 
-			// .then(response => response.json())
-			.then(response => 
-			{
-				if (response.ok) {
-					window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+			.then(response => response.json())
+			.then(response => {
+				// Do something with response.
+				console.log( response )
+				if (response.hasOwnProperty('detail')) {
+					alert( 'Please fix the following and try again: ' + response.detail )
+				}
+				else if (response.hasOwnProperty('aichatid')) {
+					UpdateWhenAnswered();
 				}
 				else {
-					alert( 'Problem updating conversation.' )
+					window.location.reload();
 				}
 			}) 
 			.catch(err => {

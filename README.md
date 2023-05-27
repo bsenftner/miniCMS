@@ -12,6 +12,8 @@ Still outstanding issues with Tailscale/Traefik integration and ssl cert generat
 
 ## Now ChatGPT Enabled: what the hell, I couldn't help myself... 
 
+![ChatGPT4 communication flowchart](/src/app/static/MiniCMS-Celery-flowchart.jpg)
+
 New page endpoints, available from a Project page:
 
 - /newAiExchange/[projectId]
