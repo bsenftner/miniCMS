@@ -23,24 +23,29 @@ FROM ubuntu:20.04 AS runner-image
 RUN apt-get update && apt-get install --no-install-recommends -y python3.9 python3-venv && \
 	apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN useradd --create-home app
+# Run as root
+# USER root
+
+# create a user named "app" with a group also named "app":
+RUN useradd --create-home -U app
+
+# copy across virtual environment:
 COPY --from=builder-image /home/app/venv /home/app/venv
 
-# USER app
-# RUN mkdir /home/app/web 
-# WORKDIR /home/app/web
-# COPY . .
-#
 RUN mkdir /home/app/web
 WORKDIR /home/app/web
-# copy project
-# COPY . .
-# chown all the files to the app user
-# RUN chown app:app /home/app/web
+
+# Create directory structure needed for uploads directory to exist:
+RUN mkdir -p /home/app/web/src/app/uploads
+
+# supposed to recursively change owner and group for directory structure beneath web
+# RUN chown -R app:app /home/app/web
+
+# copy from host to container, done as user 'app' but files are still owner and group root:root
 COPY --chown=app:app . /home/app/web
+
 # change to the app user
 USER app
-
 
 EXPOSE 8000
 

@@ -64,18 +64,7 @@ async def create_project(payload: ProjectRequest,
    
     
     log.info(f"create_project: verified Tag '{payload.tag}' does not exist...")
-            
-    # good, we can create the project AFTER we create a tag with the project tag:
-    tagPayload = basicTextPayload( text=payload.tag )
-    tagid = await crud.post_tag( tagPayload )
-    if tagid is None:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_POST_NEW_PROJECT'), 
-                                       f"Project Tag failed '{payload.tag}'" )
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
-
-    log.info(f"create_project: created Tag '{payload.tag}'")
+    
     
     # projects all receive their own upload directory with the name of the tag text
     proj_upload_path = config.get_base_path() / 'uploads' / payload.tag
@@ -92,6 +81,19 @@ async def create_project(payload: ProjectRequest,
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
    
     log.info(f"create_project: created upload dir")
+    
+            
+    # good, we can create the project AFTER we create a tag with the project tag:
+    tagPayload = basicTextPayload( text=payload.tag )
+    tagid = await crud.post_tag( tagPayload )
+    if tagid is None:
+        await crud.rememberUserAction( current_user.userid, 
+                                       UserActionLevel.index('SITEBUG'),
+                                       UserAction.index('FAILED_POST_NEW_PROJECT'), 
+                                       f"Project Tag failed '{payload.tag}'" )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
+
+    log.info(f"create_project: created Tag '{payload.tag}'")
     
     projPayload = ProjectSchema(name=payload.name,
                                 text=payload.text,

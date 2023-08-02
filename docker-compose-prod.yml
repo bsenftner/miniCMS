@@ -49,7 +49,9 @@ services:
       - traefik.http.services.web.loadbalancer.server.port=8000
       - traefik.http.routers.web.entrypoints=websecure
     volumes:
-      - ./src/:/home/app/web
+      - type: bind
+        source: ./src
+        target: /home/app/web
     environment:
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@db/${DB_NAME}
       - CELERY_BROKER_URL=redis://redis:6379/0
