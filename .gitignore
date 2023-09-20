@@ -13,6 +13,7 @@ site
 coverage.xml
 .netlify
 *.db
+*.log
 log.txt
 env3.*
 env
@@ -45,3 +46,4 @@ src/app/logs/celery.log
 src/app/uploads/bsjnk/00057-4028752657.png
 src/app/uploads/gloria/gloria-project-header.jpg
 src/app/uploads/MiniCMS/AboutMiniCMS.jpg
+src/app/logs/celery.log
