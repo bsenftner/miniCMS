@@ -6,7 +6,7 @@
 
 ### Latest changes: Communications with OpenAI are now Celery tasks via Redis, with Flower
 
-Still outstanding issues with Tailscale/Traefik integration and ssl cert generation
+~~Still outstanding issues with Tailscale/Traefik integration and ssl cert generation~~ Dumping Docker Desktop for Docker (no desktop) fixed everything related to Tailscale/Traefik
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
