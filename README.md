@@ -32,7 +32,8 @@ and
 
 Earlier experiments with an 'AI Attorney' proved quite useful.
 That same 'AI Attorney' is now the default chatbot when creating a project.
-Chatbots are provate to a project, as are their exchanges (conversations.)
+Chatbots are private to a project, as are their exchanges (conversations.)
+An example of a custom chatbot might be one tuned with Legal Spanish to Legal English translation.
 
 MiniCMS Features:
 
