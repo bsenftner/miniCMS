@@ -86,16 +86,7 @@
 					and their activities, if known. Include general questions first. The conversation's context is maintained, so you can ask 
 					additional questions as well as provide more information as the conversation progresses.
 				</p>
-				
-				<div id="chatbotEditorBttns"></div>
-
-				<p>For best results, engage with a Chatbot within it's defined role. Do not expect the AI Attorney to discuss solar energy options.
-					Explain question situations clearly using ordinary language, as if you are explaining to a friend. Including information such as
-					the solar location's address when chatting with a Solar Salesbot can significantly improve answer quality. This is due to the AI 
-					being able to incorporate local knowledge in it's answer. Include general info first. The conversation's context is maintained, 
-					so one can ask additional questions as well as provide more information as the conversation progresses.
-				</p>
-				<div id="launchChatButtons"></div>
+				<a href="#" class="button" id="aiChatsBttn" onclick="GotoAiChats()">Visit the AI Attorney</a>
 			</div>
 		</main>
 
@@ -109,8 +100,6 @@
 	</footer>
 	</div>
 
-	{% include 'common_ifAccessDo.html' %}
-	
 	{% include 'common_slides.html' %}
 
 	{% include 'common_editStyle.html' %}
@@ -135,7 +124,6 @@
 
 			ToggleProjectMemberSet();
 			ToggleUploadDownloadSet();
-			LoadChatbots();
 
 			const access_token = localStorage.getItem('token');
 			if (typeof access_token !== 'undefined') {
@@ -276,81 +264,12 @@
 		}
 
 		
-		function GotoEmptyChatbotEditor() { 
+		function GotoAiChats() { 
 			if ("{{contentPost.status}}" == 'archived') {
-				alert( 'Archived Projects cannot create new AI Chatbots.' )
+				alert( 'Archived Projects cannot create new AI Attorney conversations.' )
 				return;
 			}
-			window.location.href = "/newChatbot/{{ contentPost.projectid }}"; 
-		}
-
-		function LoadChatbots() {
-
-			if ("{{contentPost.status}}" == 'archived') {
-				document.getElementById("chatbotEditorBttns").innerHTML = '<div>Archived projects cannot edit Chatbots</div>';
-				document.getElementById("launchChatButtons").innerHTML = '<div>Archived projects cannot have Chatbot conversations</div>';;
-			}
-			else {
-				fetch("/chatbot/project/{{contentPost.projectid}}", { method: 'GET', headers: {} })
-				.then(response => response.json())
-				.then( response =>  {
-					let chatbotList = response;
-					console.log( chatbotList );
-	
-					isChatbotEditor = false;
-					cbeText = "{{cbeTag}}";
-					if (cbeText.length > 0 && gUser.roles.includes(cbeText)) {
-						isChatbotEditor = true;
-					}
-
-					let domain = (new URL(window.location));
-					let limit = chatbotList.length;
-					if (limit>0) {
-						let chatbotHtml = '';
-						if (isChatbotEditor) {
-							chatbotHtml += '<a href="#" class="button" id="aiChatRolesBttn" onclick="GotoEmptyChatbotEditor()">Goto Empty Chatbot Editor</a>';
-						}
-						let launchChatsHtml = '';
-						for (let i = 0; i < limit; i++) {
-							let chatbot = chatbotList[i]; 
-	
-							let createTime = new Date(chatbot.created_date + 'Z');  // the 'Z' says this is UTC 
-
-							chatbotHtml += '<div class="aichatExchange">';
-							chatbotHtml += '<h5>On ';
-							chatbotHtml += createTime.toDateString();
-							chatbotHtml += ' at ';
-							chatbotHtml += createTime.toTimeString();
-							chatbotHtml += ' <em>';
-							chatbotHtml += chatbot.username;
-							chatbotHtml += '</em> created Chatbot: </h5>';
-
-							if (isChatbotEditor) {
-								chatbotHtml += '<a href="' + domain.origin + '/ChatbotEditor/' + chatbot.chatbotid + '" class="button">Edit Chatbot: ' + chatbot.name + '</a>';
-							}
-							else {
-								chatbotHtml += '<a href="' + domain.origin + '/ChatbotPage/' + chatbot.chatbotid + '" class="button">View Chatbot: ' + chatbot.name + '</a>';
-							}
-							chatbotHtml += '</div>';
-	
-							launchChatsHtml += '<div class="aichatExchange">';
-							launchChatsHtml += '<a href="' + domain.origin + '/newChatbotExchange/' + chatbot.chatbotid + '" class="button">Chat with: ' + chatbot.name + '</a>';
-							launchChatsHtml += '</div>';
-						}
-	
-						document.getElementById("chatbotEditorBttns").innerHTML = chatbotHtml;
-						document.getElementById("launchChatButtons").innerHTML = launchChatsHtml;
-						
-					}
-					else {
-						let chatbotHtml = '';
-						if (isChatbotEditor) {
-							chatbotHtml += '<a href="#" class="button" id="aiChatRolesBttn" onclick="GotoEmptyChatbotEditor()">Goto Empty Chatbot Editor</a>';
-							document.getElementById("chatbotEditorBttns").innerHTML = chatbotHtml;
-						}
-					}
-				});
-			}
+			window.location.href = "/newAiExchange/{{ contentPost.projectid }}"; 
 		}
 
 

@@ -1,37 +1,45 @@
 # A FastAPI based multi-user CMS / DMS experiment (content management & document management)
 
-## Version 1.3, in beta, looking for issues
+## Version 1.4, in beta, looking for issues
 
 ### All required functionality is in place for secure project document & associated info management with remote located project members
 
-### Latest changes: Communications with OpenAI are now Celery tasks via Redis, with Flower
+### Latest changes
 
-~~Still outstanding issues with Tailscale/Traefik integration and ssl cert generation~~ Dumping Docker Desktop for Docker (no desktop) fixed everything related to Tailscale/Traefik
+- A chatbot editor, useful for the creation of conversational agents
+- New site permission: *chatbot editor*, like an admin, but only for chatbots
+- Renamed chat related API endpoints
 
 ![webpage screen shot](/src/app/static/AboutMiniCMS.jpg)
 
-## Now ChatGPT Enabled: what the hell, I couldn't help myself... 
+## ChatGPT integration 
 
 ![ChatGPT4 communication flowchart](/src/app/static/MiniCMS-Celery-flowchart.jpg)
 
-New page endpoints, available from a Project page:
+New API endpoints:
 
-- /newAiExchange/[projectId]
+- /chatbot/ POST to create new chatbot
+- /chatbot/[chatbotid] GET specific chatbot (must have owning project access)
+- /chatbot/project/[projectid] GET all project chatbots
+- /chatbot/[chatbotid] PUT update specific chatbot (must have chatbot edit permission)
 
 and
 
-- /aiExchange/[aichatid]
+- /aichat/ POST creates a new chatbot conversation
+- /aichat/[chatid] GET gets a chatbot conversation (must have owning project access)
+- /aichat/project/[projectid] GET all project chatbot conversations
+- /aichat/[chatid] PUT update chatbot conversation (ask another question)
 
-converse with an "AI Attorney" I'm experimenting with; Looking into embedding CA legal case law knowledge
-
-At the moment, the "AI Attorney" is good about being factual, not hallucinating facts or law, restricted to CA law
+Earlier experiments with an 'AI Attorney' proved quite useful.
+That same 'AI Attorney' is now the default chatbot when creating a project.
+Chatbots are provate to a project, as are their exchanges (conversations.)
 
 MiniCMS Features:
 
 - Duel local and prod docker compose setups
   - FastAPI, Postgresql, SQLAlchemy, Pydantic, Databases
 - User accounts
-  - Roles (admin, staff, per-Project)
+  - Roles: admin, staff, per-Project access, per project chatbot editor
     - Basically operate as permissions; having a project role indicates project membership and access
   - Email verification
     - Until email verification, user account cannot do much, locked out of projects, which is almost everything
@@ -93,11 +101,15 @@ MiniCMS Features:
   - Comments use a reduced functionality embed of TinyMCE editor, but still allows image, video and pdf embeds
   - Comments, once posted, cannot be edited
   - Support for nested comments is in place, just not completed yet, not sure if necessary
+- 'Chatbot' content type
+  - An editor interface to create chatbots
+    - Instruction sets to guide a LLM AI how to behave during a natural language exchange 
+      - i.e. a chat interface on a web site
+  - This is an initial, functional interface for further experimentation, it works
 - 'AI Chat' content type
-  - A chat interface to an AI knowledgable of CA Law and prompted to behave as an attorney
-  - Current work has been functionality, and truthfullness, behaving as an attorney
-  - Starting on carried conversational contexts
-  - After that, embedding specific case law knowledge
+  - A chat interface to a LLM AI chatbot behaving within the role provided by a 'Chatbot'
+    - A default Chatbot in the role of a CA Law Professor and Attorney is available
+    - The 'Chatbot' content type and it's editor may be used to create additional chatbots
 - 'Tag' content type
   - for unique term management, employed for multiple uses
     - "system tags" are used for

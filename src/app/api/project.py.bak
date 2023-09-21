@@ -62,17 +62,8 @@ async def create_project(payload: ProjectRequest,
                                        f"Project Tag taken '{payload.tag}'" )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A Tag with this name already exists.")
    
-    # the project's tag with 'CBEdit' added is also needed, so make sure that does not already exist:
-    cbEditTag = payload.tag + 'CBEdit' 
-    tag = await crud.get_tag_by_name( cbEditTag )
-    if tag is not None:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('CONFUSED'),
-                                       UserAction.index('FAILED_POST_NEW_PROJECT'), 
-                                       f"Project Tag taken '{cbEditTag}'" )
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A Tag with this name + 'CBEdit' already exists.")
     
-    log.info(f"create_project: verified Tags '{payload.tag}', '{cbEditTag}' are available for use...")
+    log.info(f"create_project: verified Tag '{payload.tag}' does not exist...")
     
     
     # projects all receive their own upload directory with the name of the tag text
@@ -92,7 +83,7 @@ async def create_project(payload: ProjectRequest,
     log.info(f"create_project: created upload dir")
     
             
-    # good, we can create the project AFTER we create the project tag and project chatbot editor tag...:
+    # good, we can create the project AFTER we create a tag with the project tag:
     tagPayload = basicTextPayload( text=payload.tag )
     tagid = await crud.post_tag( tagPayload )
     if tagid is None:
@@ -101,26 +92,15 @@ async def create_project(payload: ProjectRequest,
                                        UserAction.index('FAILED_POST_NEW_PROJECT'), 
                                        f"Project Tag failed '{payload.tag}'" )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
-    #
-    # almost ready, we create the project AFTER we create a tag for edit permission on this project's chatbots:
-    tagPayload = basicTextPayload( text=cbEditTag )
-    cbEditTagid = await crud.post_tag( tagPayload )
-    if cbEditTagid is None:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_POST_NEW_PROJECT'), 
-                                       f"Project Tag failed '{cbEditTag}'" )
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Dependant data creation failure.")
 
-    log.info(f"create_project: created Tags '{payload.tag}', '{cbEditTag}'")
+    log.info(f"create_project: created Tag '{payload.tag}'")
     
     projPayload = ProjectSchema(name=payload.name,
                                 text=payload.text,
                                 userid=current_user.userid,
                                 username=current_user.username,
                                 status="unpublished",
-                                tagid=tagid,
-                                cbetagid=cbEditTagid)
+                                tagid=tagid)
     projectid = await crud.post_project(projPayload)
     
     await crud.rememberUserAction( current_user.userid, 
@@ -128,19 +108,11 @@ async def create_project(payload: ProjectRequest,
                                    UserAction.index('POST_NEW_PROJECT'), 
                                    f"Project '{payload.name}'" )
     
-    didRoleAdjustment = False
-    old_roles = current_user.roles
     if not payload.tag in current_user.roles:
         # make creating user automagically a member of the project:
+        old_roles = current_user.roles
         current_user.roles += " " + payload.tag
-        didRoleAdjustment = True
         #
-    if not cbEditTag in current_user.roles:
-        # make creating user automagically a member of the project and a project chatbot editor:
-        current_user.roles += " " + cbEditTag
-        didRoleAdjustment = True
-    #
-    if didRoleAdjustment:
         id = await crud.put_user( current_user.userid, current_user )
         if id!=current_user.userid:
             raise HTTPException(
@@ -245,8 +217,7 @@ async def update_project(payload: ProjectUpdate,
         userid=proj.userid,             # retaining original author
         username=proj.username,
         status=payload.status,
-        tagid=proj.tagid,               # do not allow tagid to change
-        cbetagid=proj.cbetagid,         # do not allow cbetagid to change
+        tagid=proj.tagid                # do not allow tagid to change
     )
     projectid = await crud.put_project(id, putPayload)
     
@@ -315,14 +286,6 @@ async def delete_project(id: int = Path(..., gt=0),
                                        f"Project Tag {project.tagid} Not Found" )
         raise HTTPException(status_code=404, detail="Project Tag not found")
     
-    cbetag: TagDB = await crud.get_tag( project.cbetagid )
-    if not cbetag:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_DELETE_PROJECT'), 
-                                       f"Project CBE-Tag {project.cbetagid} Not Found" )
-        raise HTTPException(status_code=404, detail="Project CBE-Tag not found")
-    
     # generate a list of the (long path) uploaded files in this project's upload directory:
     upload_path = config.get_base_path() / 'uploads' / tag.text / '*' 
     uploaded_files = []
@@ -335,10 +298,6 @@ async def delete_project(id: int = Path(..., gt=0),
     projMemoList = await crud.get_all_project_memos( current_user, project.projectid )
     
     if len(uploaded_files) == 0 and len(projFileList) == 0 and len(projMemoList) == 0:
-        # if any users are project chatbot editors, remove that permission:
-        errorCount = await remove_tag_from_users( cbetag )
-        if errorCount > 0:
-            log.info( f"delete_project: remove_tag_from_users reports {errorCount} errors" )
         # if any users are members, remove them from the project:
         errorCount = await remove_tag_from_users( tag )
         if errorCount > 0:
@@ -379,11 +338,6 @@ async def delete_project(id: int = Path(..., gt=0),
     
     # this project has at least one memo or uploaded file, so archive it:
     
-    # if any users are project chatbot editors, remove that permission:
-    errorCount = await remove_tag_from_users( cbetag )
-    if errorCount > 0:
-        log.info( f"delete_project: remove_tag_from_users reports {errorCount} errors" )
-    #
     # if any users are members, remove them from the project:
     errorCount = await remove_tag_from_users( tag )
     if errorCount > 0:

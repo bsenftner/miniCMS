@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+{# 
+	This is a Jinja2 template for an html page
+	These lines are comments and are removed when the template is rendered. 
+#}
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SolarChat</title>
+  <link rel="stylesheet" href="/static/index.css">
+
+</head>
+<body>
+	<div class="grid">
+		{% include 'common_header.html' %}
+
+		{# the left sidebar #}
+		{% include 'common_lsidebar.html' %}
+
+		{# the main content area #}
+		<main>
+			<div id="mainContent">
+				{# title and post contents, with various controls #}
+				<H2> Project: <a href="#" onclick="ProjectPage()">{{parentName}}</a> </H2>
+				<H2> Chatbot: {{contentPost.name}} </H2>
+				<div class="twoColumnsMargined"  id="chatTop">
+					<h2 class="twoCols0">Chatbot Instructions:</h2>
+				</div>
+				<div class="ql-editor chatbot resizeable">
+					{{contentPost.prePrompt | safe}}
+				</div>
+                <div class="postMetadata">
+				    <h5 class="g1">Chatbot ID: {{contentPost.chatbotid}}</h5>
+				    <h5 class="g2">Author: {{contentPost.username}}</h5>
+				    <h5 class="g3">Created: {{chatbotCreated}}</h5>
+				    <h5 class="g4">Updated: {{chatbotUpdated}}</h5>
+                </div>
+			</div>
+		</main>
+
+		{# the right sidebar #}
+		<aside>
+			<div id="aside">
+				<a href="#" class="button" onclick="Login()">Login</a>
+				<br/>
+				<a href="#" class="button" onclick="Register()">Register</a>
+			</div>
+		</aside>
+  
+	<footer>
+		{{ frags[0].footer | safe }} 
+	</footer>
+	</div>
+
+	{% include 'common_ifAccessDo.html' %}
+	
+	{% include 'common_editStyle.html' %}
+
+    <!-- include the TinyMCE editor 
+	<script src="/static/tinymce/js/tinymce/tinymce.min.js"></script>  -->
+
+	<script>
+
+		document.addEventListener("DOMContentLoaded", function() {
+			page_init();
+		});
+		//
+		gUser = {};
+		//
+		function page_init() {
+
+			const access_token = localStorage.getItem('token');
+			if (typeof access_token !== 'undefined') {
+				
+				const options = { headers: { "Authorization": "Bearer " + access_token } }
+				fetch("/users/me", options)
+				.then(response => response.json())
+				.then( response =>  {
+
+					gUser = response;
+
+					if (gUser.hasOwnProperty('roles')) {
+
+						// user is logged in, change right sidebar links:
+						document.getElementById("aside").innerHTML = 
+						`<a href="#" class="button" onclick="UserProfile()">Profile</a>
+						<br/><br/>
+						<a href="#" class="button" onclick="UserSettings()">Settings</a>
+						<br/><br/>
+						<a href="#" class="button" onclick="Logout()">Logout</a>
+						`;
+
+						LoadChatbots();
+					}
+					else {
+						// something is wrong, user should not be on this page:
+						gUser = {};
+						window.location.href = "/";
+					}
+				});
+			}
+			else {
+				// user is not logged in
+				document.getElementById("chatTop").style.display = 'none';
+				document.getElementById("queryEditorContainer").style.display = 'none';
+			}
+		}
+
+		// truncate the passed string 
+		function truncate( str, n, useWordBoundary ){
+			if (str.length <= n) { return str; }
+			const subString = str.slice(0, n-1); // the original check
+			return (useWordBoundary ? subString.slice(0, subString.lastIndexOf(" ")) 
+				  					: subString) + "&hellip;";
+		};
+
+        function sanitizeString(str){
+            str = str.replace(/[^a-z0-9 \.,_-]/gim,"");
+            return str.trim();
+        }
+
+		const toggleElem = (e) => {
+			if (e.style.display === "none") {
+				e.style.display = "block";
+			  } else {
+				e.style.display = "none";
+			  }
+		};
+
+		function ProjectPage() { window.location.href = "/projectPage/{{ contentPost.projectid }}"; }
+
+		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
+
+		function Login() { window.location.href = "/login"; }
+
+		function Register() { window.location.href = "/register"; }
+
+		function UserSettings() { window.location.href = "/settings"; }
+
+		function UserProfile() { window.location.href = "/profile"; }
+
+	</script>
+
+	{% include 'common_logout.html' %}
+
+	{% include 'common_refresh.html' %}
+	
+</body>
+</html>

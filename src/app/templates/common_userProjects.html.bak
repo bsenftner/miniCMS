@@ -39,7 +39,7 @@
                 document.getElementById("mainContent").innerHTML += newHtml
             }
             else {
-                let newHtml = "</br><h2>Please wait a moment while your account is initialized.</h2>";
+                let newHtml = "</br><h2>You are not a member of any projects</h2>";
                 document.getElementById("mainContent").innerHTML += newHtml
             }
             

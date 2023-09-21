@@ -99,20 +99,6 @@ class DatabaseMgr:
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
         
-        self.chatbot_tb = Table(
-            "chatbot",
-            self.metadata,
-            Column("chatbotid", Integer, primary_key=True, index=True),
-            Column("name", String, index=True, unique=True, nullable=False),         
-            Column("prePrompt", String),    # this is the "role" instructions to the AI
-            Column("model", String),
-            Column("projectid", Integer, ForeignKey("project.projectid")),
-            Column("userid", Integer, ForeignKey("users.userid")),
-            Column("username", String, ForeignKey("users.username")),
-            Column("created_date", DateTime, default=func.now(), nullable=False),
-            Column("updated_date", DateTime, default=func.now(), onupdate=func.now(), nullable=False),
-        )
-        
         self.aichat_tb = Table(
             "aichat",
             self.metadata,
@@ -123,7 +109,6 @@ class DatabaseMgr:
             Column("model", String),
             Column("status", String),
             Column("taskid", String),
-            Column("chatbotid", Integer, ForeignKey("chatbot.chatbotid")),
             Column("projectid", Integer, ForeignKey("project.projectid")),
             Column("userid", Integer, ForeignKey("users.userid")),
             Column("username", String, ForeignKey("users.username")),
@@ -154,7 +139,6 @@ class DatabaseMgr:
             Column("text", String),                                         # project description
             Column("status", String, default="unpublished"),                # unpublished means not visible to staff
             Column("tagid", Integer, ForeignKey("tag.tagid")),              # tagid defining the access role for this project 
-            Column("cbetagid", Integer, ForeignKey("tag.tagid")),           # tagid defining access for editing this project's chatbots
             Column("created_date", DateTime, default=func.now(), nullable=False),
         )
 
@@ -211,9 +195,6 @@ class DatabaseMgr:
         
     def get_comment_table(self):
         return self.comment_tb
-        
-    def get_chatbot_table(self):
-        return self.chatbot_tb
         
     def get_aichat_table(self):
         return self.aichat_tb

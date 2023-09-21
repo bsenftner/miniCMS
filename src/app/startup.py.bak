@@ -1,5 +1,5 @@
 import json   
-from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB, ProjectRequest, ChatbotCreate
+from app.api.models import NoteSchema, MemoSchema, UserReg, basicTextPayload, TagDB, ProjectRequest
 from app.api import crud, users, encrypt, project
 from app.api.upload import check_project_uploads_for_orphans
 
@@ -81,19 +81,7 @@ appears with the suite of expected <strong>PDF controls</strong>. Of course, the
 the goals of the <strong>Project</strong>.</p>'''
     return ret
 
-def defaultAiChatRole() -> str:
-    ret = '''You are a bilingual English and Spanish attorney and CA Law Professor. 
-    You work for the Gloria Martinez Law Group, a Sacramento Immigration Law firm. 
-    You are meeting a potential client whom is seeking law advice. 
-    You want them to hire the firm. 
-    You only answer truthfully. 
-    Let's work out how to help the client in a step by step way so we are sure 
-    to have the right answer, the client understands, and they hire us.
-    If multiple options exist for the client, explain each option. 
-    If you do not have an answer, say "I do not know".
 
-    '''
-    return ret
 
         
         
@@ -235,20 +223,6 @@ async def initialize_database_data( app ) -> None:
         
     else:
         log.info(f"first memo title is '{memo.title}'")
-    # ensure default Chatbot post exists
-    log.info("checking if default Chatbot exists...")
-    aiChatRole = await crud.get_Chatbot(1)
-    if not aiChatRole:
-        log.info("creating first Chatbot...")
-        first_aiChatRole_payload = ChatbotCreate(name="Helpful CA AI Attorney", 
-                                                prePrompt=defaultAiChatRole(), 
-                                                model="gpt-4", 
-                                                projectid=1)
-        log.info(f"posting {first_aiChatRole_payload}...")
-        id = await crud.post_Chatbot(first_aiChatRole_payload, adminUser)
-        log.info(f"created first AiChatRole with id {id}.")
-    else:
-        log.info(f"first AiChatRole name is '{aiChatRole.name}'")
     
     # look for orphaned files and directories in the project upload area:
     await check_project_uploads_for_orphans( adminUser )

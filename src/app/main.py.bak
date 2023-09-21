@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.db import DatabaseMgr, get_database_mgr
-from app.api import chatbot, project, memo, comment, tag, notes, ping, users_htmlpages, video
+from app.api import project, memo, comment, tag, notes, ping, users_htmlpages, video
 from app.api import htmlpages, upload, backups, user_action, aichat, invite, tasks
 from app.config import log
 
@@ -74,9 +74,6 @@ def create_application() -> FastAPI:
     
     # install the comment router into our app with a prefix & tag too:
     application.include_router(comment.router, prefix="/comment", tags=["comment"])
-    
-    # install the aichat router into our app with a prefix & tag too:
-    application.include_router(chatbot.router, prefix="/chatbot", tags=["chatbot"])
     
     # install the aichat router into our app with a prefix & tag too:
     application.include_router(aichat.router, prefix="/aichat", tags=["aichat"])

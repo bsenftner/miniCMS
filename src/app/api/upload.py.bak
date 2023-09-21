@@ -268,25 +268,14 @@ async def check_project_uploads_for_orphans(current_user: UserInDB):
                 # we have a tag matching this directory name, do we have a matching project using this tag? 
                 proj: ProjectDB = await crud.get_project_by_tagid(tag.tagid)
                 if not proj:
-                    # there is no project for this directory with a name matching that of a tag, make a project...
-                    
-                    # is there a CBE-tag? (chatbot editing permission)
-                    cbeTagText = dirname + "CBEdit"
-                    cbetag: TagDB = await crud.get_tag_by_name( cbeTagText )
-                    if not cbetag:
-                        tagPayload = basicTextPayload( text=cbeTagText )
-                    cbetagid = await crud.post_tag( tagPayload )
-                    if cbetagid is None:
-                        log.info(f"check_project_uploads_for_orphans: failed to create tag for orphan directory in project upload dir '{cbeTagText}'" )
-                    else:
-                        newProjName = f"recovered orphaned Project '{dirname}'"
-                        projPayload = ProjectSchema(name=newProjName,
-                                                    text=f"Project recovered from orphaned upload directory '{dirname}' (found tag)",
-                                                    userid=current_user.userid,
-                                                    username=current_user.username,
-                                                    status="unpublished",
-                                                    tagid=tag.tagid,
-                                                    cbetagid=cbetagid)
+                    # there is no project for this directory with a name matching that of a tag, make a project: 
+                    newProjName = f"recovered orphaned Project '{dirname}'"
+                    projPayload = ProjectSchema(name=newProjName,
+                                                text=f"Project recovered from orphaned upload directory '{dirname}' (found tag)",
+                                                userid=current_user.userid,
+                                                username=current_user.username,
+                                                status="unpublished",
+                                                tagid=tag.tagid)
                     projectid = await crud.post_project(projPayload)
                     if not projectid:
                         log.info(f"check_project_uploads_for_orphans: failed to create project for orphaned upload dir '{dirname}'!!" )
@@ -310,46 +299,40 @@ async def check_project_uploads_for_orphans(current_user: UserInDB):
                 if tagid is None:
                     log.info(f"check_project_uploads_for_orphans: failed to create tag for orphan directory in project upload dir '{dirname}'" )
                 else:
-                    # we made the tag... but we need another for the project's chatbot editing permission:
-                    tagPayload = basicTextPayload( text=dirname+"CBEdit" )
-                    cbetagid = await crud.post_tag( tagPayload )
-                    if cbetagid is None:
-                        log.info(f"check_project_uploads_for_orphans: failed to create CBE-tag for orphan directory in project upload dir '{dirname}'" )
+                    # we made the tag...
+                    # let's peek inside the project upload directory:
+                    # we have a project and a tag for it, let's look inside that directory:
+                    project_upload_path = config.get_base_path() / 'uploads' / dirname / '*' 
+                    #
+                    project_upload_fileList = []
+                    project_upload_fileList.extend(glob.glob(str(project_upload_path)))
+                    #
+                    # default recovered project status: 
+                    new_status = 'unpublished'
+                    # if the directory contains one file, that file is a zip with the name in zip_archive_path, it's an archived project:
+                    if len(project_upload_fileList)==1:
+                        zip_archive_path = str(config.get_base_path()) + '/uploads/' + dirname + '/project_' + str(dirname) + 'archive.zip'
+                        if project_upload_fileList[0] == zip_archive_path:
+                            new_status = 'archived'
+                    #
+                    # ...let's make the project now that the status is established:
+                    newProjName = f"recovered orphaned Project '{dirname}'"
+                    projPayload = ProjectSchema(name=newProjName,
+                                                text=f"Project recovered from orphaned upload directory '{dirname}' (made tag)",
+                                                userid=current_user.userid,
+                                                username=current_user.username,
+                                                status=new_status,
+                                                tagid=tagid)
+                    projectid = await crud.post_project(projPayload)
+                    if not projectid:    
+                        log.info(f"check_project_uploads_for_orphans: failed creating project for orphan directory in project upload dir '{dirname}'" )
                     else:
-                        # let's peek inside the project upload directory:
-                        # we have a project and a tag for it, let's look inside that directory:
-                        project_upload_path = config.get_base_path() / 'uploads' / dirname / '*' 
-                        #
-                        project_upload_fileList = []
-                        project_upload_fileList.extend(glob.glob(str(project_upload_path)))
-                        #
-                        # default recovered project status: 
-                        new_status = 'unpublished'
-                        # if the directory contains one file, that file is a zip with the name in zip_archive_path, it's an archived project:
-                        if len(project_upload_fileList)==1:
-                            zip_archive_path = str(config.get_base_path()) + '/uploads/' + dirname + '/project_' + str(dirname) + 'archive.zip'
-                            if project_upload_fileList[0] == zip_archive_path:
-                                new_status = 'archived'
-                        #
-                        # ...let's make the project now that the status is established:
-                        newProjName = f"recovered orphaned Project '{dirname}'"
-                        projPayload = ProjectSchema(name=newProjName,
-                                                    text=f"Project recovered from orphaned upload directory '{dirname}' (made tag)",
-                                                    userid=current_user.userid,
-                                                    username=current_user.username,
-                                                    status=new_status,
-                                                    tagid=tagid,
-                                                    cbetagid=cbetagid)
-                        projectid = await crud.post_project(projPayload)
-                        if not projectid:    
-                            log.info(f"check_project_uploads_for_orphans: failed creating project for orphan directory in project upload dir '{dirname}'" )
+                        proj: ProjectDB = await crud.get_project( projectid )
+                        if not proj:
+                            log.info(f"check_project_uploads_for_orphans: failed to get just created project {newProjName}")
                         else:
-                            proj: ProjectDB = await crud.get_project( projectid )
-                            if not proj:
-                                log.info(f"check_project_uploads_for_orphans: failed to get just created project {newProjName}")
-                            else:
-                                # let's look inside:
-                                await check_project_upload_directory_for_orphans(dirname, proj, current_user)
+                            # let's look inside:
+                            await check_project_upload_directory_for_orphans(dirname, proj, current_user)
                                 
 # slave to the above routine:
 async def check_project_upload_directory_for_orphans(dirname: str, proj: ProjectDB, current_user: UserInDB):

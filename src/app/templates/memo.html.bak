@@ -85,8 +85,6 @@
 	</footer>
 	</div>
 
-	{% include 'common_ifAccessDo.html' %}
-	
 	{% include 'common_slides.html' %}
 
 	{% include 'common_editStyle.html' %}

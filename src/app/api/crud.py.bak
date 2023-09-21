@@ -784,8 +784,7 @@ async def put_user(id: int, user: UserInDB):
 
 
 # -----------------------------------------------------------------------------------------
-# for creating new AI Chat Roles
-async def post_Chatbot(payload: ChatbotCreate, user: UserInDB):
+async def post_aiChat(payload: AiChatCreate, user: UserInDB):
     
     log.info(f"post_Chatbot: here! got {payload} for user {user.userid}, {user.username}")
     

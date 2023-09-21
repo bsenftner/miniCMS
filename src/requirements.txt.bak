@@ -5,9 +5,11 @@ databases[postgresql]==0.6.1
 
 # fastapi==0.85.1
 fastapi==0.92.0
+# fastapi==0.100.1
 
 # fastapi-mail==1.2.0
 fastapi-mail==1.2.5
+# fastapi-mail==1.4.1
 
 # psycopg2
 # psycopg2==2.9.5

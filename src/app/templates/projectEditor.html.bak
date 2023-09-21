@@ -368,7 +368,6 @@
                 let actionBttn = "";
 				
 				let isMember =  roles.includes("{{projectTag}}");
-				let isChatbotEditor =  roles.includes("{{cbeTag}}");
 				if (isAdmin) {
 					if (isMember) {
 						if (!isOwner) {
@@ -376,12 +375,6 @@
 						}
 						else {
 							actionBttn = "<em>project owner</em>"
-						}
-						if (isChatbotEditor) {
-							actionBttn += `<a href="#" class="button" onclick="RemoveCBEPermission(${userid})">Remove ChatbotEditor access</a>`;
-						}
-						else {
-							actionBttn += `<a href="#" class="button" onclick="AddCBEPermission(${userid})">Add ChatbotEditor access</a>`;
 						}
 					}
 					else {
@@ -447,12 +440,6 @@
 					else {
 						if (isOwner) {
 							actionBttn = "<em>project owner</em>"
-						}
-						if (isChatbotEditor) {
-							actionBttn += `<a href="#" class="button" onclick="RemoveCBEPermission(${userid})">Remove ChatbotEditor access</a>`;
-						}
-						else {
-							actionBttn += `<a href="#" class="button" onclick="AddCBEPermission(${userid})">Add ChatbotEditor access</a>`;
 						}
 					}
 				}
@@ -625,38 +612,6 @@
                 // post user role update:
 			    const params = {
 				    "text": user.roles.replace(" {{projectTag}}", "")
-			    };
-                //
-                UpdateUserRoles( userid, params );
-            }
-        };
-
-        function RemoveCBEPermission( userid ) {
-			if ("{{contentPost.status}}" == "archived") {
-				alert( 'Archived Projects cannot be modified.' )
-				return;
-			}
-            let user = FindUser( userid );
-            if (user != null) {
-                // post user role update:
-			    const params = {
-				    "text": user.roles.replace(" {{cbeTag}}", "")
-			    };
-                //
-                UpdateUserRoles( userid, params );
-            }
-        };
-
-        function AddCBEPermission( userid ) {
-			if ("{{contentPost.status}}" == "archived") {
-				alert( 'Archived Projects cannot be modified.' )
-				return;
-			}
-            let user = FindUser( userid );
-            if (user != null) {
-                // post user role update:
-			    const params = {
-				    "text": user.roles + " {{cbeTag}}",
 			    };
                 //
                 UpdateUserRoles( userid, params );

@@ -41,25 +41,23 @@ openai.api_key = get_settings().OPENAI_API_KEY
 @celery_app.task(name="OpenAI_Comm")
 def OpenAI_Comm( aichat_task: AiChatTask ) -> AiChatTask:
     
-    logger.info("OpenAI_Comm: we are in!")
-    logger.info(f"OpenAI_Comm: aichat_task.aichatid '{aichat_task.aichatid}'")
-    logger.info(f"OpenAI_Comm: aichat_task.status '{aichat_task.status}'")
-    logger.info(f"OpenAI_Comm: aichat_task.taskid '{aichat_task.taskid}'")
-    logger.info(f"OpenAI_Comm: aichat_task.prompt '{aichat_task.prompt}'")
-    logger.info(f"OpenAI_Comm: aichat_task.prompt '{aichat_task.prePrompt}'")
+    # logger.info("OpenAI_Comm: we are in!")
+    # logger.info(f"OpenAI_Comm: aichat_task.aichatid '{aichat_task.aichatid}'")
+    # logger.info(f"OpenAI_Comm: aichat_task.status '{aichat_task.status}'")
+    # logger.info(f"OpenAI_Comm: aichat_task.taskid '{aichat_task.taskid}'")
+    # logger.info(f"OpenAI_Comm: aichat_task.prompt '{aichat_task.prompt}'")
     
-    # prePrompt = '''You are a bilingual English and Spanish attorney and CA Law Professor. 
-    # You work for the Gloria Martinez Law Group, a Sacramento Immigration Law firm. 
-    # You are meeting a potential client whom is seeking law advice. 
-    # You want them to hire the firm. 
-    # You only answer truthfully. 
-    # Let's work out how to help the client in a step by step way so we are sure 
-    # to have the right answer, the client understands, and they hire us.
-    # If multiple options exist for the client, explain each option. 
-    # If you do not have an answer, say "I do not know".
-    # 
-    # '''
-    prePrompt = aichat_task.prePrompt
+    prePrompt = '''You are a bilingual English and Spanish attorney and CA Law Professor. 
+    You work for the Gloria Martinez Law Group, a Sacramento Immigration Law firm. 
+    You are meeting a potential client whom is seeking law advice. 
+    You want them to hire the firm. 
+    You only answer truthfully. 
+    Let's work out how to help the client in a step by step way so we are sure 
+    to have the right answer, the client understands, and they hire us.
+    If multiple options exist for the client, explain each option. 
+    If you do not have an answer, say "I do not know".
+    
+    '''
     
     aiResponse = None
     if aichat_task.model=="text-davinci-003":        
@@ -87,7 +85,7 @@ def OpenAI_Comm( aichat_task: AiChatTask ) -> AiChatTask:
     aichat_task.reply = aiResponse 
     aichat_task.status = 'ready'
        
-    logger.info(f"OpenAI_Comm: reply '{aichat_task.reply}'")
+    # logger.info(f"OpenAI_Comm: reply '{aichat_task.reply}'")
     
     # task is done:
     return aichat_task

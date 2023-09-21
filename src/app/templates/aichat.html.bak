@@ -24,7 +24,7 @@
 			<div id="mainContent">
 				{# title and post contents, with various controls #}
 				<H2> Project: <a href="#" onclick="ProjectPage()">{{parentName}}</a> </H2>
-				<H1> Chat AI: {{contentPost.aichatid}} </H1>
+				<H1> AI Attorney: {{contentPost.aichatid}} </H1>
                 <div class="postMetadata">
 				    <h5 class="g1">Author: {{contentPost.username}}</h5>
 				    <h5 class="g2">Created: {{aichatCreated}}</h5>
@@ -60,9 +60,10 @@
 				</form>
 				<p> Keep questions on project topics and related issues, including information relevant to the 
 					project, which may be copied and pasted from project files. (No images or video yet.) </br>
+					This <b>AI</b> has passed the <em>CA Bar Exam</em>, so do not hesitate to ask real questions.
 					<b>Note:</b> questions, once asked, cannot be edited or deleted, so write professionally. 
 				</p>
-				<a href="#" class="button" onclick="PostQuery()">Ask {{ chatbotName }}</a>
+				<a href="#" class="button" onclick="PostQuery()">Ask the AI Attorney</a>
 			</div>
 
 			<div class="twoColumnsMargined">
@@ -135,12 +136,43 @@
 						if ('{{contentPost.aichatid}}' != 'new') {
 							ToggleQueryEditor();
 							document.getElementById("newChatDiv").innerHTML =
-								'</br><a href="#" class="button" onclick="NewAiChat()">Start a new Chat with: {{ chatbotName }}</a></br>';
+								'</br><a href="#" class="button" onclick="NewAiChat()">Start new AI Attorney conversation</a></br>';
 			
 							// check for task still running
 							if ('{{contentPost.status}}' == 'inuse') {
 								document.getElementById("wait_spinner").classList.remove("hide");
 								UpdateWhenAnswered();
+								/*
+								setInterval(function() {
+									
+									const options = {
+										credentials: 'include',
+										method: 'GET', // Method itself
+										headers: {
+												 'Content-type': 'application/json; charset=UTF-8', // Indicates the content 
+												 // "Authorization": "Bearer " + access_token // only needed when JWT is not in cookie
+										},
+									}
+						
+									fetch('/aichat/{{ contentPost.aichatid }}', options) 
+									.then(response => response.json())
+									.then(response => 
+									{
+										if (response.hasOwnProperty('aichatid')) {
+											let aichat = response;
+											if (aichat.status != 'inuse') {
+												window.location.href = "/aiExchange/{{ contentPost.aichatid }}";
+											}
+										}
+										
+									}) 
+									.catch(err => {
+										// Do something with the error
+										console.log(err) 
+										alert( err )
+									}) 
+			
+								}, 5000); */
 							} 
 						}
 					}
@@ -209,7 +241,7 @@
                         chatHtml += chat.username;
 						chatHtml += '</em> asked: </h5>';
 						chatHtml += '</div>';
-						chatHtml += '<a href="' + domain.origin + '/chatbotExchange/' + chat.aichatid + '">' + shortPrompt + '</a>';
+						chatHtml += '<a href="' + domain.origin + '/aiExchange/' + chat.aichatid + '">' + shortPrompt + '</a>';
 						chatHtml += '</div>';
 						count++;
 					}
@@ -257,7 +289,7 @@
 					if (response.hasOwnProperty('aichatid')) {
 						let aichat = response;
 						if (aichat.status != 'inuse') {
-							window.location.href = "/chatbotExchange/{{contentPost.aichatid}}";
+							window.location.href = "/aiExchange/{{contentPost.aichatid}}";
 						}
 					}
 					
@@ -286,8 +318,12 @@
 
 				// post as new question submission:
 				const params = {
+					"prePrompt": "", 
 					"prompt": newQuery, 
-					"chatbotid": "{{ contentPost.chatbotid }}",
+					"reply": "",
+				//	"model": "gpt-3.5-turbo",
+					"model": "gpt-4",
+					"projectid": "{{ contentPost.projectid }}",
 				};
 
 				const options = {
@@ -307,7 +343,7 @@
 							alert( 'Please fix the following and try again: ' + response.detail )
 						}
 						else if (response.hasOwnProperty('aichatid')) {
-							window.location.href = "/chatbotExchange/" + response.aichatid;
+							window.location.href = "/aiExchange/" + response.aichatid;
 							// can't use the below because we don't have an aichatid yet:
 							// UpdateWhenAnswered();
 						}
@@ -389,7 +425,7 @@
 
 		function ProjectEdit() { window.location.href = "/projectEditor/{{ contentPost.projectid }}"; }
 
-		function NewAiChat() { window.location.href = '/newChatbotExchange/{{ contentPost.chatbotid }}'; }
+		function NewAiChat() { window.location.href = '/newAiExchange/{{ contentPost.projectid }}'; }
 
 		function Login() { window.location.href = "/login"; }
 

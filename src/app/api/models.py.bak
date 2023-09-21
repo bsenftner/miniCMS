@@ -111,6 +111,7 @@ class ChatbotUpdate(BaseModel):
 class ChatbotDB(BaseModel):
     name: str       # display name used to reference this AI Chat Role
     prePrompt: str
+    reply: str
     model: str
     chatbotid: int = Field(index=True)
     projectid: int = Field(..., foreign_key="ProjectDB.projectid")

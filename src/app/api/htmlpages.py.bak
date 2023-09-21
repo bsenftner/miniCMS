@@ -618,42 +618,7 @@ async def newChatbotPage( request: Request,
     if not tag:
         await crud.rememberUserAction( current_user.userid,  
                                        UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_GET_AICHATROLE'), 
-                                       f"newChatbot, project {projectid}, '{proj.name}', Tag not found" )
-        raise HTTPException(status_code=500, detail="Project Tag not found")
-    
-    if not cbetag:
-        await crud.rememberUserAction( current_user.userid,  
-                                       UserActionLevel.index('SITEBUG'),
-                                       UserAction.index('FAILED_GET_AICHATROLE'), 
-                                       f"newChatbot, project {projectid}, '{proj.name}',  CBE-Tag not found" )
-        raise HTTPException(status_code=500, detail="Project CBE-Tag not found")
-    
-    # verify project access:
-    weAreAllowed = crud.user_has_project_access( current_user, proj, tag ) 
-    if not weAreAllowed:
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('WARNING'),
-                                       UserAction.index('FAILED_GET_AICHATROLE'), 
-                                       f"newChatbot, project {projectid}, '{proj.name}', not authorized" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized to access project.")
-    #
-    # verify project chatbot editor access:
-    if not user_has_role(current_user, cbetag.text):
-        await crud.rememberUserAction( current_user.userid, 
-                                       UserActionLevel.index('WARNING'),
-                                       UserAction.index('FAILED_GET_AICHATROLE'), 
-                                       f"newChatbot, project {projectid}, '{proj.name}', not authorized for project chatbot editing" )
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not Authorized for project chatbot editing.")
-    
-    await crud.rememberUserAction( current_user.userid, 
-                                   UserActionLevel.index('NORMAL'),
-                                   UserAction.index('NEW_AICHATROLE_PAGE'), 
-                                   f"newChatbot, project {projectid}" )
-    
-    aichatroleList = await crud.get_all_project_Chatbots(projectid)
-    
-    # returns list of project memos this user has access:
+                                       f"newAichat, project {projectid}, '{proj.name}', Tag not found" )
     memoList = await crud.get_all_project_memos(current_user, projectid)
     
      # the app runs in UTC local time:
