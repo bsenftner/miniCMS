@@ -1,0 +1,74 @@
+version: "3.3"
+
+networks:
+  web:
+    external: true
+  internal:
+    name: internal
+    external: false
+
+services:
+
+  traefik:
+    image: "traefik:v3.0"
+    # image: "traefik:v2.9"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=web"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.address=:80"
+      - "--certificatesresolvers.myresolver.tailscale=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock
+    networks:
+      - web
+      - internal
+
+  web:
+    build: ./src
+    container_name: "web"
+    command: |
+      bash -c 'while !</dev/tcp/db/5432; do sleep 1; done; uvicorn app.main:app --reload --workers 4 --host 0.0.0.0 --port 8000'
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=Host(`blakestation-wsl2-ubuntu20-04-6.cow-quail.ts.net`)
+      - traefik.http.routers.web.tls.certresolver=myresolver
+      - traefik.http.services.web.loadbalancer.server.port=8000
+      - traefik.http.routers.web.entrypoints=websecure
+    volumes:
+      - ./src/:/home/app/web
+    # ports:
+      # hostPort:containerPort
+      # - 8000:8000
+    environment:
+      - DATABASE_URL=postgresql://collectAdmin:K0113ct10n$$!@db/lawOfficeAC
+    networks:
+      - web
+      - internal
+
+  db:
+    # image: "postgres:latest"
+    image: postgres:13-alpine
+    container_name: "postgres"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USER=collectAdmin
+      - POSTGRES_PASSWORD=K0113ct10n$$!
+      - POSTGRES_DB=lawOfficeAC    
+    networks:
+      - internal
+
+volumes:
+  postgres_data:
